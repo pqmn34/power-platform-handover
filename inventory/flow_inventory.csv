@@ -1,0 +1,363 @@
+FlowName,Category,Trigger,Actions,Connectors,SourceFile
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+,5,,,,
+ArrowXL42GearsLicensesReport-A0B13F52-9DFA-F011-8406-7CED8D210053,,Recurrence,"Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, Scope, URI, CatchError","shared_teams, shared_sharepointonline, shared_keyvault",ArrowXL42GearsLicensesReport-A0B13F52-9DFA-F011-8406-7CED8D210053.json
+ASDAWeeklyChargingIssue-61517DDF-D360-F111-A826-7CED8DD7139C,,Recurrence,"Initialize_variable_–_EndDate, Initialize_variable_–_StartDate, Email_Footer, Email-TO, Scope, ERROR_HANDLING","shared_teams, shared_office365, shared_powerbi",ASDAWeeklyChargingIssue-61517DDF-D360-F111-A826-7CED8DD7139C.json
+AXLSSIS-MonthlyRepairReport-9546BF12-AECB-F011-BBD3-6045BDD64A0D,,Recurrence,"varCSVContent, EmailTO, EmailCC, Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",AXLSSIS-MonthlyRepairReport-9546BF12-AECB-F011-BBD3-6045BDD64A0D.json
+AXLTC58-SSISAssetReportPerSite-1E411D19-AECB-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContent_WIGAN, varCSVContentAIRDRIE, varCSVContentCARRICKFERGUS, varCSVContentENFIELD85, varCSVContentINVERNESS, varCSVContentWORCESTER, EmailTO, MasterScope, EmailCC, Error_Handling, Success_Alert","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",AXLTC58-SSISAssetReportPerSite-1E411D19-AECB-F011-BBD3-7C1E5267A40E.json
+AXLTC58SSIS-DuplicateDevices-9446BF12-AECB-F011-BBD3-6045BDD64A0D,,Recurrence,"Initialize_variable_varCSVContent, EmailTO, EmailCC, Error_Handling, Scope","shared_teams, shared_powerbi, shared_office365",AXLTC58SSIS-DuplicateDevices-9446BF12-AECB-F011-BBD3-6045BDD64A0D.json
+AXLTC58SSIS-LostDevices-3C562213-AECB-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContent, EmailTO, EmailCC, Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",AXLTC58SSIS-LostDevices-3C562213-AECB-F011-BBD3-7C1E5267A40E.json
+AXLTC58SSIS-LostDevicesBackOnline-00562213-AECB-F011-BBD3-7C1E5267A40E,,Recurrence,"Run_a_query_against_a_dataset, varCSVContent, Select, Condition, Create_file, Email_To, Email_CC","shared_sharepointonline, shared_office365, shared_powerbi",AXLTC58SSIS-LostDevicesBackOnline-00562213-AECB-F011-BBD3-7C1E5267A40E.json
+AXLTC58SSIS-MSRAsset-DC53A973-29D1-F011-BBD3-7C1E5267A40E,,Recurrence,"Initialize_variable_varCSVContent, EmailTO, EmailCC, Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",AXLTC58SSIS-MSRAsset-DC53A973-29D1-F011-BBD3-7C1E5267A40E.json
+AXLTC58SSIS-OutOfContactsDevices-3B562213-AECB-F011-BBD3-7C1E5267A40E,,Recurrence,"Run_a_query_against_a_dataset, Initialize_variable_varCSVContent, Select, Condition, Create_file, EmailTO, EmailCC","shared_sharepointonline, shared_office365, shared_powerbi",AXLTC58SSIS-OutOfContactsDevices-3B562213-AECB-F011-BBD3-7C1E5267A40E.json
+AXLTC80SSIS-MSRAsset-845F7E64-28D1-F011-BBD3-6045BDD64A0D,,Recurrence,"Initialize_variable_varCSVContent, EmailTO, EmailCC, Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",AXLTC80SSIS-MSRAsset-845F7E64-28D1-F011-BBD3-6045BDD64A0D.json
+BlueDartRefreshStockVisibilityandReporting-C873A3DB-C9F6-F011-8406-7CED8D210053,,Recurrence,"Error_Handling, Scope","shared_teams, shared_powerbi",BlueDartRefreshStockVisibilityandReporting-C873A3DB-C9F6-F011-8406-7CED8D210053.json
+BlueDartSOTILicenseInformation-797F75B5-80E5-F011-8544-7C1E5267A40E,,Recurrence,"Get_secret_ClientIDSecret, Get_secretPSWD, EmailTO, EmailCC, Scope, ClientIDSecret, UID, Password, EncodeSecret, HTTP, TokenParse_JSON, AccessToken, Error_Handling","shared_teams, shared_sharepointonline, shared_keyvault",BlueDartSOTILicenseInformation-797F75B5-80E5-F011-8544-7C1E5267A40E.json
+BLUEDARTWeeklyOfflineDevices-8A0A365D-30E6-F011-8544-6045BDD64A0D,,Recurrence,"varCSVContent, Error_Handling, EmailTO, EmailCC, Scope, OfflineDevicePerSite, SelectPivotTable, PivotDataArray, Append_to_array_variable, Create_HTML_PivotTable","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",BLUEDARTWeeklyOfflineDevices-8A0A365D-30E6-F011-8544-6045BDD64A0D.json
+BlueDartWeeklyRepairandDamageReport-5D8A0CFC-6D1C-F111-8341-000D3A8F644D,,Recurrence,"Scope, EmailTO, CatchError, varCSVContentLostBER, varCSVContentDamaged, EmailCC, EmailFooter-Internal","shared_teams, shared_office365, shared_powerbi",BlueDartWeeklyRepairandDamageReport-5D8A0CFC-6D1C-F111-8341-000D3A8F644D.json
+Child-DHLEVRIPremiumRMACleanUpasperRepairData-EBE1A530-D243-F111-88B5-000D3A8F644D,,manual,"HTTP, ClientIDSecret, EncodeSecret, TokenParse_JSON, Get_secret_ClientID, Get_secret_ClientCS, EmailTo, EmailCC, Error_Handling, Scope, AccessToken, DHLCountRMAReceivedByZebra, Offlinemorethan40days, DHLRMAReceivedByZebra, SelectDHLOfflineMoreThan40Days, Create_HTML_table, Compose, Create_CSV_table, Get_secretUID, Get_secretPSWD, Compose_-_DeviceCount, URI, EmailFooter-Internal, DeletedSuccessList, DeletedFailedList","shared_powerbi, shared_teams, shared_keyvault, shared_office365",Child-DHLEVRIPremiumRMACleanUpasperRepairData-EBE1A530-D243-F111-88B5-000D3A8F644D.json
+Child-Hydrite42GGetDeviceLogs-1F333CF2-5EC5-F011-BBD3-7C1E5267A40E,,manual,"Initialize_variable, Get_items, Apply_to_each, Respond_to_a_Power_App_or_flow","shared_sharepointonline, shared_office365",Child-Hydrite42GGetDeviceLogs-1F333CF2-5EC5-F011-BBD3-7C1E5267A40E.json
+Child-HYDRITE42GGetDeviceLogs-592D864A-8ECF-F011-BBD3-6045BDD64A0D,,manual,"Initialize_variable, Get_items, Apply_to_each, Respond_to_a_Power_App_or_flow","shared_sharepointonline, shared_office365",Child-HYDRITE42GGetDeviceLogs-592D864A-8ECF-F011-BBD3-6045BDD64A0D.json
+Child-PILOTTRAVEL42GGetDeviceLogs-9D1E74A9-6AC5-F011-BBD3-6045BDD64A0D,,manual,"Initialize_variable, Get_items, Apply_to_each, Respond_to_a_Power_App_or_flow","shared_sharepointonline, shared_office365",Child-PILOTTRAVEL42GGetDeviceLogs-9D1E74A9-6AC5-F011-BBD3-6045BDD64A0D.json
+Child-RM42GGetDeviceLogs-E3AC3D3E-A9C4-F011-BBD3-7C1E5267A40E,,manual,"uid, pswd, Initialize_variable, Get_items, Apply_to_each, Respond_to_a_Power_App_or_flow","shared_sharepointonline, shared_keyvault, shared_office365",Child-RM42GGetDeviceLogs-E3AC3D3E-A9C4-F011-BBD3-7C1E5267A40E.json
+Child-RM42GGetDeviceLogsv2-6C86AB20-E8C5-F011-BBD3-7C1E5267A40E,,manual,"Initialize_variable, Get_items, Apply_to_each, uid, pswd, Respond_to_a_Power_App_or_flow","shared_sharepointonline, shared_keyvault, shared_office365",Child-RM42GGetDeviceLogsv2-6C86AB20-E8C5-F011-BBD3-7C1E5267A40E.json
+Child-RMGBatteryDecommissioningYellowMessage-9D78155C-9335-F111-88B5-000D3A8F644D,,Recurrence,"Get_secret_-_Key, Get_secret_UID, Get_secret_PSWD, YellowMsg_Count, Compose-YellowMessage, URI, SuccessListYM, FailedListYM, RedMsg_Count, Compose-RedMessage, Scope, Scope_-_CATCH_(Error_Handler), Delay_Until","shared_office365, shared_teams, shared_keyvault, shared_powerbi",Child-RMGBatteryDecommissioningYellowMessage-9D78155C-9335-F111-88B5-000D3A8F644D.json
+CHILDEVRIPremiumDELETEOffline60DaysLostDevices-DE022694-002E-F111-88B3-7CED8DD7139C,,manual,"HTTP, TokenParse_JSON, AccessToken, Offlinemorethan60days, CountOfflineGT60Days, GetsecretCIDCS, GetsecretUID, Get_secretPSWD, URI, ClientIDSecret, EncodeSecret, DeletedSuccessList, DeletedFailedList, Scope, ERROR_Handling, Post_FAILED_message_in_a_chat_or_channel_1_1","shared_office365, shared_teams, shared_keyvault, shared_powerbi",CHILDEVRIPremiumDELETEOffline60DaysLostDevices-DE022694-002E-F111-88B3-7CED8DD7139C.json
+ConsumSOTILicenseInformation-EDEA3914-10CD-F011-BBD3-6045BDD64A0D,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Get_secret_ClientIDSecret, Get_secretPSWD, Scope, Error_Handling, Get_secretUID, Get_PSWD","shared_teams, shared_sharepointonline, shared_keyvault, shared_office365",ConsumSOTILicenseInformation-EDEA3914-10CD-F011-BBD3-6045BDD64A0D.json
+ConsumSSIS-LostDevices-24DB52DF-19CD-F011-BBD3-7C1E5267A40E,,Recurrence,"Run_a_query_against_a_dataset, varCSVContent, Select, Condition, Create_file","shared_sharepointonline, shared_office365, shared_powerbi",ConsumSSIS-LostDevices-24DB52DF-19CD-F011-BBD3-7C1E5267A40E.json
+ConsumSSIS-LostDevicesFound-DD024821-2CCD-F011-BBD3-6045BDD64A0D,,Recurrence,"Run_a_query_against_a_dataset, varCSVContent, Select, Condition, Create_file","shared_sharepointonline, shared_office365, shared_powerbi",ConsumSSIS-LostDevicesFound-DD024821-2CCD-F011-BBD3-6045BDD64A0D.json
+ConsumSSIS-MonthlyAssetReport-F2189102-33CD-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContent, EmailTO, EmailCC, Scope, CatchError","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",ConsumSSIS-MonthlyAssetReport-F2189102-33CD-F011-BBD3-7C1E5267A40E.json
+ConsumSSIS-MonthlyLostDevices-27361385-20CD-F011-BBD3-6045BDD64A0D,,Recurrence,"Run_a_query_against_a_datasetMonthly, varCSVContentMonthly, SelectMonthly, ConditionMonthly, Create_file, Run_a_query_against_a_datasetLatest, SelectLatest, ConditionLatest, Send_an_email_(V2), varCSVContentLatest","shared_sharepointonline, shared_office365, shared_powerbi",ConsumSSIS-MonthlyLostDevices-27361385-20CD-F011-BBD3-6045BDD64A0D.json
+ConsumSSIS-MonthlyRepairReport-D0955283-5FCD-F011-BBD3-6045BDD64A0D,,Recurrence,"Run_a_query_against_a_dataset, varCSVContent, Select, Condition, Create_file","shared_sharepointonline, shared_office365, shared_powerbi",ConsumSSIS-MonthlyRepairReport-D0955283-5FCD-F011-BBD3-6045BDD64A0D.json
+CONSUMSSIS-MSRReport-66D8A206-2DD1-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContent, Error_Handling, EmailTO, EmailCC, Scope","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",CONSUMSSIS-MSRReport-66D8A206-2DD1-F011-BBD3-7C1E5267A40E.json
+ConsumSSIS-WARNINGCRITICALSOTILicenses-03CEBDE1-43CD-F011-BBD3-6045BDD64A0D,,Recurrence,"varCSVContentStaging, varCSVContentZebraTestDevices, varCSVContentDuplicateDevices, varCSVContentExtendedOffline, varCSVContentAssetReport, varCSVContentLostAndStolen, Master, Error_Handling, EmailTO, EmailCC","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",ConsumSSIS-WARNINGCRITICALSOTILicenses-03CEBDE1-43CD-F011-BBD3-6045BDD64A0D.json
+ConsumSSIS-WrongCostaReport-836D7AA6-97CE-F011-BBD3-6045BDD64A0D,,Recurrence,"Run_a_query_against_a_dataset, varCSVContent, Select, Condition, Create_file","shared_sharepointonline, shared_office365, shared_powerbi",ConsumSSIS-WrongCostaReport-836D7AA6-97CE-F011-BBD3-6045BDD64A0D.json
+DHLDailyLastLocationofLostDevices-9C39363E-3BD1-F011-BBD3-7C1E5267A40E,,Recurrence,"Run_a_query_against_a_dataset, Create_CSV_table, Create_file, Select, Send_an_email_(V2)","shared_sharepointonline, shared_office365, shared_powerbi",DHLDailyLastLocationofLostDevices-9C39363E-3BD1-F011-BBD3-7C1E5267A40E.json
+DMSOperationsOutcome-22584EC8-1445-F011-8779-6045BDD3BDDA,,When_an_item_or_a_file_is_modified,Refresh_a_dataset,"shared_sharepointonline, shared_powerbi",DMSOperationsOutcome-22584EC8-1445-F011-8779-6045BDD3BDDA.json
+EVRIAssetManagementPS-2F39D511-A35D-F111-A826-000D3A8F644D,,Recurrence,"Email_TO, Email_Footer, Scope, Error_Handling, Email_CC","shared_teams, shared_office365, shared_powerbi",EVRIAssetManagementPS-2F39D511-A35D-F111-A826-000D3A8F644D.json
+EVRIBYODCOLAccessMonthlyReport-FC38D511-A35D-F111-A826-000D3A8F644D,,Recurrence,"Email_Footer, Email-TO, Scope, Error_Handling, Email-CC","shared_teams, shared_office365, shared_powerbi",EVRIBYODCOLAccessMonthlyReport-FC38D511-A35D-F111-A826-000D3A8F644D.json
+EVRIBYODEmailOffline60Dayson1st-45C080E8-4C87-F011-B4CC-7C1E52488D9D,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, HTTP_FolderID, TokenParse_JSON, AccessToken, Parse_JSON_FolderID, Initialize_variable_LostID, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_60_Days, EVRi_Offline_More_Than_60_Days, Offlinemorethan60days, EVRiCountMoreThan60DaysOffline, Delay, Send_an_email_(V2)","shared_office365, shared_powerbi",EVRIBYODEmailOffline60Dayson1st-45C080E8-4C87-F011-B4CC-7C1E52488D9D.json
+EVRIBYODMovingOffline30daystoLOSTFolder-2F25028D-4C87-F011-B4CC-0022482F23C8,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_30_Days, EVRi_Offline_More_Than_30_Days, Offlinemorethan30days, EVRiCountMoreThan30DaysOffline, Get_secret_ClientIDSecret, Get_secretPSWD, Get_items, Compose_LostId, Initialize_variable, Condition","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",EVRIBYODMovingOffline30daystoLOSTFolder-2F25028D-4C87-F011-B4CC-0022482F23C8.json
+EVRIBYODMovingOffline30daystoLOSTFolder-555E7B9C-FD7C-F011-B4CC-0022482F23C8,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_30_Days, EVRi_Offline_More_Than_30_Days, Offlinemorethan30days, EVRiCountMoreThan30DaysOffline, Get_secret_ClientIDSecret, Get_secretPSWD, Get_items, Compose_LostId, Initialize_variable, Condition","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",EVRIBYODMovingOffline30daystoLOSTFolder-555E7B9C-FD7C-F011-B4CC-0022482F23C8.json
+EVRIBYODMovingOffline30daystoLOSTFolder-65BBD04F-2892-F011-B4CB-0022482F23C8,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_30_Days, EVRi_Offline_More_Than_30_Days, Offlinemorethan30days, EVRiCountMoreThan30DaysOffline, Get_secret_ClientIDSecret, Get_secretPSWD, Get_items, Compose_LostId, Initialize_variable, Condition","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",EVRIBYODMovingOffline30daystoLOSTFolder-65BBD04F-2892-F011-B4CB-0022482F23C8.json
+EVRIColl-8OfflineAgeReportsOn1st-ABED8525-CE73-F111-AB0F-7CED8DD7139C,,Recurrence,"Scope, varCSVContantGT15Days, varCSVContantGT30Days, varCSVContantGT60Days, Error_Handling, EmailTO, EmailCC","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIColl-8OfflineAgeReportsOn1st-ABED8525-CE73-F111-AB0F-7CED8DD7139C.json
+EVRIConsolidatedEmailOffline60Dayson1st-130B020F-4D87-F011-B4CC-7C1E52488D9D,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, HTTP_FolderID, TokenParse_JSON, AccessToken, Parse_JSON_FolderID, Initialize_variable_LostID, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_60_Days, EVRi_Offline_More_Than_60_Days, Offlinemorethan60days, EVRiCountMoreThan60DaysOffline, Delay, Send_an_email_(V2)","shared_office365, shared_powerbi",EVRIConsolidatedEmailOffline60Dayson1st-130B020F-4D87-F011-B4CC-7C1E52488D9D.json
+EVRIConsolidatedMovingOffline30daystoLOSTFolder-91D3C4C7-FD7C-F011-B4CC-7C1E52488D9D,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_30_Days, EVRi_Offline_More_Than_30_Days, Offlinemorethan30days, EVRiCountMoreThan30DaysOffline, Get_secret_ClientIDSecret, Get_secretPSWD, Get_items, Compose_LostId, Initialize_variable, Condition","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",EVRIConsolidatedMovingOffline30daystoLOSTFolder-91D3C4C7-FD7C-F011-B4CC-7C1E52488D9D.json
+EVRIConsolidatedMovingOffline30daystoLOSTFolder-AB58A9A5-4C87-F011-B4CC-0022482F23C8,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_30_Days, EVRi_Offline_More_Than_30_Days, Offlinemorethan30days, EVRiCountMoreThan30DaysOffline, Get_secret_ClientIDSecret, Get_secretPSWD, Get_items, Compose_LostId, Initialize_variable, Condition","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",EVRIConsolidatedMovingOffline30daystoLOSTFolder-AB58A9A5-4C87-F011-B4CC-0022482F23C8.json
+EVRIConsolidatedSOTIDevicesGroupPathID-2B25B121-57B9-F011-BBD3-6045BDD64A0D,,Recurrence,"Master, Error_Handling, Get_secret_ClientIDSecret, Get_secretPSWD, ClientIDSecret, UID, Password, EncodeSecret, HTTP, TokenParse_JSON, AccessToken, apiToken","shared_sharepointonline, shared_keyvault, shared_office365",EVRIConsolidatedSOTIDevicesGroupPathID-2B25B121-57B9-F011-BBD3-6045BDD64A0D.json
+EVRiConsolidatedZebraandNon-ZebraOffline15_30_60Da-FA249263-4D87-F011-B4CC-7C1E52488D9D,,Recurrence,"EVRiConsolidatedCountMoreThan15DaysOffline, Offlinemorethan15days, Condition15Days, EVRiConsolidatedCountMoreThan30DaysOffline, Offlinemorethan30days, Condition60Days, EVRiConsolidatedCountMoreThan60DaysOffline, NonZebraOfflinemorethan60days, NonZebraCondition30Days, NonZebraSelectAll, NonZebraCreate_HTMLtable, NonZebraCompose3, NonZebraRun_a_query_against_a_dataset, ComposeOfflinemorethan15days, ComposeOfflinemorethan30days, ComposeOfflinemorethan60days, Condition","shared_office365, shared_powerbi",EVRiConsolidatedZebraandNon-ZebraOffline15_30_60Da-FA249263-4D87-F011-B4CC-7C1E52488D9D.json
+EVRIMonitorandAlertforAllDatasets-DF34E74C-903D-F011-B4CC-7C1E528247C3,,Recurrence,"Send_an_email_(V2), Parent_Scope, Refresh_a_dataset, Delay","shared_sharepointonline, shared_powerbi, shared_office365",EVRIMonitorandAlertforAllDatasets-DF34E74C-903D-F011-B4CC-7C1E528247C3.json
+EVRIPBIRefreshbyPSFrom-64B0B610-A35D-F111-A826-7CED8DD7139C,,When_an_item_is_created_or_modified,"Scope, Condition, Compose","shared_teams, shared_sharepointonline, shared_powerbi",EVRIPBIRefreshbyPSFrom-64B0B610-A35D-F111-A826-7CED8DD7139C.json
+EVRIPremiumDHLRefreshStockVisibilityandReporting-F9543D00-C5F6-F011-8406-7CED8D210053,,Recurrence,"Error_Handling, Scope","shared_teams, shared_powerbi",EVRIPremiumDHLRefreshStockVisibilityandReporting-F9543D00-C5F6-F011-8406-7CED8D210053.json
+EVRIPremiumDHLSOTILicenseInformation-475CCA8A-8BCB-F011-BBD3-7C1E5267A40E,,Recurrence,"Get_secret_ClientIDSecret, Get_secretPSWD, EmailTO, EmailCC, Scope, ClientIDSecret, UID, Password, EncodeSecret, HTTP, TokenParse_JSON, AccessToken, Error_Handling, Get_secretUID, Get_secret_PSWD","shared_teams, shared_sharepointonline, shared_keyvault, shared_office365",EVRIPremiumDHLSOTILicenseInformation-475CCA8A-8BCB-F011-BBD3-7C1E5267A40E.json
+EVRIPremiumDHLSSIS-ALKReport-03562213-AECB-F011-BBD3-7C1E5267A40E,,Recurrence,"Initialize_variable_varCSVContent, EmailTO, EmailCC, Error_Handling, Scope","shared_teams, shared_powerbi, shared_office365",EVRIPremiumDHLSSIS-ALKReport-03562213-AECB-F011-BBD3-7C1E5267A40E.json
+EVRIPremiumDHLSSIS-DuplicateDevices-26BD7E86-D4CB-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContent, Error_Handling, EmailTO, EmailCC, Scope","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",EVRIPremiumDHLSSIS-DuplicateDevices-26BD7E86-D4CB-F011-BBD3-7C1E5267A40E.json
+EVRIPremiumDHLSSIS-LostDevices-C1876E18-AFCB-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContent, Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumDHLSSIS-LostDevices-C1876E18-AFCB-F011-BBD3-7C1E5267A40E.json
+EVRIPremiumDHLSSIS-LostDevicesFound-08E991D7-35CC-F011-BBD3-6045BDD64A0D,,Recurrence,"varCSVContent, EmailTO, EmailCC, Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumDHLSSIS-LostDevicesFound-08E991D7-35CC-F011-BBD3-6045BDD64A0D.json
+EVRIPremiumDHLSSIS-MonthlyLostDevices-3F3F9114-CACB-F011-BBD3-6045BDD64A0D,,Recurrence,"Run_a_query_against_a_datasetMonthly, varCSVContentMonthly, SelectMonthly, ConditionMonthly, Run_a_query_against_a_datasetLatest, SelectLatest, ConditionLatest, varCSVContentLatest, Error_Handling, EmailTO, EmailCC, 1st_of_Month","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumDHLSSIS-MonthlyLostDevices-3F3F9114-CACB-F011-BBD3-6045BDD64A0D.json
+EVRIPremiumDHLSSIS-MonthlyRepairReport-C6CEB544-62CD-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContent, EmailTO, EmailCC, Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumDHLSSIS-MonthlyRepairReport-C6CEB544-62CD-F011-BBD3-7C1E5267A40E.json
+EVRIPremiumDHLSSIS-MSRReport-12E9A150-31D1-F011-BBD3-6045BDD64A0D,,Recurrence,"varCSVContent, Scope, Error_Handling, EmailTO, EmailCC","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumDHLSSIS-MSRReport-12E9A150-31D1-F011-BBD3-6045BDD64A0D.json
+EVRIPremiumDHLSSIS-UKCRITICALSOTILicensesarelow-77D42B79-57CC-F011-BBD3-7C1E5267A40E,,Recurrence,"varCSVContentStaging, varCSVContentZebraTestDevices, varCSVContentDuplicateDevices, varCSVContentExtendedOffline, varCSVContentAssetReport, varCSVContentLostAndStolen, Master, Error_Handling, EmailTO, EmailCC","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumDHLSSIS-UKCRITICALSOTILicensesarelow-77D42B79-57CC-F011-BBD3-7C1E5267A40E.json
+EVRIPremiumDHLSSIS-WeeklyAssetReport-7119F916-87CC-F011-BBD3-6045BDD64A0D,,Recurrence,"varCSVContent, Scope, Error_Handling, EmailTO, EmailCC","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumDHLSSIS-WeeklyAssetReport-7119F916-87CC-F011-BBD3-6045BDD64A0D.json
+EVRIPremiumLostandStolenReports1stofMonth-58BE93FA-0417-F111-8341-000D3A8F644D,,Recurrence,"Scope, EmailTO, EmailCC, CatchError, varCSVContent15Days, varCSVContent30Days, varCSVContent60Days","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumLostandStolenReports1stofMonth-58BE93FA-0417-F111-8341-000D3A8F644D.json
+EVRIPremiumMovingOffline30daystoLOSTFolder-509160AB-751F-F111-8342-7CED8D210053,,Recurrence,"ClientIDSecret, EncodeSecret, UID, Password, Get_secret_ClientIDSecret, Get_secretPSWD, ERROR_Handling, Get_UID, Get_pswd, UML, EmailTO, EmailCC, Scope_1, Condition, arrFailureLog, arrSuccessLog, Initialize_variable, ERROR_Handling_1, HTTP, TokenParse_JSON, AccessToken, ERROR_Handling_1_1, CountOfflineGT30Days, Compose_LostId, GetLostFolderID, RenameDevices, Offlinemorethan30days","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",EVRIPremiumMovingOffline30daystoLOSTFolder-509160AB-751F-F111-8342-7CED8D210053.json
+EVRIPremiumOffline60daystobeDeleted-BA3F4996-882A-F111-88B3-7CED8DD7139C,,Recurrence,"ERROR_Handling, EmailTO, EmailCC, Scope, CountOfflineGT60Days, Offlinemorethan60days","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",EVRIPremiumOffline60daystobeDeleted-BA3F4996-882A-F111-88B3-7CED8DD7139C.json
+EVRIPremiumOffline60daystoDeletedon1st-84B4625E-F22D-F111-88B3-7CED8DD7139C,,Recurrence,"EmailTO, EmailCC, Scope, CountOfflineGT60Days, Offlinemorethan60days, CatchError","shared_powerbi, shared_teams, shared_sharepointonline, shared_approvals, shared_office365",EVRIPremiumOffline60daystoDeletedon1st-84B4625E-F22D-F111-88B3-7CED8DD7139C.json
+EVRiRefreshStockVisibilityandReporting-746E8B9C-7E20-F111-8341-7CED8DD7139C,,Recurrence,"Error_Handling, Scope","shared_teams, shared_powerbi",EVRiRefreshStockVisibilityandReporting-746E8B9C-7E20-F111-8341-7CED8DD7139C.json
+EVRIRenamingConsolidatedMovingOffline30daystoLOSTF-22947E2D-72AB-F011-BBD3-0022482F23C8,,manual,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Get_secret_ClientIDSecret, Get_secretPSWD, HTTP_MoveDevice",shared_keyvault,EVRIRenamingConsolidatedMovingOffline30daystoLOSTF-22947E2D-72AB-F011-BBD3-0022482F23C8.json
+EVRiRepairDevicesPictureFromSFTP-C0FD3BC8-CA22-F111-8341-7CED8DD7139C,,manual,"Filter_array, List_files_in_folder",shared_sftpwithssh,EVRiRepairDevicesPictureFromSFTP-C0FD3BC8-CA22-F111-8341-7CED8DD7139C.json
+EVRIRMADamagedPDAPictures-00D94526-FF3E-F111-88B4-7CED8DD7139C,,Recurrence,"List_files_in_folder, Get_past_time, Scope, CatchError","shared_teams, shared_sharepointonline, shared_sftpwithssh",EVRIRMADamagedPDAPictures-00D94526-FF3E-F111-88B4-7CED8DD7139C.json
+EVRiSFDCCOLAccessAutomation-6E02F46D-FEF8-EF11-BE20-7C1E528247C3,,Recurrence,"Run_a_query_against_a_dataset, Refresh_a_dataset, Select, Create_CSV_table, Compose, Compose_1, Create_HTML_table, Create_file, Filter_array, List_files_in_folder, Delay, Send_an_email_(V2)","shared_office365, shared_sftpwithssh, shared_powerbi",EVRiSFDCCOLAccessAutomation-6E02F46D-FEF8-EF11-BE20-7C1E528247C3.json
+EVRISOTIBYODDevicesGroupPathID-2D25B121-57B9-F011-BBD3-6045BDD64A0D,,Recurrence,"Master, Error_Handling, Get_secret_ClientIDSecret, Get_secretPSWD, ClientIDSecret, UID, Password, EncodeSecret, HTTP, TokenParse_JSON, AccessToken","shared_teams, shared_sharepointonline, shared_keyvault, shared_office365",EVRISOTIBYODDevicesGroupPathID-2D25B121-57B9-F011-BBD3-6045BDD64A0D.json
+EVRISOTIZebraDevicesGroupPathID-4F5B7939-8FCF-F011-BBD3-6045BDD64A0D,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Get_secret_ClientIDSecret, Delay, Get_secretPSWD, HTTP_GetDeviceGroupPathID, Parse_JSON, CatchError, Scope","shared_teams, shared_sharepointonline, shared_keyvault",EVRISOTIZebraDevicesGroupPathID-4F5B7939-8FCF-F011-BBD3-6045BDD64A0D.json
+EVRISSIS-WeeklyAssetReport-F8E71E6A-90CC-F011-BBD3-6045BDD64A0D,,Recurrence,"Run_a_query_against_a_dataset, varCSVContent, Select, Condition, Create_file, Send_an_email_(V2)","shared_sharepointonline, shared_office365, shared_powerbi",EVRISSIS-WeeklyAssetReport-F8E71E6A-90CC-F011-BBD3-6045BDD64A0D.json
+EVRISSIS-WeeklyPISAssetReport-73647DCE-96CC-F011-BBD3-6045BDD64A0D,,Recurrence,"Run_a_query_against_a_dataset, varCSVContent, Select, Condition, Create_file, Send_an_email_(V2), Run_a_query_against_a_dataset_1, Select_1, EmailTO, EmailCC","shared_sharepointonline, shared_office365, shared_powerbi",EVRISSIS-WeeklyPISAssetReport-73647DCE-96CC-F011-BBD3-6045BDD64A0D.json
+EVRIWeeklyLabelOrderReportingAutomation-98C0DA8E-B068-F011-BEC2-0022482F23C8,,When_a_file_is_created_or_modified_(properties_only),"Master_Scope, Error_Handling, Compose_Today's_Date_String_(yyyyMMdd), TriggerCondition_, Append_to_array_variable, Select, Run_a_query_against_a_dataset, AttachmentsArray, finalDataArray, Create_HTML_table, Compose, Compose_FinalTableForEmail, EmailTO, EmailCC","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",EVRIWeeklyLabelOrderReportingAutomation-98C0DA8E-B068-F011-BEC2-0022482F23C8.json
+EVRiZebraandNon-ZebraOffline15_30_60DaysforSM-9BA43A4B-FEF8-EF11-BE20-6045BDD3BDDA,,Recurrence,"EVRiCountMoreThan15DaysOffline, Offlinemorethan15days, Condition15Days, EVRiCountMoreThan30DaysOffline, EVRiCountMoreThan60DaysOffline, Offlinemorethan30days, Offlinemorethan60days, Condition_for_Email, Condition30Days, Condition60Days, Run_a_query_against_a_dataset, Select, NonZebraEVRiCountMoreThan15DaysOffline, NonZebraEVRiCountMoreThan30DaysOffline, NonZebraEVRiCountMoreThan60DaysOffline, NonZebraOfflinemorethan15days, NonZebraOfflinemorethan30days, NonZebraOfflinemorethan60days, NonZebraCondition15Days, NonZebraCondition30Days, NonZebraCondition60Days, NonZebraSelectAll, NonZebraCreate_HTMLtable, NonZebraCompose3, Create_HTML_table_3, Compose_3, NonZebraRun_a_query_against_a_dataset","shared_office365, shared_powerbi",EVRiZebraandNon-ZebraOffline15_30_60DaysforSM-9BA43A4B-FEF8-EF11-BE20-6045BDD3BDDA.json
+EVRIZebraConsolidatedMovingOffline30daystoLOSTFold-4962DB58-5592-F011-B4CB-0022482F23C8,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_30_Days, EVRi_Offline_More_Than_30_Days, Offlinemorethan30days, EVRiCountMoreThan30DaysOffline, Get_secret_ClientIDSecret, Get_secretPSWD, Get_items, Compose_LostId, Initialize_variable, Condition, arrSuccessLog, arrFailureLog, ERROR_Handling, RenameApply_to_each, RenameDevices, Create_CSV_table_RenameDevices, Send_an_email_(V2)_1, TO, CC","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",EVRIZebraConsolidatedMovingOffline30daystoLOSTFold-4962DB58-5592-F011-B4CB-0022482F23C8.json
+EVRIZebraDeletionofOffline60days-38E63F4D-FEF8-EF11-BE20-7C1E528247C3,,manual,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_60_Days, EVRi_Offline_More_Than_60_Days, Offlinemorethan60days, EVRiCountMoreThan60DaysOffline, Condition_PreDeletionList, Get_secret_ClientIDSecret, Delay, Get_secretPSWD","shared_keyvault, shared_office365, shared_powerbi",EVRIZebraDeletionofOffline60days-38E63F4D-FEF8-EF11-BE20-7C1E528247C3.json
+EVRIZebraEmailOffline60Dayson1st-96A43A4B-FEF8-EF11-BE20-6045BDD3BDDA,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, HTTP_FolderID, TokenParse_JSON, AccessToken, Parse_JSON_FolderID, Initialize_variable_LostID, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_60_Days, EVRi_Offline_More_Than_60_Days, Offlinemorethan60days, EVRiCountMoreThan60DaysOffline, Delay, Send_an_email_(V2)","shared_office365, shared_powerbi",EVRIZebraEmailOffline60Dayson1st-96A43A4B-FEF8-EF11-BE20-6045BDD3BDDA.json
+EVRIZebraMovingOffline30daystoLOSTFolder-98A43A4B-FEF8-EF11-BE20-6045BDD3BDDA,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, AccessToken, Create_CSV_table, Compose, Create_HTML_table, Select_EVRI_Offline_More_Than_30_Days, EVRi_Offline_More_Than_30_Days, Offlinemorethan30days, EVRiCountMoreThan30DaysOffline, Get_secret_ClientIDSecret, Get_secretPSWD, Get_items, Compose_LostId, Initialize_variable, Condition","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",EVRIZebraMovingOffline30daystoLOSTFolder-98A43A4B-FEF8-EF11-BE20-6045BDD3BDDA.json
+EVRiZebraOffline60DaysforTotalMobileStarID-133EB337-8FCF-F011-BBD3-7C1E5267A40E,,Recurrence,"EVRiCountMoreThan60DaysOffline, Offlinemorethan60days, Day28","shared_office365, shared_powerbi",EVRiZebraOffline60DaysforTotalMobileStarID-133EB337-8FCF-F011-BBD3-7C1E5267A40E.json
+EVRiZebraPrinterReportTo03PrinterAuditSNsLocations-1048BDDD-5A06-F111-8407-000D3A8F644D,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),"Scope, CatchError","shared_teams, shared_sharepointonline, shared_office365",EVRiZebraPrinterReportTo03PrinterAuditSNsLocations-1048BDDD-5A06-F111-8407-000D3A8F644D.json
+EVRIZebraSOTI49DeviceInfo-D9C4B0A6-1B0A-F011-BAE3-6045BDD3BDDA,,Recurrence,"hasMoreDevices, alldevices, currentSkip, take, skip, AccessToken, TokenParse_JSON, HTTP, EncodeSecret, Password, UID, ClientIDSecret, apiToken, baseUrl, Scope, CatchError","shared_teams, shared_sharepointonline, shared_powerbi",EVRIZebraSOTI49DeviceInfo-D9C4B0A6-1B0A-F011-BAE3-6045BDD3BDDA.json
+EVRI_OfflineDeviceAlert_DeviceBaseline-23584EC8-1445-F011-8779-6045BDD3BDDA,,Recurrence,"Send_an_email_(V2), Parent_Scope","shared_sharepointonline, shared_powerbi, shared_office365",EVRI_OfflineDeviceAlert_DeviceBaseline-23584EC8-1445-F011-8779-6045BDD3BDDA.json
+FRIDAYRMGLostAndStolenFilesToTBWtoUpdatetheX012-763A6367-FF63-F011-BEC2-7C1E52488D9D,,Recurrence,"Master_Scope, Error_Handling, Compose_Today's_Date_String_(yyyyMMdd), AttachmentsArray, Scope, EmailCC, EmailTO","shared_teams, shared_sharepointonline, shared_office365",FRIDAYRMGLostAndStolenFilesToTBWtoUpdatetheX012-763A6367-FF63-F011-BEC2-7C1E52488D9D.json
+Hydrite42GearsLicensesReport-48FF393C-30F8-F011-8406-7CED8D210053,,Recurrence,"Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, Scope, URI, CatchError","shared_teams, shared_sharepointonline, shared_keyvault",Hydrite42GearsLicensesReport-48FF393C-30F8-F011-8406-7CED8D210053.json
+HYDRITE42GGetDeviceLogs-895B7939-8FCF-F011-BBD3-6045BDD64A0D,,manual,"Initialize_variable, Get_items, Apply_to_each","shared_sharepointonline, shared_office365",HYDRITE42GGetDeviceLogs-895B7939-8FCF-F011-BBD3-6045BDD64A0D.json
+HYDRITE42GGetDeviceLogs-B8CF5665-62C5-F011-BBD3-6045BDD64A0D,,manual,Run_a_Child_Flow,,HYDRITE42GGetDeviceLogs-B8CF5665-62C5-F011-BBD3-6045BDD64A0D.json
+HydriteChemicalRefreshStockVisibilityandReporting-DF7DCD06-89F8-F011-8406-000D3A8F644D,,Recurrence,"Error_Handling, Scope","shared_teams, shared_powerbi",HydriteChemicalRefreshStockVisibilityandReporting-DF7DCD06-89F8-F011-8406-000D3A8F644D.json
+HYDRITEDeleteGetDeviceLogsItem-535B7939-8FCF-F011-BBD3-6045BDD64A0D,,manual,"Initialize_variable, Get_items, Apply_to_each, Send_an_email_(V2)","shared_sharepointonline, shared_office365",HYDRITEDeleteGetDeviceLogsItem-535B7939-8FCF-F011-BBD3-6045BDD64A0D.json
+MSSL2OpenCasesandTasksReminder-F5B63D3E-3BD1-F011-BBD3-6045BDD64A0D,,Recurrence,"Total_Open_Cases, Initialize_variable, Condition, Run_a_query_against_a_dataset, Select, Create_HTML_table, Compose, Open_Cases_Table, Select_Case_Count_Table, Create_HTML_table_Case_Count_Table, Compose_Case_Count, Open_Tasks_Table, Tasks_Select, Create_HTML_table_2, Compose_2, Total_Open_Tasks, Initialize_variable_2","shared_office365, shared_powerbi",MSSL2OpenCasesandTasksReminder-F5B63D3E-3BD1-F011-BBD3-6045BDD64A0D.json
+NewRoyalMailOffline14and44ReportsforL1-72A4A818-13F9-EF11-BE20-6045BDD3BDDA,,Recurrence,"RMLCountMoreThan14DaysOffline, LostStolenWipeCount, Condition, RMLCountMoreThan44DaysOffline, Initialize_variable","shared_office365, shared_powerbi",NewRoyalMailOffline14and44ReportsforL1-72A4A818-13F9-EF11-BE20-6045BDD3BDDA.json
+NKDWeeklyRepairReport-549430D4-342C-F111-88B4-000D3A8F644D,,Recurrence,"varCSVContent, EmailTO, Scope, EmailCC, CatchError","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",NKDWeeklyRepairReport-549430D4-342C-F111-88B4-000D3A8F644D.json
+Pilot42GGetDeviceLogs-E3A1608A-6BC5-F011-BBD3-6045BDD64A0D,,manual,Run_a_Child_Flow,,Pilot42GGetDeviceLogs-E3A1608A-6BC5-F011-BBD3-6045BDD64A0D.json
+PILOTDeleteGetDeviceLogsItem-625B7939-8FCF-F011-BBD3-6045BDD64A0D,,manual,"Initialize_variable, Get_items, Apply_to_each, Send_an_email_(V2)","shared_sharepointonline, shared_office365",PILOTDeleteGetDeviceLogsItem-625B7939-8FCF-F011-BBD3-6045BDD64A0D.json
+PilotTravel42GearsLicensesReport-0E4EDC57-88F7-F011-8406-000D3A8F644D,,Recurrence,"Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, Scope, CatchError","shared_teams, shared_sharepointonline, shared_keyvault",PilotTravel42GearsLicensesReport-0E4EDC57-88F7-F011-8406-000D3A8F644D.json
+PILOTTRAVEL42GGetDeviceLogs-183EB337-8FCF-F011-BBD3-7C1E5267A40E,,manual,"Initialize_variable, Get_items, Apply_to_each","shared_sharepointonline, shared_office365",PILOTTRAVEL42GGetDeviceLogs-183EB337-8FCF-F011-BBD3-7C1E5267A40E.json
+PilotTravelOffline30DaysforSM-68584249-903D-F011-B4CB-6045BDD3BDDA,,Recurrence,"Scope, CatchError, PTCountMoreThan30DaysOffline, Offlinemorethan30days","shared_teams, shared_office365, shared_powerbi",PilotTravelOffline30DaysforSM-68584249-903D-F011-B4CB-6045BDD3BDDA.json
+PilotTravelRefreshStockVisibilityandReporting-DC451744-E7F6-F011-8406-7C1E5217A349,,Recurrence,"Error_Handling, Scope","shared_teams, shared_powerbi",PilotTravelRefreshStockVisibilityandReporting-DC451744-E7F6-F011-8406-7C1E5217A349.json
+PilotTravelRepairedMACAddressestoCustomer-6DA7AFB1-AD3C-F111-88B5-000D3A8F644D,,Recurrence,"Scope, CatchError, RepairedPast2Days, VariableRepairedPast2Days, TO, CC, EmailFooter-Internal, ComposeRepairedMACCount","shared_teams, shared_office365, shared_powerbi",PilotTravelRepairedMACAddressestoCustomer-6DA7AFB1-AD3C-F111-88B5-000D3A8F644D.json
+RefreshadatasetCSI-61E6B822-B818-F111-8341-7CED8DD7139C,,manual,Refresh_a_dataset,shared_powerbi,RefreshadatasetCSI-61E6B822-B818-F111-8341-7CED8DD7139C.json
+RefreshEVRIPBITC75-D82C98AE-C53A-F011-B4CC-7C1E528247C3,,Recurrence,Refresh_a_dataset,shared_powerbi,RefreshEVRIPBITC75-D82C98AE-C53A-F011-B4CC-7C1E528247C3.json
+RefreshSMSmartSheetPBIfromForm-50DE7966-FF63-F011-BEC2-0022482F23C8,,manual,"Refresh_a_dataset, Delay",shared_powerbi,RefreshSMSmartSheetPBIfromForm-50DE7966-FF63-F011-BEC2-0022482F23C8.json
+RM42GGetDeviceLogsv2-0D579C1F-C29E-F011-B41C-0022482F23C8,,manual,"Run_a_Child_Flow, Send_an_email_(V2)",shared_office365,RM42GGetDeviceLogsv2-0D579C1F-C29E-F011-B41C-0022482F23C8.json
+RM42GGetDeviceLogsv2-57BE93FA-0417-F111-8341-000D3A8F644D,,manual,"Initialize_variable, Get_items, Apply_to_each","shared_sharepointonline, shared_office365",RM42GGetDeviceLogsv2-57BE93FA-0417-F111-8341-000D3A8F644D.json
+RMG-UpdateX012DataForINCTracker-62B0B610-A35D-F111-A826-7CED8DD7139C,,manual,"vStartRow, vBatchSize, vHasMore, Do_until",shared_powerbi,RMG-UpdateX012DataForINCTracker-62B0B610-A35D-F111-A826-7CED8DD7139C.json
+RMG42GEARSDAILYDEVICEINFOFORTREND-55507BEE-C371-F011-BEC2-0022482F23C8,,Recurrence,"Error_Handling, Master, MinRows, IncrRows, appendCSV, LoopsVar","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",RMG42GEARSDAILYDEVICEINFOFORTREND-55507BEE-C371-F011-BEC2-0022482F23C8.json
+RMG42GearsLicensesReport-2EF2C648-FFFC-F011-8406-000D3A1B678A,,Recurrence,"Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, Scope, URI, CatchError","shared_teams, shared_sharepointonline, shared_keyvault",RMG42GearsLicensesReport-2EF2C648-FFFC-F011-8406-000D3A1B678A.json
+RMG42GearsLicensesReport-5BAF571C-A9D9-F011-8544-6045BDD64A0D,,Recurrence,"Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, Error_Handling, Scope","shared_teams, shared_sharepointonline, shared_keyvault, shared_office365",RMG42GearsLicensesReport-5BAF571C-A9D9-F011-8544-6045BDD64A0D.json
+RMG42GGetJobsFolderIDs-193EB337-8FCF-F011-BBD3-7C1E5267A40E,,manual,"HTTP, Parse_JSON, Apply_to_each, Send_an_email_(V2), Delay, Get_items, Apply_toeach, Send_an_email_(V2)_2","shared_sharepointonline, shared_excelonlinebusiness, shared_office365",RMG42GGetJobsFolderIDs-193EB337-8FCF-F011-BBD3-7C1E5267A40E.json
+RMG42GJobIDDelete-173EB337-8FCF-F011-BBD3-7C1E5267A40E,,manual,"Initialize_variable, Get_items, Apply_to_each",shared_sharepointonline,RMG42GJobIDDelete-173EB337-8FCF-F011-BBD3-7C1E5267A40E.json
+RMGAppReleaseReport-FA38D511-A35D-F111-A826-000D3A8F644D,,Recurrence,"varThreshold, varAudienceType, varCustomerTo, varInternalTo, varEmailTo, varSubject, varUpgradeRate, varReportDate, varLatestSourceModifiedDate, varBySiteFileName, varByIMEIFileName, varDashboardLink, Send_an_email_(V2), MinRows, incrRows, appendCSV, LoopsVar, Scope, EmailTO","shared_sharepointonline, shared_powerbi, shared_office365",RMGAppReleaseReport-FA38D511-A35D-F111-A826-000D3A8F644D.json
+RMGBillingWorkin-ProgressinX012DailyBackup-AB462DD2-8E61-F011-BEC2-0022482F23C8,,Recurrence,"Run_a_query_against_a_dataset, Create_file, Select, Create_CSV_table","shared_sharepointonline, shared_powerbi",RMGBillingWorkin-ProgressinX012DailyBackup-AB462DD2-8E61-F011-BEC2-0022482F23C8.json
+RMGDelete42GFolderIDs-505B7939-8FCF-F011-BBD3-6045BDD64A0D,,manual,"Initialize_variable, Get_items, Apply_to_each",shared_sharepointonline,RMGDelete42GFolderIDs-505B7939-8FCF-F011-BBD3-6045BDD64A0D.json
+RMGDeleteGetDeviceLogsItem-875B7939-8FCF-F011-BBD3-6045BDD64A0D,,manual,"Initialize_variable, Get_items, Apply_to_each, Send_an_email_(V2)","shared_sharepointonline, shared_office365",RMGDeleteGetDeviceLogsItem-875B7939-8FCF-F011-BBD3-6045BDD64A0D.json
+RMGEXOReceivedConfirmationAutomation-60E6B822-B818-F111-8341-7CED8DD7139C,,manual,"Scope, mismatchedSites, matchedSites, CatchError","shared_teams, shared_sendmail, shared_excelonlinebusiness",RMGEXOReceivedConfirmationAutomation-60E6B822-B818-F111-8341-7CED8DD7139C.json
+RMGEXOSKELETONREPLACEMENTPROJECT-9839363E-3BD1-F011-BBD3-7C1E5267A40E,,Recurrence,"Create_file, MinRows, IncrRows, appendCSV, LoopsVar, Calculate_Loops, Loops2run, Do_until, convert2csv","shared_sharepointonline, shared_powerbi",RMGEXOSKELETONREPLACEMENTPROJECT-9839363E-3BD1-F011-BBD3-7C1E5267A40E.json
+RMGGetDetailsofallDeviceGroups-89F7AB1F-57B9-F011-BBD3-7C1E5267A40E,,manual,"Get_Details_of_All_Groups, Parse_JSON, Get_items, Apply_to_each, Apply_to_each_2, Initialize_variable, Delay, UID, PSWD","shared_sharepointonline, shared_keyvault",RMGGetDetailsofallDeviceGroups-89F7AB1F-57B9-F011-BBD3-7C1E5267A40E.json
+RMGINCEscalatedtoDMSL2-FB38D511-A35D-F111-A826-000D3A8F644D,,When_an_item_is_created,"Scope, Error_Handling","shared_teams, shared_sharepointonline",RMGINCEscalatedtoDMSL2-FB38D511-A35D-F111-A826-000D3A8F644D.json
+RMGItemReceivedConfirmation-5C8A0CFC-6D1C-F111-8341-000D3A8F644D,,When_a_new_response_is_submitted,"Get_response_details, Get_items, Filter_array, Condition, ComposeEmail, Combined_Site, Create_item","shared_microsoftforms, shared_sharepointonline, shared_office365",RMGItemReceivedConfirmation-5C8A0CFC-6D1C-F111-8341-000D3A8F644D.json
+RMGItemsReceivedConfirmation-62E6B822-B818-F111-8341-7CED8DD7139C,,When_a_new_response_is_submitted,"Scope, CatchError, mismatchedSites, matchedSites","shared_microsoftforms, shared_teams, shared_sharepointonline, shared_excelonlinebusiness, shared_office365",RMGItemsReceivedConfirmation-62E6B822-B818-F111-8341-7CED8DD7139C.json
+RMGMasterSiteDataSync-209D4960-9335-F111-88B4-7CED8DD7139C,,manual,"Get_items, Apply_to_each",shared_sharepointonline,RMGMasterSiteDataSync-209D4960-9335-F111-88B4-7CED8DD7139C.json
+RMGMonthlyDeviceDisruptionsReports-DEB8AB25-57B9-F011-BBD3-7C1E5267A40E,,manual,"Export_To_File_for_Power_BI_Reports, Send_an_email_(V2)","shared_office365, shared_powerbi",RMGMonthlyDeviceDisruptionsReports-DEB8AB25-57B9-F011-BBD3-7C1E5267A40E.json
+RMGOutboundPDAAutoRelocationstoRMAFolder-F58C9D3C-C3B0-F011-BBD3-0022482F23C8,,Recurrence,"Create_CSV_table, arrSuccessLog, arrFailureLog, Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, Run_a_query_against_a_dataset_RMAGroupID, ComposeGroupID, Run_a_query_against_a_dataset_RMADevices, Select_RMADevices, varSuccessLog, varFailureLog, Error_Handling, SUCCESS_Handling, Scope","shared_office365, shared_teams, shared_keyvault, shared_powerbi",RMGOutboundPDAAutoRelocationstoRMAFolder-F58C9D3C-C3B0-F011-BBD3-0022482F23C8.json
+RMGPDAAudit-253F0F10-E612-F111-8406-000D3A8F644D,,Recurrence,"MinRows, IncrRows, appendCSV, LoopsVar, Scope, CatchError","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",RMGPDAAudit-253F0F10-E612-F111-8406-000D3A8F644D.json
+RMGPDADeviceSetAssetsNetbookValue-3CA36E07-236D-F011-BEC2-0022482F23C8,,manual,Run_a_query_against_a_dataset,shared_powerbi,RMGPDADeviceSetAssetsNetbookValue-3CA36E07-236D-F011-BEC2-0022482F23C8.json
+RMGPEAKDeviceAutoRelocationsasperX012-5857983E-A1AA-F011-BBD3-7C1E52488D9D,,Recurrence,"Run_a_query_against_a_dataset, Select, Create_CSV_table, DeviceCount, ComposeDeviceCount, arrSuccessLog, arrFailureLog, Condition_IF_any_device, Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, varSuccessLog, varFailureLog","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",RMGPEAKDeviceAutoRelocationsasperX012-5857983E-A1AA-F011-BBD3-7C1E52488D9D.json
+RMGPFWMoveOfflineGT14DevicestoLOSTFolder-EE002CEC-3654-F011-877A-7C1E528247C3,,Recurrence,"Get_file_content_using_path, Compose_Wednesday_FilePath, Decode_CSV_File_Content, Split_CSV_to_Lines, Run_a_query_against_a_dataset, SelectFridayDeviceIDs, SelectWednesdayDeviceIDs, Filter_array, ComposeWednesdayDeviceIDs, ComposeFridayDeviceID, Apply_to_each, MatchDeviceID, Compose_DeviceIDsToMove, Get_secret_UID, Get_secret_PSWD, Get_secret_APIKEY, Select_for_SharePoint, Filter_array_for_moving_devices, SelectForMovingDevices, Run_a_query_against_a_dataset_get_LOST_id, Compose_LOST_ID, SuccessList, FailureList, Send_an_email_(V2), Create_CSV_table_for_moving_devices, Error_Handling, API_Execution, SUCCESS_Handling","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",RMGPFWMoveOfflineGT14DevicestoLOSTFolder-EE002CEC-3654-F011-877A-7C1E528247C3.json
+RMGPFWMoveOfflineGT44DevicestoWIPEFolder-4D62EA7D-F954-F011-877A-0022482F23C8,,Recurrence,"Get_file_content_using_path, Compose_Wednesday_FilePath, Decode_CSV_File_Content, Split_CSV_to_Lines, Run_a_query_against_a_dataset, SelectFridayDeviceIDs, SelectWednesdayDeviceIDs, Filter_array, ComposeWednesdayDeviceIDs, ComposeFridayDeviceID, Apply_to_each, MatchDeviceID, Compose_DeviceIDsToMove, Get_secret_UID, Get_secret_PSWD, Get_secret_APIKEY, Filter_array_for_moving_devices, SelectForMovingDevices, Run_a_query_against_a_dataset_get_WIPE_id, Compose_WIPE_ID, SuccessList, FailureList, Send_an_email_(V2), Create_CSV_table_for_moving_devices, Select_for_SharePoint, API_Execution, Error_Handling, SUCCESS_Handling","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",RMGPFWMoveOfflineGT44DevicestoWIPEFolder-4D62EA7D-F954-F011-877A-0022482F23C8.json
+RMGPFWOfflineMoreThan44DaysaspertheRedlandsData-0DF63498-4736-F011-8C4E-7C1E528247C3,,Recurrence,"RMG_PFW_Offline_MoreThan_44_Days, Condition, Compose, FAILED_Send_an_email_(V2)","shared_office365, shared_powerbi",RMGPFWOfflineMoreThan44DaysaspertheRedlandsData-0DF63498-4736-F011-8C4E-7C1E528247C3.json
+RMGProjectPEAKTaggingSNtoPEAK-6B632B39-A594-F011-B4CB-0022482F23C8,,Recurrence,"Run_a_query_against_a_dataset_PEAK_All_Devices, Select_PEAK_Devices, Error_Handling, Get_secret, UID, Password, Success_Handling, Condition","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",RMGProjectPEAKTaggingSNtoPEAK-6B632B39-A594-F011-B4CB-0022482F23C8.json
+RMGRedLandsPFWDeviceReport-B9F7AB1F-57B9-F011-BBD3-7C1E5267A40E,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),For_each,"shared_sharepointonline, shared_office365",RMGRedLandsPFWDeviceReport-B9F7AB1F-57B9-F011-BBD3-7C1E5267A40E.json
+RMGRedLandsRMLDeviceReport-2C25B121-57B9-F011-BBD3-6045BDD64A0D,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),For_each,"shared_onedriveforbusiness, shared_sharepointonline, shared_office365",RMGRedLandsRMLDeviceReport-2C25B121-57B9-F011-BBD3-6045BDD64A0D.json
+RMGRefreshStockVisibilityandReporting-EC01E61B-162B-F011-8C4D-6045BDD3BDDA,,Recurrence,"Error_Handling, Scope","shared_teams, shared_powerbi",RMGRefreshStockVisibilityandReporting-EC01E61B-162B-F011-8C4D-6045BDD3BDDA.json
+RMGRELAYDeviceAutoRelocationsasperX012-193E0026-EE4D-F111-BEC6-7CED8DD7139C,,Recurrence,"Run_a_query_against_a_dataset, Select, Create_CSV_table, DeviceCount, ComposeDeviceCount, arrSuccessLog, arrFailureLog, Condition_IF_any_device, Get_secret_APIKEY, Get_secret_UID, Get_secret_PSWD, varSuccessLog, varFailureLog","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",RMGRELAYDeviceAutoRelocationsasperX012-193E0026-EE4D-F111-BEC6-7CED8DD7139C.json
+RMGRenameDAISYtoSNAPIManual-DE34E74C-903D-F011-B4CC-7C1E528247C3,,manual,"Send_an_email_(V2), Apply_to_each, List_rows_present_in_a_table, Send_an_email_(V2)_2","shared_excelonlinebusiness, shared_office365",RMGRenameDAISYtoSNAPIManual-DE34E74C-903D-F011-B4CC-7C1E528247C3.json
+RMGRenameSNtoPEAKTagAPI-24584EC8-1445-F011-8779-6045BDD3BDDA,,manual,"Send_an_email_(V2), Apply_to_each, Run_a_query_against_a_dataset_APK_All_Devices, Select_PEAK_Devices, Create_CSV_table, Create_file, Delay","shared_sharepointonline, shared_powerbi, shared_office365",RMGRenameSNtoPEAKTagAPI-24584EC8-1445-F011-8779-6045BDD3BDDA.json
+RMGRMLAPKDailyCRHITRateBySite-95B0B610-A35D-F111-A826-7CED8DD7139C,,Recurrence,"Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_powerbi",RMGRMLAPKDailyCRHITRateBySite-95B0B610-A35D-F111-A826-7CED8DD7139C.json
+RMGRMLLOSTOfflineGT44DaysaspertheRedlandsData-3071946B-313D-F011-B4CB-6045BDD3BDDA,,Recurrence,"FAILED_Send_an_email_(V2), Master_Scope","shared_sharepointonline, shared_powerbi, shared_office365",RMGRMLLOSTOfflineGT44DaysaspertheRedlandsData-3071946B-313D-F011-B4CB-6045BDD3BDDA.json
+RMGRMLMoveOfflineGT14DevicestoLOSTFolder-14947589-4654-F011-877A-6045BDD3BDDA,,Recurrence,"Get_file_content_using_path, Compose_Wednesday_FilePath, Decode_CSV_File_Content, Split_CSV_to_Lines, Run_a_query_against_a_dataset, SelectFridayDeviceIDs, SelectWednesdayDeviceIDs, Filter_array, ComposeWednesdayDeviceIDs, ComposeFridayDeviceID, Apply_to_each, MatchDeviceID, Compose_DeviceIDsToMove, Get_secret_UID, Get_secret_PSWD, Get_secret_APIKEY, Filter_array_for_moving_devices, SelectForMovingDevices, Run_a_query_against_a_dataset_get_LOST_id, Compose_LOST_ID, SuccessList, FailureList, Send_an_email_(V2), Create_CSV_table_for_moving_devices, Select_for_SharePoint, Create_file, API_Execution, Error_Handling, Success_Handling","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",RMGRMLMoveOfflineGT14DevicestoLOSTFolder-14947589-4654-F011-877A-6045BDD3BDDA.json
+RMGRMLMoveOfflineGT44DevicestoWIPEFolder-9C5070DA-0155-F011-877A-0022482F23C8,,Recurrence,"Get_file_content_using_path, Compose_Wednesday_FilePath, Decode_CSV_File_Content, Split_CSV_to_Lines, Run_a_query_against_a_dataset, SelectFridayDeviceIDs, SelectWednesdayDeviceIDs, Filter_array, ComposeWednesdayDeviceIDs, ComposeFridayDeviceID, Apply_to_each, MatchDeviceID, Compose_DeviceIDsToMove, Get_secret_UID, Get_secret_PSWD, Get_secret_APIKEY, Filter_array_for_moving_devices, SelectForMovingDevices, Run_a_query_against_a_dataset_get_WIPE_id, Compose_WIPE_ID, SuccessList, FailureList, Send_an_email_(V2), Create_CSV_table_for_moving_devices, Select_for_SharePoint, Create_file, API_Execution, Error_Handling, SUCCESS_Handling","shared_powerbi, shared_teams, shared_keyvault, shared_sharepointonline, shared_office365",RMGRMLMoveOfflineGT44DevicestoWIPEFolder-9C5070DA-0155-F011-877A-0022482F23C8.json
+RMGRMLOfflineMoreThan14DaysaspertheRedlandsData-C8DF0836-8B35-F011-8C4E-6045BDD3BDDA,,Recurrence,"FAILED_Send_an_email_(V2), Master_Scope","shared_sharepointonline, shared_powerbi, shared_office365",RMGRMLOfflineMoreThan14DaysaspertheRedlandsData-C8DF0836-8B35-F011-8C4E-6045BDD3BDDA.json
+RMGRMLOfflineMoreThan44DaysaspertheRedlandsData-EBAC3D0E-9935-F011-8C4E-7C1E528247C3,,Recurrence,"RMG_RML_Offline_MoreThan_44_Days_as_per_the_Redlands_Data, Condition, Compose, FAILED_Send_an_email_(V2)","shared_office365, shared_powerbi",RMGRMLOfflineMoreThan44DaysaspertheRedlandsData-EBAC3D0E-9935-F011-8C4E-7C1E528247C3.json
+RMGSaveReturnPictures-FC6F64ED-C228-F011-8C4E-7C1E528247C3,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),"For_each, For_each_1","shared_sharepointonline, shared_office365",RMGSaveReturnPictures-FC6F64ED-C228-F011-8C4E-7C1E528247C3.json
+RMGSFTPTest-C6D286FF-0C0F-F011-9989-6045BDD3BDDA,,manual,"csv_to_RMG_CMDB, List_files_in_folder-copy_2, List_files_in_folder-copy_3",shared_sftpwithssh,RMGSFTPTest-C6D286FF-0C0F-F011-9989-6045BDD3BDDA.json
+RMGSNtoTagEXAMPAPERAPIManual-00A49AE8-445E-F011-BEC1-0022482F23C8,,manual,"Send_an_email_(V2), Apply_to_each, List_rows_present_in_a_table, Send_an_email_(V2)_2, Get_secret_UID, Get_secret_PSWD","shared_keyvault, shared_excelonlinebusiness, shared_office365",RMGSNtoTagEXAMPAPERAPIManual-00A49AE8-445E-F011-BEC1-0022482F23C8.json
+RMGSNtoTagPEAKAPIManual-95513DC4-1445-F011-877A-7C1E528247C3,,manual,"Send_an_email_(V2), Apply_to_each, List_rows_present_in_a_table, Send_an_email_(V2)_2, Get_secret_UID, Get_secret_PSWD","shared_keyvault, shared_excelonlinebusiness, shared_office365",RMGSNtoTagPEAKAPIManual-95513DC4-1445-F011-877A-7C1E528247C3.json
+RMGSTAGINGServerSNtoTagEXAMPAPERAPIManual-6031251C-7168-F011-BEC2-0022482F23C8,,manual,"Send_an_email_(V2), Apply_to_each, List_rows_present_in_a_table, Send_an_email_(V2)_2, Get_secret_UID, Get_secret_PSWD","shared_keyvault, shared_excelonlinebusiness, shared_office365",RMGSTAGINGServerSNtoTagEXAMPAPERAPIManual-6031251C-7168-F011-BEC2-0022482F23C8.json
+RMGTagginFromSNToDaisyAutomation-F06B7B50-E551-F011-877A-6045BDD3BDDA,,Recurrence,"Scope, Send_an_email_(V2)","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",RMGTagginFromSNToDaisyAutomation-F06B7B50-E551-F011-877A-6045BDD3BDDA.json
+RMGTaggingFromSNToExamAutomation-EF6F9B0A-2B3E-F111-88B5-000D3A8F644D,,Recurrence,"Scope, Send_an_email_(V2)","shared_office365, shared_sharepointonline, shared_keyvault, shared_powerbi",RMGTaggingFromSNToExamAutomation-EF6F9B0A-2B3E-F111-88B5-000D3A8F644D.json
+RMGTaggingFromSNToRelayAutomation-503CB69C-982B-F111-88B4-000D3A8F644D,,Recurrence,"Scope, Error_Handling","shared_teams, shared_sharepointonline, shared_keyvault, shared_powerbi",RMGTaggingFromSNToRelayAutomation-503CB69C-982B-F111-88B4-000D3A8F644D.json
+RMGTBWInboundToInboundFolder-2A25B121-57B9-F011-BBD3-6045BDD64A0D,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),For_each,"shared_sharepointonline, shared_office365",RMGTBWInboundToInboundFolder-2A25B121-57B9-F011-BBD3-6045BDD64A0D.json
+RMGTBWOutboundToOutboundFolder-6A25B121-57B9-F011-BBD3-6045BDD64A0D,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),For_each,"shared_sharepointonline, shared_office365",RMGTBWOutboundToOutboundFolder-6A25B121-57B9-F011-BBD3-6045BDD64A0D.json
+RMGUpdateSharepointListforINCTracker-65B0B610-A35D-F111-A826-7CED8DD7139C,,Recurrence,"Run_a_query_against_a_dataset, Apply_to_each, Run_a_query_against_a_dataset1, Apply_to_each1","shared_sharepointonline, shared_powerbi",RMGUpdateSharepointListforINCTracker-65B0B610-A35D-F111-A826-7CED8DD7139C.json
+RMGVIQFBatteryHealthStatus-84EB5747-8910-F111-8406-7CED8DD7139C,,Recurrence,"MinRows, IncrRows, appendCSV, LoopsVar, Scope, CatchError","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",RMGVIQFBatteryHealthStatus-84EB5747-8910-F111-8406-7CED8DD7139C.json
+RMGZebDailyINCsPBIReport-87F7AB1F-57B9-F011-BBD3-7C1E5267A40E,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),For_each,"shared_sharepointonline, shared_office365",RMGZebDailyINCsPBIReport-87F7AB1F-57B9-F011-BBD3-7C1E5267A40E.json
+RMGZebPreviousDayCreatedIncidents-8AF7AB1F-57B9-F011-BBD3-7C1E5267A40E,,When_a_new_email_arrives_in_a_shared_mailbox_(V2),For_each,"shared_sharepointonline, shared_office365",RMGZebPreviousDayCreatedIncidents-8AF7AB1F-57B9-F011-BBD3-7C1E5267A40E.json
+RMGZebraAssetManagementRegister-AE8ECDAB-FB29-F111-88B3-7C1E524AA539,,Recurrence,"MinRows, IncrRows, appendCSV, LoopsVar, Scope, CatchError, EmailTO, EmailCC","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",RMGZebraAssetManagementRegister-AE8ECDAB-FB29-F111-88B3-7C1E524AA539.json
+RMG_GPRS_Compliance_History-63B0B610-A35D-F111-A826-7CED8DD7139C,,Recurrence,"Scope, Scope_1","shared_sharepointonline, shared_powerbi",RMG_GPRS_Compliance_History-63B0B610-A35D-F111-A826-7CED8DD7139C.json
+RMG_rmg_inc_trackerto_rmg_inc_tracker_db-53A3A42D-3880-F111-AB0F-000D3A8F644D,,Recurrence,"Compose_Today_UK, Get_items, Filter_Old_Items_UK, Apply_to_each_Old_Item",shared_sharepointonline,RMG_rmg_inc_trackerto_rmg_inc_tracker_db-53A3A42D-3880-F111-AB0F-000D3A8F644D.json
+RMG_VIQF_Battery_Info_Data_Storage_for_Trend-9B3AE84B-846C-F011-BEC2-0022482F23C8,,Recurrence,"Error_Handling, Master, MinRows, IncrRows, appendCSV, LoopsVar","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",RMG_VIQF_Battery_Info_Data_Storage_for_Trend-9B3AE84B-846C-F011-BEC2-0022482F23C8.json
+RMG_VIQF_Battery_Swap_Data_Storage_for_Trend-28D678CA-9C6C-F011-BEC2-7C1E52488D9D,,Recurrence,"Error_Handling, Master, MinRows, IncrRows, appendCSV, LoopsVar","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",RMG_VIQF_Battery_Swap_Data_Storage_for_Trend-28D678CA-9C6C-F011-BEC2-7C1E52488D9D.json
+RMG_VIQF_Device_Disruptions_Data_Storage_for_Trend-7523FC24-A56C-F011-BEC2-7C1E52488D9D,,Recurrence,"Error_Handling, Master, MinRows, IncrRows, appendCSV, LoopsVar","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",RMG_VIQF_Device_Disruptions_Data_Storage_for_Trend-7523FC24-A56C-F011-BEC2-7C1E52488D9D.json
+RMG_VIQF_Device_Info_Data_Storage_for_Trend-DA845504-A26C-F011-BEC2-0022482F23C8,,Recurrence,"Error_Handling, Master, MinRows, IncrRows, appendCSV, LoopsVar","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",RMG_VIQF_Device_Info_Data_Storage_for_Trend-DA845504-A26C-F011-BEC2-0022482F23C8.json
+RMG_VIQF_Device_Scan_Data_Storage_for_Trend-86453050-A76C-F011-BEC2-0022482F23C8,,Recurrence,"Error_Handling, Master, MinRows, IncrRows, appendCSV, LoopsVar","shared_teams, shared_sharepointonline, shared_powerbi, shared_office365",RMG_VIQF_Device_Scan_Data_Storage_for_Trend-86453050-A76C-F011-BEC2-0022482F23C8.json
+RMG_WiFi_Compliance_History-F938D511-A35D-F111-A826-000D3A8F644D,,Recurrence,"Scope, Scope_1","shared_sharepointonline, shared_powerbi",RMG_WiFi_Compliance_History-F938D511-A35D-F111-A826-000D3A8F644D.json
+RMG_ZEBRA_PDA_X012TOBIG_TCS-85024AC7-2A46-F011-877A-7C1E528247C3,,Recurrence,"MinRows, IncrRows, Calculate_Loops, Loops2run, LoopsVar, Do_until, appendCSV, Create_file, convert2csv, RMG_CMDB_csv_on_SFTP, Update_file, Update_file_RMG_ZEBRA_PDA, To_BA_Site_for_Service_Management, Send_an_email_(V2)","shared_office365, shared_sharepointonline, shared_sftpwithssh, shared_powerbi",RMG_ZEBRA_PDA_X012TOBIG_TCS-85024AC7-2A46-F011-877A-7C1E528247C3.json
+RMG_ZEBRA_PDA_X012TORMG-02CF5E28-5803-F011-BAE3-6045BDD3BDDA,,Recurrence,"Error_Handling, Master, MinRows, IncrRows, appendCSV, LoopsVar","shared_teams, shared_sharepointonline, shared_sftpwithssh, shared_office365, shared_powerbi",RMG_ZEBRA_PDA_X012TORMG-02CF5E28-5803-F011-BAE3-6045BDD3BDDA.json
+RoyalMailGroupPBIRefreshafterUpdatingtheMasterSite-E0B82000-B3F1-EE11-904C-002248280236,,manual,"Refresh_a_dataset, Send_an_email_(V2)","shared_office365, shared_powerbi",RoyalMailGroupPBIRefreshafterUpdatingtheMasterSite-E0B82000-B3F1-EE11-904C-002248280236.json
+RoyalMailLostStolenWipeOffline14and44Reports-95B3F6D5-BA00-F011-BAE3-7C1E528247C3,,Recurrence,"CountLostStolenWipe, LostStolenWipeCount, Condition, LostStolenWipe_Offline_LESS_than_14_days_ICCID, Initialize_variable","shared_office365, shared_powerbi",RoyalMailLostStolenWipeOffline14and44Reports-95B3F6D5-BA00-F011-BAE3-7C1E528247C3.json
+SendanEmailtoSubmittersforInProgressCSI-5EB50E84-D863-F111-A826-7CED8DD7139C,,manual,"Get_items, Apply_to_each","shared_sharepointonline, shared_office365",SendanEmailtoSubmittersforInProgressCSI-5EB50E84-D863-F111-A826-7CED8DD7139C.json
+SendCSIMeetingInvite-8569DA9D-D837-F111-88B5-000D3A8F644D,,manual,Create_event_(V4),shared_office365,SendCSIMeetingInvite-8569DA9D-D837-F111-88B5-000D3A8F644D.json
+SIASubmitFormToEMail-4AB22AD5-7C05-F011-BAE2-7C1E528247C3,,When_an_item_is_created,"SubmitterEmail, UserEmail, Send_an_email_(V2), Compose, SplitSupplier, SplitInput, SplitProcess, SplitOutput, SplitCustomers, Applytoeach, LoopIndex, TableBody, ComposeSIPOC, ComposeMaxLength, ComposeRange, ComposeOpportunityStatement, ProblemStatement, GoalStatement, CurrentWorking, ExpectedBenefit, SustainmentPlan, ToolsUsed, LessonLearned, ComposeExpectedToolsLessons, Attachment","shared_sharepointonline, shared_office365",SIASubmitFormToEMail-4AB22AD5-7C05-F011-BAE2-7C1E528247C3.json
+SIAUpdateFormToEMail-11F8E0D4-7C05-F011-BAE2-6045BDD3BDDA,,When_an_item_or_a_file_is_modified,"SubmitterEmail, UserEmail, Send_an_email_(V2), Compose, SplitSupplier, SplitInput, SplitProcess, SplitOutput, SplitCustomers, Applytoeach, LoopIndex, TableBody, ComposeSIPOC, ComposeMaxLength, ComposeRange, ComposeOpportunityStatement, ProblemStatement, GoalStatement, CurrentWorking, ExpectedBenefit, SustainmentPlan, ToolsUsed, LessonsLearned, ComposeExpectedToolsLessons, Attachment, SplitProcessPOST, SplitOutputPOST, ComposeSIPOCPOST, ApplytoeachPOST, SplitSupplierPOST, SplitInputPOST, SplitCustomersPOST, ComposeMaxLengthPOST, ComposeRangePOST, LoopIndexPOST, TableBodyPOST","shared_sharepointonline, shared_office365",SIAUpdateFormToEMail-11F8E0D4-7C05-F011-BAE2-6045BDD3BDDA.json
+UpdateEXOTrackerOnceaDay-9154F33D-0F63-F111-A826-000D3A8F644D,,manual,"Get_items, Apply_to_each","shared_sharepointonline, shared_excelonlinebusiness",UpdateEXOTrackerOnceaDay-9154F33D-0F63-F111-A826-000D3A8F644D.json
+UpdateO365UsersListforMDMUserAccessManagement-D0B352BF-8665-F111-A826-000D3A8F644D,,Recurrence,"Scope, Error_Handling, Get_user_profile_(V2), Initialize-UsersToProcess, Initialize-FinalTeamArray, Initialize-CurrentUserUPN, Initialize-TempQueue","shared_teams, shared_sharepointonline, shared_office365users",UpdateO365UsersListforMDMUserAccessManagement-D0B352BF-8665-F111-A826-000D3A8F644D.json
+WEDNESDAYRMGLOSTWIPEPFWOfflineGT1444DaysaspertheRe-C5E28D6A-4A3D-F011-B4CB-6045BDD3BDDA,,Recurrence,"Master_Scope, Error_Handling, TO, CC","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",WEDNESDAYRMGLOSTWIPEPFWOfflineGT1444DaysaspertheRe-C5E28D6A-4A3D-F011-B4CB-6045BDD3BDDA.json
+WEDNESDAYRMGLOSTWIPERMLOfflineGT1444DaysaspertheRe-810E99C0-8D67-F011-BEC2-0022482F23C8,,Recurrence,"Master_Scope, Error_Handling, Scope","shared_teams, shared_sharepointonline, shared_office365, shared_powerbi",WEDNESDAYRMGLOSTWIPERMLOfflineGT1444DaysaspertheRe-810E99C0-8D67-F011-BEC2-0022482F23C8.json
+XPOFOUNDFolderClean-Up-F14FB0AB-860E-F111-8406-7C1E525A880A,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, Get_secret_ClientID, Get_secret_ClientCS, EmailTo, EmailCC, Scope, AccessToken, XPOCountFoundDevices, Offlinemorethan7days, ReplyTo, CatchError, Get_secretpswd, Get_secretuid, Post_message_in_a_chat_or_channel_3","shared_office365, shared_teams, shared_keyvault, shared_powerbi",XPOFOUNDFolderClean-Up-F14FB0AB-860E-F111-8406-7C1E525A880A.json
+XPOLostOffline40DaysDeletionandReporting-F2CF9786-52DB-F011-8544-6045BDD64A0D,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, Password, TokenParse_JSON, Get_secret_ClientID, Get_secret_ClientCS, EmailTo, EmailCC, Error_Handling, Scope, XPOCountMoreThan40DaysOffline, Offlinemorethan40days, XPOOfflineGT40Days, SelectXPOOfflineMoreThan40Days, Create_HTML_table, Compose, Create_CSV_table, Getsecretuid, Getsecretpswd, Compose_-_DeviceCount, AccessToken","shared_powerbi, shared_teams, shared_keyvault, shared_office365",XPOLostOffline40DaysDeletionandReporting-F2CF9786-52DB-F011-8544-6045BDD64A0D.json
+XPORefreshStockVisibilityandReporting-E491CC6B-CAF6-F011-8406-7CED8D210053,,Recurrence,"Error_Handling, Scope","shared_teams, shared_powerbi",XPORefreshStockVisibilityandReporting-E491CC6B-CAF6-F011-8406-7CED8D210053.json
+XPORMACleanUpasperRepairData-00944C7C-F2DB-F011-8544-6045BDD64A0D,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, TokenParse_JSON, Get_secret_ClientID, Get_secret_ClientCS, EmailTo, EmailCC, Error_Handling, Scope, AccessToken, XPOCountRMAReceivedByZebra, Offlinemorethan40days, XPORMAReceivedByZebra, SelectXPOOfflineMoreThan40Days, Create_HTML_table, Compose, Create_CSV_table, Get_secretUID, Get_secretPSWD, Compose_-_DeviceCount, Delay","shared_powerbi, shared_teams, shared_keyvault, shared_office365",XPORMACleanUpasperRepairData-00944C7C-F2DB-F011-8544-6045BDD64A0D.json
+XPOSOTIDevicesGroupPathID-23CA8B19-6FDB-F011-8544-7C1E5267A40E,,Recurrence,"HTTP, ClientIDSecret, EncodeSecret, UID, TokenParse_JSON, AccessToken, Get_secret_ClientIDSecret, Delay, Get_secretPSWD, HTTP_GetDeviceGroupPathID, Parse_JSON, Get_items, For_each, Scope, Delay_1, CatchError, Get_secret-pswd","shared_teams, shared_sharepointonline, shared_keyvault",XPOSOTIDevicesGroupPathID-23CA8B19-6FDB-F011-8544-7C1E5267A40E.json
+XPOSOTILicenseInformation-62AF019D-E2DB-F011-8544-6045BDD64A0D,,Recurrence,"Get_secret_ClientIDSecret, Get_secretPSWD, EmailTO, EmailCC, Scope, ClientIDSecret, UID, Password, EncodeSecret, HTTP, TokenParse_JSON, AccessToken, Error_Handling","shared_teams, shared_sharepointonline, shared_keyvault, shared_office365",XPOSOTILicenseInformation-62AF019D-E2DB-F011-8544-6045BDD64A0D.json
