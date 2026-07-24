@@ -1,0 +1,179 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_is_created_or_modified": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "36343f78-49df-49ad-8ed5-9dabfdc0433b"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnUpdatedItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "splitOn": "@triggerOutputs()?['body/value']"
+        }
+      },
+      "actions": {
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Refresh_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "6b8c4896-fc83-4121-afeb-8fb25cae1e64"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "RefreshDataset",
+                  "connectionName": "shared_powerbi"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "d3f5c2d6-e14d-4fb1-a03c-ba0c914e97d8"
+              }
+            }
+          },
+          "runAfter": {}
+        },
+        "Condition": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "contains": [
+                  "@outputs('Refresh_a_dataset')?['body']?['error']?['code']",
+                  "@'RefreshInProgressException'"
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Terminate": {
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Succeeded"
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Error_Handling": {
+                "type": "Scope",
+                "actions": {
+                  "Filter_array": {
+                    "type": "Query",
+                    "inputs": {
+                      "from": "@result('Scope')",
+                      "where": "@equals(item()?['status'],'Failed')"
+                    }
+                  },
+                  "COMPOSE-ERROR_MESSAGE": {
+                    "type": "Compose",
+                    "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+                    "runAfter": {
+                      "Filter_array": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Post_message_in_a_chat_or_channel": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "poster": "Flow bot",
+                        "location": "Channel",
+                        "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                        "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                        "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('COMPOSE-ERROR_MESSAGE')}</u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                        "operationId": "PostMessageToConversation",
+                        "connectionName": "shared_teams"
+                      }
+                    },
+                    "runAfter": {
+                      "COMPOSE-ERROR_MESSAGE": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Compose": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "Compose": {
+          "type": "Compose",
+          "inputs": "@outputs('Refresh_a_dataset')?['body']?['error']?['code']",
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

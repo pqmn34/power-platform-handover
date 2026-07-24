@@ -1,0 +1,734 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Month",
+            "interval": 1,
+            "timeZone": "W. Europe Standard Time",
+            "startTime": "2025-02-01T09:00:00Z"
+          },
+          "metadata": {
+            "operationMetadataId": "94e84f5a-ec79-420e-ac27-0e16f862df3b"
+          }
+        }
+      },
+      "actions": {
+        "EVRiConsolidatedCountMoreThan15DaysOffline": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "// DAX Query\nDEFINE VAR __DS0FilterTable = \n\tFILTER(\n\t\tKEEPFILTERS(VALUES('Devices ET45'[Path])),\n\t\tSEARCH(\"EMEA\\UK\\\", 'Devices ET45'[Path], 1, 0) >= 1\n\t)\n\nEVALUATE\n\tSUMMARIZECOLUMNS(\n\t\t__DS0FilterTable,\n\t\t\"Consolidated_Offline___15_Days\", IGNORE('Devices ET45'[Consolidated Offline > 15 Days])\n\t)\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          }
+        },
+        "Offlinemorethan15days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ConsolidatedOffline15days",
+                "type": "integer",
+                "value": "@outputs('EVRiConsolidatedCountMoreThan30DaysOffline')?['body/firstTableRows'][0]?['[Consolidated_Offline___15_Days]']"
+              }
+            ]
+          },
+          "runAfter": {
+            "EVRiConsolidatedCountMoreThan60DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        },
+        "Condition15Days": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('ConsolidatedOffline15days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "actions": {},
+          "else": {
+            "actions": {
+              "EVRi_Consolidated_Offline_More_Than_15_Days": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"Offline\"}, 'Devices ET45'[Offline > 15 Days])\n\n\tVAR __DS0FilterTable2 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Devices ET45'[Path])),\n\t\t\tSEARCH(\"EMEA\\UK\\\", 'Devices ET45'[Path], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Devices ET45',\n\t\t\t\t'Devices ET45'[DeviceName],\n\t\t\t\t'Devices ET45'[Serial Number],\n\t\t\t\t'Devices ET45'[Model],\n\t\t\t\t'Devices ET45'[EnrollmentTime],\n\t\t\t\t'Devices ET45'[LastAgentDisconnectTime],\n\t\t\t\t'Devices ET45'[Days Offline],\n\t\t\t\t'Devices ET45'[Offline > 15 Days],\n\t\t\t\t'Devices ET45'[Project],\n\t\t\t\t'Devices ET45'[Site],\n\t\t\t\t'Devices ET45'[Deployment],\n\t\t\t\t'Devices ET45'[Path],\n\t\t\t\t'Devices ET45'[ICCID Text],\n\t\t\t\t'Devices ET45'[DeviceId]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Devices ET45'[DeviceName] DESC,\n\t'Devices ET45'[Serial Number],\n\t'Devices ET45'[Model],\n\t'Devices ET45'[EnrollmentTime],\n\t'Devices ET45'[LastAgentDisconnectTime],\n\t'Devices ET45'[Days Offline],\n\t'Devices ET45'[Offline > 15 Days],\n\t'Devices ET45'[Project],\n\t'Devices ET45'[Site],\n\t'Devices ET45'[Deployment],\n\t'Devices ET45'[Path],\n\t'Devices ET45'[ICCID Text],\n\t'Devices ET45'[DeviceId]\n",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery",
+                    "connectionName": "shared_powerbi"
+                  }
+                },
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                }
+              },
+              "Select_EVRI_Consolidated_Offline_More_Than_15_Days": {
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('EVRi_Consolidated_Offline_More_Than_15_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Devices ET45[DeviceName]']",
+                    "Serial Number": "@item()?['Devices ET45[Serial Number]']",
+                    "Model": "@item()?['Devices ET45[Model]']",
+                    "Project": "@item()?['Devices ET45[Project]']",
+                    "Site": "@item()?['Devices ET45[Site]']",
+                    "Device Path": "@item()?['Devices ET45[Path]']",
+                    "Deployment": "@item()?['Devices ET45[Deployment]']",
+                    "Offline Days": "@item()?['Devices ET45[Days Offline]']",
+                    "Offline > 15 Days": "@item()?['Devices ET45[Offline > 15 Days]']",
+                    "Last Seen": "@if(equals(item()?['Devices ET45[LastAgentDisconnectTime]'], null), '', formatDateTime(item()?['Devices ET45[LastAgentDisconnectTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Devices ET45[EnrollmentTime]'], null), '', formatDateTime(item()?['Devices ET45[EnrollmentTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "ICCID": "@item()?['Devices ET45[ICCID Text]']"
+                  }
+                },
+                "runAfter": {
+                  "EVRi_Consolidated_Offline_More_Than_15_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                }
+              },
+              "Create_CSV_table_15Days": {
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Consolidated_Offline_More_Than_15_Days')",
+                  "format": "CSV"
+                },
+                "runAfter": {
+                  "Compose": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                }
+              },
+              "Create_HTML_table": {
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Consolidated_Offline_More_Than_15_Days')",
+                  "format": "HTML"
+                },
+                "runAfter": {
+                  "Select_EVRI_Consolidated_Offline_More_Than_15_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                }
+              },
+              "Compose": {
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                "runAfter": {
+                  "Create_HTML_table": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "NonZebraOfflinemorethan60days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          }
+        },
+        "EVRiConsolidatedCountMoreThan30DaysOffline": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "// DAX Query\nDEFINE VAR __DS0FilterTable = \n\tFILTER(\n\t\tKEEPFILTERS(VALUES('Devices ET45'[Path])),\n\t\tSEARCH(\"EMEA\\UK\\\", 'Devices ET45'[Path], 1, 0) >= 1\n\t)\n\nEVALUATE\n\tSUMMARIZECOLUMNS(\n\t\t__DS0FilterTable,\n\t\t\"Consolidated_Offline___30_Days\", IGNORE('Devices ET45'[Consolidated Offline > 30 Days])\n\t)\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "EVRiConsolidatedCountMoreThan15DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          }
+        },
+        "Offlinemorethan30days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ConsolidatedOffline30days",
+                "type": "float",
+                "value": "@outputs('EVRiConsolidatedCountMoreThan30DaysOffline')?['body/firstTableRows'][0]?['[Consolidated_Offline___30_Days]']"
+              }
+            ]
+          },
+          "runAfter": {
+            "ComposeOfflinemorethan60days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        },
+        "Condition60Days": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('ConsolidatedOffline60days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "actions": {},
+          "else": {
+            "actions": {
+              "EVRi_Consolidated_Offline_More_Than_60_Days": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Devices ET45'[Path])),\n\t\t\tSEARCH(\"EMEA\\UK\\\", 'Devices ET45'[Path], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Devices ET45'[Offline > 60 Days])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Devices ET45',\n\t\t\t\t'Devices ET45'[DeviceName],\n\t\t\t\t'Devices ET45'[Serial Number],\n\t\t\t\t'Devices ET45'[Model],\n\t\t\t\t'Devices ET45'[EnrollmentTime],\n\t\t\t\t'Devices ET45'[LastAgentDisconnectTime],\n\t\t\t\t'Devices ET45'[Days Offline],\n\t\t\t\t'Devices ET45'[Project],\n\t\t\t\t'Devices ET45'[Site],\n\t\t\t\t'Devices ET45'[Deployment],\n\t\t\t\t'Devices ET45'[Path],\n\t\t\t\t'Devices ET45'[ICCID Text],\n\t\t\t\t'Devices ET45'[DeviceId],\n\t\t\t\t'Devices ET45'[Offline > 60 Days]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'Devices ET45'[DeviceName] DESC,\n\t'Devices ET45'[Serial Number],\n\t'Devices ET45'[Model],\n\t'Devices ET45'[EnrollmentTime],\n\t'Devices ET45'[LastAgentDisconnectTime],\n\t'Devices ET45'[Days Offline],\n\t'Devices ET45'[Project],\n\t'Devices ET45'[Site],\n\t'Devices ET45'[Deployment],\n\t'Devices ET45'[Path],\n\t'Devices ET45'[ICCID Text],\n\t'Devices ET45'[DeviceId],\n\t'Devices ET45'[Offline > 60 Days]\n",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery",
+                    "connectionName": "shared_powerbi"
+                  }
+                },
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                }
+              },
+              "Create_CSV_table_60Days": {
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Consolidated_Offline_More_Than_60_Days')",
+                  "format": "CSV"
+                },
+                "runAfter": {
+                  "Compose_1": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                }
+              },
+              "Create_HTML_table_1": {
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Consolidated_Offline_More_Than_60_Days')",
+                  "format": "HTML"
+                },
+                "runAfter": {
+                  "Select_EVRI_Consolidated_Offline_More_Than_60_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                }
+              },
+              "Compose_1": {
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table_1')}",
+                "runAfter": {
+                  "Create_HTML_table_1": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                }
+              },
+              "Select_EVRI_Consolidated_Offline_More_Than_60_Days": {
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('EVRi_Consolidated_Offline_More_Than_60_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Devices ET45[DeviceName]']",
+                    "Serial Number": "@item()?['Devices ET45[Serial Number]']",
+                    "Model": "@item()?['Devices ET45[Model]']",
+                    "Project": "@item()?['Devices ET45[Project]']",
+                    "Site": "@item()?['Devices ET45[Site]']",
+                    "Device Path": "@item()?['Devices ET45[Path]']",
+                    "Deployment": "@item()?['Devices ET45[Deployment]']",
+                    "Offline Days": "@item()?['Devices ET45[Days Offline]']",
+                    "Offline > 60 Days": "@item()?['Devices ET45[Offline > 60 Days]']",
+                    "Last Seen": "@if(equals(item()?['Devices ET45[LastAgentDisconnectTime]'], null), '', formatDateTime(item()?['Devices ET45[LastAgentDisconnectTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Devices ET45[EnrollmentTime]'], null), '', formatDateTime(item()?['Devices ET45[EnrollmentTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "ICCID": "@item()?['Devices ET45[ICCID Text]']"
+                  }
+                },
+                "runAfter": {
+                  "EVRi_Consolidated_Offline_More_Than_60_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "NonZebraCondition30Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          }
+        },
+        "EVRiConsolidatedCountMoreThan60DaysOffline": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "// DAX Query\nDEFINE VAR __DS0FilterTable = \n\tFILTER(\n\t\tKEEPFILTERS(VALUES('Devices ET45'[Path])),\n\t\tSEARCH(\"EMEA\\UK\\\", 'Devices ET45'[Path], 1, 0) >= 1\n\t)\n\nEVALUATE\n\tSUMMARIZECOLUMNS(\n\t\t__DS0FilterTable,\n\t\t\"Consolidated_Offline___60_Days\", IGNORE('Devices ET45'[Consolidated Offline > 60 Days])\n\t)\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "EVRiConsolidatedCountMoreThan30DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          }
+        },
+        "NonZebraOfflinemorethan60days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ConsolidatedOffline60days",
+                "type": "float",
+                "value": "@outputs('EVRiConsolidatedCountMoreThan60DaysOffline')?['body/firstTableRows'][0]?['[Consolidated_Offline___60_Days]']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Offlinemorethan30days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        },
+        "NonZebraCondition30Days": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('ConsolidatedOffline30days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "actions": {},
+          "else": {
+            "actions": {
+              "EVRi_Consolidated_Offline_More_Than_30_Days": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Devices ET45'[Path])),\n\t\t\tSEARCH(\"EMEA\\UK\\\", 'Devices ET45'[Path], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Devices ET45'[Offline > 30 Days])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Devices ET45',\n\t\t\t\t'Devices ET45'[DeviceName],\n\t\t\t\t'Devices ET45'[Serial Number],\n\t\t\t\t'Devices ET45'[Model],\n\t\t\t\t'Devices ET45'[EnrollmentTime],\n\t\t\t\t'Devices ET45'[LastAgentDisconnectTime],\n\t\t\t\t'Devices ET45'[Days Offline],\n\t\t\t\t'Devices ET45'[Project],\n\t\t\t\t'Devices ET45'[Site],\n\t\t\t\t'Devices ET45'[Deployment],\n\t\t\t\t'Devices ET45'[Path],\n\t\t\t\t'Devices ET45'[ICCID Text],\n\t\t\t\t'Devices ET45'[DeviceId],\n\t\t\t\t'Devices ET45'[Offline > 30 Days]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Devices ET45'[Deployment] DESC,\n\t'Devices ET45'[DeviceName],\n\t'Devices ET45'[Serial Number],\n\t'Devices ET45'[Model],\n\t'Devices ET45'[EnrollmentTime],\n\t'Devices ET45'[LastAgentDisconnectTime],\n\t'Devices ET45'[Days Offline],\n\t'Devices ET45'[Project],\n\t'Devices ET45'[Site],\n\t'Devices ET45'[Path],\n\t'Devices ET45'[ICCID Text],\n\t'Devices ET45'[DeviceId],\n\t'Devices ET45'[Offline > 30 Days]\n",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery",
+                    "connectionName": "shared_powerbi"
+                  }
+                },
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                }
+              },
+              "Select_EVRI_Consolidated_Offline_More_Than_30_Days": {
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('EVRi_Consolidated_Offline_More_Than_30_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Devices ET45[DeviceName]']",
+                    "Serial Number": "@item()?['Devices ET45[Serial Number]']",
+                    "Model": "@item()?['Devices ET45[Model]']",
+                    "Project": "@item()?['Devices ET45[Project]']",
+                    "Site": "@item()?['Devices ET45[Site]']",
+                    "Device Path": "@item()?['Devices ET45[Path]']",
+                    "Deployment": "@item()?['Devices ET45[Deployment]']",
+                    "Offline Days": "@item()?['Devices ET45[Days Offline]']",
+                    "Offline > 30 Days": "@item()?['Devices ET45[Offline > 30 Days]']",
+                    "Last Seen": "@if(equals(item()?['Devices ET45[LastAgentDisconnectTime]'], null), '', formatDateTime(item()?['Devices ET45[LastAgentDisconnectTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Devices ET45[EnrollmentTime]'], null), '', formatDateTime(item()?['Devices ET45[EnrollmentTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "ICCID": "@item()?['Devices ET45[ICCID Text]']"
+                  }
+                },
+                "runAfter": {
+                  "EVRi_Consolidated_Offline_More_Than_30_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                }
+              },
+              "Create_CSV_Table_30Days": {
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Consolidated_Offline_More_Than_30_Days')",
+                  "format": "CSV"
+                },
+                "runAfter": {
+                  "NonZebraCompose15Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                }
+              },
+              "NonZebraCreate_HTML_table15Days": {
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Consolidated_Offline_More_Than_30_Days')",
+                  "format": "HTML"
+                },
+                "runAfter": {
+                  "Select_EVRI_Consolidated_Offline_More_Than_30_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                }
+              },
+              "NonZebraCompose15Days": {
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('NonZebraCreate_HTML_table15Days')}",
+                "runAfter": {
+                  "NonZebraCreate_HTML_table15Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Condition15Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          }
+        },
+        "NonZebraSelectAll": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('NonZebraRun_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Offline > 15 Days": "@item()?['[Consolidated_Offline___15_Days]']",
+              "Offline > 30 Days": "@item()?['[Consolidated_Offline___30_Days]']",
+              "Offline > 60 Days": "@item()?['[Consolidated_Offline___60_Days]']"
+            }
+          },
+          "runAfter": {
+            "NonZebraRun_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3664f256-5bc0-474a-ade8-93dc8c174c06"
+          }
+        },
+        "NonZebraCreate_HTMLtable": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('NonZebraSelectAll')",
+            "format": "HTML"
+          },
+          "runAfter": {
+            "NonZebraSelectAll": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+          }
+        },
+        "NonZebraCompose3": {
+          "type": "Compose",
+          "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('NonZebraCreate_HTMLtable')}",
+          "runAfter": {
+            "NonZebraCreate_HTMLtable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+          }
+        },
+        "NonZebraRun_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"Consolidated_Offline___15_Days\", 'Devices ET45'[Consolidated Offline > 15 Days],\n\t\t\"Consolidated_Offline___30_Days\", 'Devices ET45'[Consolidated Offline > 30 Days],\n\t\t\"Consolidated_Offline___60_Days\", 'Devices ET45'[Consolidated Offline > 60 Days]\n\t)\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "Condition60Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "854ac311-f894-4593-83da-6cd6a7ea5586"
+          }
+        },
+        "ComposeOfflinemorethan15days": {
+          "type": "Compose",
+          "inputs": "@outputs('EVRiConsolidatedCountMoreThan15DaysOffline')?['body']?['firstTableRows']?[0]?['[Consolidated_Offline___15_Days]']",
+          "runAfter": {
+            "Offlinemorethan15days": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ComposeOfflinemorethan30days": {
+          "type": "Compose",
+          "inputs": "@outputs('EVRiConsolidatedCountMoreThan30DaysOffline')?['body']?['firstTableRows']?[0]?['[Consolidated_Offline___30_Days]']",
+          "runAfter": {
+            "ComposeOfflinemorethan15days": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ComposeOfflinemorethan60days": {
+          "type": "Compose",
+          "inputs": "@outputs('EVRiConsolidatedCountMoreThan15DaysOffline')?['body']?['firstTableRows']?[0]?['[Consolidated_Offline___15_Days]']",
+          "runAfter": {
+            "ComposeOfflinemorethan30days": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Condition": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@body('Create_CSV_Table_30Days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Send_an_email_(V2)_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "HUKAsset.Management@hermes-europe.co.uk;HUKITProc@hermes-europe.co.uk;Debbie.Bakes@Evri.com;Paul.Tate@Evri.com;Jakub.Polak@zebra.com",
+                  "emailMessage/Subject": "EVRi: Consolidated SOTI Offline Devices ",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,<br><br>Please find the report of offline devices attached.<br><br>Evri team, please follow up with the site managers regarding the devices that have been offline for 15 days.<br>Devices offline for more than 30 days will be moved to the LOST folder and locked if they come online.<br>Devices that have been offline for more than 60 days will be deleted from SOTI. Zebra Service Desk, please deactivate SIM cards for these devices.<br><b><strong class=\"editor-text-bold\">ZEBRA CONSOLIDATED SOTI DEVICES</strong></b><br>@{outputs('NonZebraCompose3')}<br>If there are any issues with this report, please contact your Zebra Service Manager (jakub.polak@zebra.com).<br><br>Warm regards<br><br>Zebra DMS Support</p>",
+                  "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                  "emailMessage/From": "dms.support@zebra.com",
+                  "emailMessage/Cc": "michaela.pastourmatzi@zebra.com;darshindran.jeyakumar@zebra.com",
+                  "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "ZebraConsOfflineMoreThan15Days.csv",
+                      "ContentBytes": "@body('Create_CSV_table_15Days')"
+                    },
+                    {
+                      "Name": "ZebraConsOfflineMoreThan60Days.csv",
+                      "ContentBytes": "@body('Create_CSV_table_60Days')"
+                    },
+                    {
+                      "Name": "ZebraConsOfflineMoreThan30Days.csv",
+                      "ContentBytes": "@body('Create_CSV_Table_30Days')"
+                    }
+                  ],
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Send_an_email_(V2)": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "emailMessage/To": "HUKAsset.Management@hermes-europe.co.uk;HUKITProc@hermes-europe.co.uk;Debbie.Bakes@Evri.com;Paul.Tate@Evri.com;Jakub.Polak@zebra.com",
+                    "emailMessage/Subject": "EVRi: Consolidated SOTI Offline Devices ",
+                    "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,<br><br>Please find the report of offline devices attached.<br><br>Evri team, please follow up with the site managers regarding the devices that have been offline for 15 days.<br>Devices offline for more than 30 days will be moved to the LOST folder and locked if they come online.<br>Devices that have been offline for more than 60 days will be deleted from SOTI. Zebra Service Desk, please deactivate SIM cards for these devices.<br><b><strong class=\"editor-text-bold\">ZEBRA CONSOLIDATED SOTI DEVICES</strong></b><br>@{outputs('NonZebraCompose3')}<br>If there are any issues with this report, please contact your Zebra Service Manager (jakub.polak@zebra.com).<br><br>Warm regards<br><br>Zebra DMS Support</p>",
+                    "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                    "emailMessage/From": "dms.support@zebra.com",
+                    "emailMessage/Cc": "michaela.pastourmatzi@zebra.com;darshindran.jeyakumar@zebra.com",
+                    "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                    "emailMessage/Attachments": [
+                      {
+                        "Name": "ZebraConsOfflineMoreThan15Days.csv",
+                        "ContentBytes": "@body('Create_CSV_table_15Days')"
+                      },
+                      {
+                        "Name": "ZebraConsOfflineMoreThan60Days.csv",
+                        "ContentBytes": "@body('Create_CSV_table_60Days')"
+                      },
+                      {
+                        "Name": "ZebraConsOfflineMoreThan30Days.csv",
+                        "ContentBytes": "@body('Create_CSV_Table_30Days')"
+                      }
+                    ],
+                    "emailMessage/Importance": "High"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                    "operationId": "SendEmailV2",
+                    "connectionName": "shared_office365"
+                  }
+                },
+                "metadata": {
+                  "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "NonZebraCompose3": [
+              "Succeeded"
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

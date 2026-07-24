@@ -1,0 +1,679 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_f3d13"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_or_a_file_is_modified": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "d64543ed-887f-4ef9-ac3d-921c6cf69c59"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnChangedItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Minute"
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "0472f370-9629-4ac7-a39a-218dbfc66aaf"
+          }
+        }
+      },
+      "actions": {
+        "SubmitterEmail": {
+          "type": "Compose",
+          "inputs": "@triggerBody()?['SubmitterName/Email']",
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "b07b9956-5855-4033-ab90-f92b311bfda9"
+          }
+        },
+        "UserEmail": {
+          "type": "Compose",
+          "inputs": "@triggerBody()?['Implementer/Email']",
+          "runAfter": {
+            "SubmitterEmail": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c5f21962-69e1-47f6-8c14-e76a334f055e"
+          }
+        },
+        "Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "prabhat.kumar@zebra.com",
+              "emailMessage/Subject": "@{triggerBody()?['CSINumber']}: @{triggerBody()?['Title']}",
+              "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Greetings!</em></i></p><p class=\"editor-paragraph\">Please find below the details of SIA Record submitted by @{outputs('SubmitterEmail')}.<br>Open the attachment to view the full report.</p><p class=\"editor-paragraph\">@{outputs('Compose')}<br>Warm regards,<br>Strategic Innovation and Automation</p><br>",
+              "emailMessage/Bcc": "pqmn34@zebra.com",
+              "emailMessage/Attachments": [
+                {
+                  "Name": "@{triggerBody()?['CSINumber']}-@{triggerBody()?['Title']}.html",
+                  "ContentBytes": "@outputs('Attachment')"
+                }
+              ],
+              "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365-1"
+            }
+          },
+          "runAfter": {
+            "Attachment": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f3d87352-fbd2-484a-8d2d-97fa4d5249eb"
+          }
+        },
+        "Compose": {
+          "type": "Compose",
+          "inputs": "<html>\n<body>\n  <table style=\"border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;\">\n    <tr style=\"background-color: #0074b3; color: #ffffff;\">\n      <th style=\"padding: 8px; text-align: left; border: 1px solid #0074b3;\">Field</th>\n      <th style=\"padding: 8px; text-align: left; border: 1px solid #0074b3;\">Value</th>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">SIA Number</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/CSINumber']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Title</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/Title']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Submitter Name</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/SubmitterName/DisplayName']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Implementer</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/Implementer/DisplayName']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Start Date</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/StartDate']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">End Date</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/EndDate']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Opportunity Category</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerBody()?['Opportunity_x0020_Category/Value']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Category</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/Category/Value']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Sub Category</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/SubCategory/Value']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Base Metrics</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/BaseMetrics']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Target Metrics</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/TargetMetrics']}</td>\n    </tr>\n<tr>\n  <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Status</td>\n  <td style=\"padding: 8px; border: 1px solid #0074b3; @{if(equals(triggerOutputs()?['body/Status/Value'], 'Completed'), 'background-color: #28a745; color: #ffffff; font-weight: bold;', 'background-color: #ffc107;')}\">@{triggerOutputs()?['body/Status/Value']}</td>\n</tr>\n    <tr>\n      <td style=\"padding: 8px; background-color: #0074b3; color: #ffffff; font-weight: bold; border: 1px solid #0074b3;\">Frequency per Month</td>\n      <td style=\"padding: 8px; background-color: #ffffff; border: 1px solid #0074b3;\">@{triggerOutputs()?['body/FrequencyperMonth']}</td>\n    </tr>\n  </table>\n</body>\n</html>",
+          "runAfter": {
+            "ApplytoeachPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "dd8c02b1-27f8-4004-b6c2-4a134c0f0877"
+          }
+        },
+        "SplitSupplier": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Supplier_x0028_CurrentSIPOC_x002']), ',')",
+          "runAfter": {
+            "UserEmail": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3b6bedb4-00d8-4110-b031-489084eee9dc"
+          }
+        },
+        "SplitInput": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Input_x0028_CurrentSIPOC_x0029_']), ',')",
+          "runAfter": {
+            "SplitSupplierPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "25c18e15-926e-42b4-8a38-093b379403b6"
+          }
+        },
+        "SplitProcess": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Process_x0028_CurrentSIPOC_x0029']), ',')",
+          "runAfter": {
+            "SplitInputPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "39d18a49-90a2-40cb-8879-108c99b97c4e"
+          }
+        },
+        "SplitOutput": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Output_x0028_CurrentSIPOC_x0029_']), ',')",
+          "runAfter": {
+            "SplitProcessPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1689f911-4462-4349-90f3-25a4b812690f"
+          }
+        },
+        "SplitCustomers": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Customer_x0028_CurrentSIPOC_x002']), ',')",
+          "runAfter": {
+            "SplitOutputPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1a6e69ab-b169-4877-abad-ba6e57fe2492"
+          }
+        },
+        "Applytoeach": {
+          "type": "Foreach",
+          "foreach": "@outputs('ComposeRange')",
+          "actions": {
+            "ComposeRow": {
+              "type": "Compose",
+              "inputs": "<tr>\n  <td style=\"padding: 10px; background-color: #d3d3d3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitSupplier'))), outputs('SplitSupplier')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #cce7ff; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitInput'))), outputs('SplitInput')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #fce5cd; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitProcess'))), outputs('SplitProcess')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d5f5e3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitOutput'))), outputs('SplitOutput')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d0d3d4; text-align: center;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitCustomers'))), outputs('SplitCustomers')[variables('LoopIndex')], '')}\n  </td>\n</tr>\n",
+              "runAfter": {
+                "Increment_variable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f86ef7de-e59f-408c-8a98-f58c02be6828"
+              }
+            },
+            "Append_to_string_variable": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "TableBody",
+                "value": "<tr>\n  <td style=\"padding: 10px; background-color: #d3d3d3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitSupplier'))), outputs('SplitSupplier')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #cce7ff; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitInput'))), outputs('SplitInput')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #fce5cd; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitProcess'))), outputs('SplitProcess')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d5f5e3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitOutput'))), outputs('SplitOutput')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d0d3d4; text-align: center;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitCustomers'))), outputs('SplitCustomers')[variables('LoopIndex')], '')}\n  </td>\n</tr>"
+              },
+              "runAfter": {
+                "ComposeRow": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "79ba4a38-e499-4610-acd6-080aeb19e21b"
+              }
+            },
+            "Increment_variable": {
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "LoopIndex",
+                "value": 1
+              },
+              "metadata": {
+                "operationMetadataId": "6dae9210-e46b-45bb-89a2-5e416e729472"
+              }
+            }
+          },
+          "runAfter": {
+            "TableBody": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d8d70a67-7fa9-4c22-8dce-f7d0779359ef"
+          }
+        },
+        "LoopIndex": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LoopIndex",
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          },
+          "runAfter": {
+            "ComposeRange": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a508e269-4760-44a2-a4a6-94c00d16dcc8"
+          }
+        },
+        "TableBody": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "TableBody",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "LoopIndex": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5bab42e1-1541-451c-bf39-672ad3bfa5eb"
+          }
+        },
+        "ComposeSIPOC": {
+          "type": "Compose",
+          "inputs": "<html>\n<body>\n  <h2 style=\"font-family: Arial, sans-serif; color: #0056b3; text-align: center;\">Current SIPOC </h2>\n  <table style=\"border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; table-layout: fixed;\">\n    <thead>\n      <!-- First row with large S I P O C, each with different background colors -->\n      <tr>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #4a4a4a; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">S</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #3b83bd; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">I</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #f39c12; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">P</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #27ae60; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">O</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #7f8c8d; color: #ffffff; font-size: 24px;\">C</th>\n      </tr>\n      <!-- Second row with column names, each with matching background colors -->\n      <tr>\n        <th style=\"padding: 15px; text-align: center; background-color: #4a4a4a; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Suppliers</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #3b83bd; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Inputs</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #f39c12; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Process</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #27ae60; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Outputs</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #7f8c8d; color: #ffffff; word-wrap: break-word;\">Customers</th>\n      </tr>\n    </thead>\n    <tbody style=\"word-wrap: break-word;\">\n      <!-- Replace this with your variable 'TableBody' for row data -->\n      @{variables('TableBody')}\n    </tbody>\n  </table>\n</body>\n</html>",
+          "runAfter": {
+            "ComposeExpectedToolsLessons": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "143551ee-618d-479a-97ff-cdbd8aedf23a"
+          }
+        },
+        "ComposeMaxLength": {
+          "type": "Compose",
+          "inputs": "@max(length(outputs('SplitSupplier')), length(outputs('SplitInput')), length(outputs('SplitProcess')), length(outputs('SplitOutput')), length(outputs('SplitCustomers')))",
+          "runAfter": {
+            "SplitCustomersPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "58ff981b-5317-45d9-bec6-45adb1926605"
+          }
+        },
+        "ComposeRange": {
+          "type": "Compose",
+          "inputs": "@range(0, int(outputs('ComposeMaxLength')))",
+          "runAfter": {
+            "ComposeMaxLength": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "771e717d-f7f9-4ea6-8998-13542f002399"
+          }
+        },
+        "ComposeOpportunityStatement": {
+          "type": "Compose",
+          "inputs": "<table style=\"border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;\">\n  <!-- Opportunity Statement Header -->\n  <tr>\n    <td style=\"color: #0056b3; font-size: 18px; font-weight: bold; text-align: left; padding: 10px;\">\n      Opportunity Statement\n    </td>\n  </tr>\n\n  <!-- Opportunity Statement Content -->\n  <tr>\n    <td style=\"border-top: 4px solid #0056b3; border-bottom: 10px solid #ffffff; padding: 10px; text-align: left;\">\n      @{variables('ProblemStatement')}\n    </td>\n  </tr>\n\n  <!-- Current Results Header -->\n  <tr>\n    <td style=\"color: #0056b3; font-size: 18px; font-weight: bold; text-align: left; padding: 10px;\">\n      Current Results\n    </td>\n  </tr>\n\n  <!-- Current Results Content -->\n  <tr>\n    <td style=\"border-top: 4px solid #0056b3; border-bottom: 10px solid #ffffff; padding: 10px; text-align: left;\">\n      @{variables('CurrentWorking')}\n    </td>\n  </tr>\n\n  <!-- Kaizen Goal Header -->\n  <tr>\n    <td style=\"color: #0056b3; font-size: 18px; font-weight: bold; text-align: left; padding: 10px;\">\n      Goal Statement\n    </td>\n  </tr>\n\n  <!-- Kaizen Goal Content -->\n  <tr>\n    <td style=\"border-top: 4px solid #0056b3; border-bottom: 2px solid #ffffff; padding: 10px; text-align: left;\">\n      @{variables('GoalStatement')}\n    </td>\n  </tr>\n</table>",
+          "runAfter": {
+            "LessonsLearned": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "06036089-c67b-435b-9700-338a553ec1c5"
+          }
+        },
+        "ProblemStatement": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ProblemStatement",
+                "type": "string",
+                "value": "@triggerBody()?['ProblemStatement']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3af41937-2d2e-4494-ada6-526d26d45a4e"
+          }
+        },
+        "GoalStatement": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "GoalStatement",
+                "type": "string",
+                "value": "@triggerBody()?['GoalStatement']"
+              }
+            ]
+          },
+          "runAfter": {
+            "CurrentWorking": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bdff9a79-4eea-45df-8bb0-2e1f36d1bf8b"
+          }
+        },
+        "CurrentWorking": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "CurrentWorking",
+                "type": "string",
+                "value": "@triggerBody()?['CurrentWorking']"
+              }
+            ]
+          },
+          "runAfter": {
+            "ProblemStatement": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b445f9fc-cf0c-4de3-981a-2943c5bb4688"
+          }
+        },
+        "ExpectedBenefit": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ExpectedBenefit",
+                "type": "string",
+                "value": "@triggerBody()?['ExpectedBenefits']"
+              }
+            ]
+          },
+          "runAfter": {
+            "GoalStatement": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bdff9a79-4eea-45df-8bb0-2e1f36d1bf8b"
+          }
+        },
+        "SustainmentPlan": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "SustainmentPlan",
+                "type": "string",
+                "value": "@triggerBody()?['SustainmentPlan']"
+              }
+            ]
+          },
+          "runAfter": {
+            "ExpectedBenefit": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bdff9a79-4eea-45df-8bb0-2e1f36d1bf8b"
+          }
+        },
+        "ToolsUsed": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ToolsUsed",
+                "type": "string",
+                "value": "@triggerBody()?['ToolsUsed']"
+              }
+            ]
+          },
+          "runAfter": {
+            "SustainmentPlan": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bdff9a79-4eea-45df-8bb0-2e1f36d1bf8b"
+          }
+        },
+        "LessonsLearned": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LessonLearned",
+                "type": "string",
+                "value": "@triggerBody()?['LessonsLearned']"
+              }
+            ]
+          },
+          "runAfter": {
+            "ToolsUsed": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bdff9a79-4eea-45df-8bb0-2e1f36d1bf8b"
+          }
+        },
+        "ComposeExpectedToolsLessons": {
+          "type": "Compose",
+          "inputs": "<table style=\"border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;\">\n  <!-- Opportunity Statement Header -->\n  <tr>\n    <td style=\"color: #0056b3; font-size: 18px; font-weight: bold; text-align: left; padding: 10px;\">\n      Expected Benefit\n    </td>\n  </tr>\n\n  <!-- Opportunity Statement Content -->\n  <tr>\n    <td style=\"border-top: 4px solid #0056b3; border-bottom: 10px solid #ffffff; padding: 10px; text-align: left;\">\n      @{variables('ExpectedBenefit')}\n    </td>\n  </tr>\n\n  <!-- Current Results Header -->\n  <tr>\n    <td style=\"color: #0056b3; font-size: 18px; font-weight: bold; text-align: left; padding: 10px;\">\n     Sustainment Plan\n    </td>\n  </tr>\n\n  <!-- Current Results Content -->\n  <tr>\n    <td style=\"border-top: 4px solid #0056b3; border-bottom: 10px solid #ffffff; padding: 10px; text-align: left;\">\n      @{variables('SustainmentPlan')}\n    </td>\n  </tr>\n\n  <!-- Kaizen Goal Header -->\n  <tr>\n    <td style=\"color: #0056b3; font-size: 18px; font-weight: bold; text-align: left; padding: 10px;\">\n      Tools Used\n    </td>\n  </tr>\n\n  <!-- Kaizen Goal Content -->\n  <tr>\n    <td style=\"border-top: 4px solid #0056b3; border-bottom: 2px solid #ffffff; padding: 10px; text-align: left;\">\n      @{variables('ToolsUsed')}\n    </td>\n  </tr>\n  <!-- Kaizen Goal Header -->\n  <tr>\n    <td style=\"color: #0056b3; font-size: 18px; font-weight: bold; text-align: left; padding: 10px;\">\n      Lesson Learned\n    </td>\n  </tr>\n\n  <!-- Kaizen Goal Content -->\n  <tr>\n    <td style=\"border-top: 4px solid #0056b3; border-bottom: 2px solid #ffffff; padding: 10px; text-align: left;\">\n      @{variables('LessonLearned')}\n    </td>\n  </tr>\n</table>",
+          "runAfter": {
+            "ComposeOpportunityStatement": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "06036089-c67b-435b-9700-338a553ec1c5"
+          }
+        },
+        "Attachment": {
+          "type": "Compose",
+          "inputs": "<html>\n<body>\n  <h2 style=\"text-align: center; font-family: Verdana;\">@{triggerBody()?['CSINumber']}: @{triggerBody()?['Title']}</h2>\n  <div>@{outputs('Compose')}</div>\n  <div>@{outputs('ComposeOpportunityStatement')}</div>\n  <div>@{outputs('ComposeSIPOC')}</div>\n  <div>@{outputs('ComposeSIPOCPOST')}</div>\n  <div>@{outputs('ComposeExpectedToolsLessons')}</div>\n</body>\n</html>",
+          "runAfter": {
+            "ComposeSIPOCPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bf17d935-7e3a-4b28-8eeb-2fb2900321f7"
+          }
+        },
+        "SplitProcessPOST": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Process_x0028_PostSIPOC_x0029_']), ',')",
+          "runAfter": {
+            "SplitProcess": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "39d18a49-90a2-40cb-8879-108c99b97c4e"
+          }
+        },
+        "SplitOutputPOST": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Output_x0028_PostSIPOC_x0029_']), ',')",
+          "runAfter": {
+            "SplitOutput": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1689f911-4462-4349-90f3-25a4b812690f"
+          }
+        },
+        "ComposeSIPOCPOST": {
+          "type": "Compose",
+          "inputs": "<html>\n<body>\n  <h2 style=\"font-family: Arial, sans-serif; color: #0056b3; text-align: center;\">POST SIPOC </h2>\n  <table style=\"border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; table-layout: fixed;\">\n    <thead>\n      <!-- First row with large S I P O C, each with different background colors -->\n      <tr>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #4a4a4a; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">S</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #3b83bd; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">I</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #f39c12; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">P</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #27ae60; color: #ffffff; font-size: 24px; border-right: 2px solid #ffffff;\">O</th>\n        <th colspan=\"1\" style=\"width: 20%; padding: 20px; text-align: center; background-color: #7f8c8d; color: #ffffff; font-size: 24px;\">C</th>\n      </tr>\n      <!-- Second row with column names, each with matching background colors -->\n      <tr>\n        <th style=\"padding: 15px; text-align: center; background-color: #4a4a4a; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Suppliers</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #3b83bd; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Inputs</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #f39c12; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Process</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #27ae60; color: #ffffff; border-right: 2px solid #ffffff; word-wrap: break-word;\">Outputs</th>\n        <th style=\"padding: 15px; text-align: center; background-color: #7f8c8d; color: #ffffff; word-wrap: break-word;\">Customers</th>\n      </tr>\n    </thead>\n    <tbody style=\"word-wrap: break-word;\">\n      <!-- Replace this with your variable 'TableBody' for row data -->\n      @{variables('TableBodyPOST')}\n    </tbody>\n  </table>\n</body>\n</html>",
+          "runAfter": {
+            "ComposeSIPOC": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "143551ee-618d-479a-97ff-cdbd8aedf23a"
+          }
+        },
+        "ApplytoeachPOST": {
+          "type": "Foreach",
+          "foreach": "@outputs('ComposeRangePOST')",
+          "actions": {
+            "ComposeRowPOST": {
+              "type": "Compose",
+              "inputs": "<tr>\n  <td style=\"padding: 10px; background-color: #d3d3d3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitSupplier'))), outputs('SplitSupplier')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #cce7ff; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitInput'))), outputs('SplitInput')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #fce5cd; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitProcess'))), outputs('SplitProcess')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d5f5e3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitOutput'))), outputs('SplitOutput')[variables('LoopIndex')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d0d3d4; text-align: center;\">\n    @{if(less(variables('LoopIndex'), length(outputs('SplitCustomers'))), outputs('SplitCustomers')[variables('LoopIndex')], '')}\n  </td>\n</tr>\n",
+              "runAfter": {
+                "Increment_variablePOST": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f86ef7de-e59f-408c-8a98-f58c02be6828"
+              }
+            },
+            "Append_to_string_variablePOST": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "TableBodyPOST",
+                "value": "<tr>\n  <td style=\"padding: 10px; background-color: #d3d3d3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndexPOST'), length(outputs('SplitSupplierPOST'))), outputs('SplitSupplierPOST')[variables('LoopIndexPOST')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #cce7ff; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndexPOST'), length(outputs('SplitInputPOST'))), outputs('SplitInputPOST')[variables('LoopIndexPOST')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #fce5cd; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndexPOST'), length(outputs('SplitProcessPOST'))), outputs('SplitProcessPOST')[variables('LoopIndexPOST')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d5f5e3; text-align: center; border-right: 2px solid #ffffff;\">\n    @{if(less(variables('LoopIndexPOST'), length(outputs('SplitOutputPOST'))), outputs('SplitOutputPOST')[variables('LoopIndexPOST')], '')}\n  </td>\n  <td style=\"padding: 10px; background-color: #d0d3d4; text-align: center;\">\n    @{if(less(variables('LoopIndexPOST'), length(outputs('SplitCustomersPOST'))), outputs('SplitCustomersPOST')[variables('LoopIndexPOST')], '')}\n  </td>\n</tr>"
+              },
+              "runAfter": {
+                "ComposeRowPOST": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "79ba4a38-e499-4610-acd6-080aeb19e21b"
+              }
+            },
+            "Increment_variablePOST": {
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "LoopIndexPOST",
+                "value": 1
+              },
+              "metadata": {
+                "operationMetadataId": "6dae9210-e46b-45bb-89a2-5e416e729472"
+              }
+            }
+          },
+          "runAfter": {
+            "TableBodyPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d8d70a67-7fa9-4c22-8dce-f7d0779359ef"
+          }
+        },
+        "SplitSupplierPOST": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Supplier_x0028_PostSIPOC_x0029_']), ',')",
+          "runAfter": {
+            "SplitSupplier": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3b6bedb4-00d8-4110-b031-489084eee9dc"
+          }
+        },
+        "SplitInputPOST": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Input_x0028_POSTSIPOC_x0029_']), ',')",
+          "runAfter": {
+            "SplitInput": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "25c18e15-926e-42b4-8a38-093b379403b6"
+          }
+        },
+        "SplitCustomersPOST": {
+          "type": "Compose",
+          "inputs": "@split(concat(',', triggerOutputs()?['body/Customer_x0028_POSTSIPOC_x0029_']), ',')",
+          "runAfter": {
+            "SplitCustomers": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1a6e69ab-b169-4877-abad-ba6e57fe2492"
+          }
+        },
+        "ComposeMaxLengthPOST": {
+          "type": "Compose",
+          "inputs": "@max(length(outputs('SplitSupplierPOST')), length(outputs('SplitInputPOST')), length(outputs('SplitProcessPOST')), length(outputs('SplitOutputPOST')), length(outputs('SplitCustomersPOST')))",
+          "runAfter": {
+            "Applytoeach": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "58ff981b-5317-45d9-bec6-45adb1926605"
+          }
+        },
+        "ComposeRangePOST": {
+          "type": "Compose",
+          "inputs": "@range(0, int(outputs('ComposeMaxLengthPOST')))",
+          "runAfter": {
+            "ComposeMaxLengthPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "771e717d-f7f9-4ea6-8998-13542f002399"
+          }
+        },
+        "LoopIndexPOST": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LoopIndexPOST",
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          },
+          "runAfter": {
+            "ComposeRangePOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a508e269-4760-44a2-a4a6-94c00d16dcc8"
+          }
+        },
+        "TableBodyPOST": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "TableBodyPOST",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "LoopIndexPOST": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5bab42e1-1541-451c-bf39-672ad3bfa5eb"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

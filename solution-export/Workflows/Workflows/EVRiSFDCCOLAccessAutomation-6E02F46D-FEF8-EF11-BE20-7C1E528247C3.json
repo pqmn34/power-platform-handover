@@ -1,0 +1,303 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sftpwithssh-1": {
+        "api": {
+          "name": "shared_sftpwithssh"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsftpwithssh_e9fb8"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_f3d13"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 10,
+            "timeZone": "Central Europe Standard Time",
+            "startTime": "2024-07-18T07:59:30Z"
+          },
+          "metadata": {
+            "operationMetadataId": "dc0b54a0-6cf7-4cf4-a55e-de15ca43e14f"
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "8f81c853-50fe-41a0-a3ac-49ac10067d34",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('EVRi BYOD'[Account Name])),\n\t\t\tSEARCH(\"Evri\", 'EVRi BYOD'[Account Name], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('EVRi BYOD'[Customer Reference])),\n\t\t\tNOT('EVRi BYOD'[Customer Reference] IN {\"-\"})\n\t\t)\n\n\tVAR __DS0FilterTable3 = \n\t\tTREATAS({TRUE}, 'EVRi BYOD'[Exclude Letters in Customer Reference])\n\n\tVAR __DS0FilterTable4 = \n\t\tTREATAS({TRUE}, 'EVRi BYOD'[IsRecent])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'EVRi BYOD',\n\t\t\t\t'EVRi BYOD'[Case Number],\n\t\t\t\t'EVRi BYOD'[Account Name],\n\t\t\t\t'EVRi BYOD'[End User / Partner],\n\t\t\t\t'EVRi BYOD'[Subject],\n\t\t\t\t'EVRi BYOD'[Open],\n\t\t\t\t'EVRi BYOD'[Closed],\n\t\t\t\t'EVRi BYOD'[Case Owner],\n\t\t\t\t'EVRi BYOD'[Contact Name],\n\t\t\t\t'EVRi BYOD'[Customer Reference],\n\t\t\t\t'EVRi BYOD'[Resolution Code],\n\t\t\t\t'EVRi BYOD'[Status],\n\t\t\t\t'EVRi BYOD'[Case Owner Role],\n\t\t\t\t'EVRi BYOD'[Internal Reference],\n\t\t\t\t'EVRi BYOD'[Resolution Type],\n\t\t\t\t'EVRi BYOD'[DateTimeOpened],\n\t\t\t\t'EVRi BYOD'[IsRecent],\n\t\t\t\t'EVRi BYOD'[DateTimeClosed],\n\t\t\t\t'EVRi BYOD'[First Name],\n\t\t\t\t'EVRi BYOD'[Last Name],\n\t\t\t\t'EVRi BYOD'[Number],\n\t\t\t\t'EVRi BYOD'[test],\n\t\t\t\t'EVRi BYOD'[name1],\n\t\t\t\t'EVRi BYOD'[name2]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2),\n\t\t\tKEEPFILTERS(__DS0FilterTable3),\n\t\t\tKEEPFILTERS(__DS0FilterTable4)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'EVRi BYOD'[Case Number],\n\t'EVRi BYOD'[Account Name],\n\t'EVRi BYOD'[End User / Partner],\n\t'EVRi BYOD'[Subject],\n\t'EVRi BYOD'[Open],\n\t'EVRi BYOD'[Closed],\n\t'EVRi BYOD'[Case Owner],\n\t'EVRi BYOD'[Contact Name],\n\t'EVRi BYOD'[Customer Reference],\n\t'EVRi BYOD'[Resolution Code],\n\t'EVRi BYOD'[Status],\n\t'EVRi BYOD'[Case Owner Role],\n\t'EVRi BYOD'[Internal Reference],\n\t'EVRi BYOD'[Resolution Type],\n\t'EVRi BYOD'[DateTimeOpened],\n\t'EVRi BYOD'[IsRecent],\n\t'EVRi BYOD'[DateTimeClosed],\n\t'EVRi BYOD'[First Name],\n\t'EVRi BYOD'[Last Name],\n\t'EVRi BYOD'[Number],\n\t'EVRi BYOD'[test],\n\t'EVRi BYOD'[name1],\n\t'EVRi BYOD'[name2]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "Delay": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3d7cf63e-bcb2-4a73-8815-90ea5e3bd485"
+          }
+        },
+        "Refresh_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "8f81c853-50fe-41a0-a3ac-49ac10067d34"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "RefreshDataset",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "9a0a3459-41c6-4694-938c-553c5634f134"
+          }
+        },
+        "Select": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "caller_id.employee_number": "@concat('\"',item()?['EVRi BYOD[Customer Reference]'],'\"')",
+              "caller_id.first_name": "@item()?['EVRi BYOD[First Name]']",
+              "caller_id.last_name": "@item()?['EVRi BYOD[Last Name]']",
+              "number": "@concat('\"','SFDC', item()?['EVRi BYOD[Case Number]'],'\"')"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "42a7cae7-4aaf-42af-bee9-ae04352dee8b"
+          }
+        },
+        "Create_CSV_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "CSV"
+          },
+          "runAfter": {
+            "Create_HTML_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cbc59918-c4f4-4a00-8589-e1a6919e6e4c"
+          }
+        },
+        "Compose": {
+          "type": "Compose",
+          "inputs": "@body('Create_CSV_table')",
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7b42dbae-db4b-4605-afee-bf2ca9661be9"
+          }
+        },
+        "Compose_1": {
+          "type": "Compose",
+          "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FF0000; /* Red background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "83b312ce-deae-4cd3-8f4f-885f23fec6cb"
+          }
+        },
+        "Create_HTML_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "HTML"
+          },
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "31d030aa-c305-4875-8539-7278e51eee20"
+          }
+        },
+        "Create_file": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "folderPath": "/files",
+              "name": "hermes_couriers_needing_swap_@{formatDateTime(addHours(utcNow(), 1), 'yyyyMMddHHmmss')}.csv",
+              "body": "@outputs('Compose')",
+              "ReadFileMetadataFromServer": true
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sftpwithssh-1"
+            }
+          },
+          "runAfter": {
+            "Filter_array": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "dd06aa01-bd00-48f3-8fad-77869dd67592"
+          }
+        },
+        "Filter_array": {
+          "type": "Query",
+          "inputs": {
+            "from": "@body('List_files_in_folder')",
+            "where": "@endswith(item()?['name'], '.csv')"
+          },
+          "runAfter": {
+            "List_files_in_folder": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0ae0af5f-2bc5-4571-94a2-57edb006d0e6"
+          }
+        },
+        "List_files_in_folder": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "L2ZpbGVz"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+              "operationId": "ListFolder",
+              "connectionName": "shared_sftpwithssh-1"
+            }
+          },
+          "runAfter": {
+            "Compose_1": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "L2ZpbGVz": "/files",
+            "operationMetadataId": "e3398ff8-7eea-4968-a895-6a874a198a9b"
+          }
+        },
+        "Delay": {
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 90,
+              "unit": "Second"
+            }
+          },
+          "runAfter": {
+            "Refresh_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3da11f07-dd5c-4060-8a0f-5341b3bb8879"
+          }
+        },
+        "Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "StrategicInnovationandAutomation@Zebra.com",
+              "emailMessage/Subject": "EVRI BYOD: hermes_couriers_needing_swap_@{formatDateTime(addHours(utcNow(), 1), 'yyyyMMddHHmmss')} - FAILED",
+              "emailMessage/Body": "<p class=\"editor-paragraph\">Hi,</p><br><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FAILED</strong></b></p><br><p class=\"editor-paragraph\">Please find below the updated case list. It has been successfully uploaded to SFTP.</p><p class=\"editor-paragraph\">@{outputs('Compose_1')}</p><br><p class=\"editor-paragraph\">Regards</p><br><p class=\"editor-paragraph\">SIA</p>",
+              "emailMessage/From": "StrategicInnovationandAutomation@Zebra.com",
+              "emailMessage/Cc": "StrategicInnovationandAutomation@Zebra.com",
+              "emailMessage/Sensitivity": "abf32614-c88b-47f0-b0d4-813df96d97c7",
+              "emailMessage/Importance": "High"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365"
+            }
+          },
+          "runAfter": {
+            "Create_file": [
+              "FAILED"
+            ],
+            "List_files_in_folder": [
+              "FAILED"
+            ],
+            "Refresh_a_dataset": [
+              "FAILED"
+            ],
+            "Run_a_query_against_a_dataset": [
+              "FAILED"
+            ],
+            "Filter_array": [
+              "FAILED"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0d14b7b3-6bad-4073-a3ce-ecfebcd8bb65"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

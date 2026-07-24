@@ -1,0 +1,553 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 95,
+            "frequency": "Minute",
+            "timeZone": "UTC"
+          }
+        }
+      },
+      "actions": {
+        "Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "StrategicInnovationandAutomation@Zebra.com",
+              "emailMessage/Subject": "🛑ALERT: EVRI Monitor and Alert for All Datasets Flow FAILED",
+              "emailMessage/Body": "<b>🚨 ALERT: EVRI Monitor and Alert for All Datasets Flow FAILED</b>\n\n\n<b>Flow Name:</b> <code>@{workflow().name}</code>\n\n\n<b>Run ID:</b> <code>@{workflow().run.name}</code>\n\n\n<b>Time:</b> <code>@{utcNow()}</code>\n\n\n<b>Status:</b> One or more device processing scopes (ZebraTC75, BYOD, ET45, etc.) have <span style=\"color:red\"><b>FAILED</b></span> or timed out.\n\n\n<b>Action Needed:</b> Please check the Power Automate run log for more details.\n\n\n<i>This is an automated alert from Power Automate.</i>\n",
+              "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+              "emailMessage/Importance": "High"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365"
+            }
+          },
+          "runAfter": {
+            "Parent_Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "Parent_Scope": {
+          "type": "Scope",
+          "actions": {
+            "Scope_ZebraTC75": {
+              "type": "Scope",
+              "actions": {
+                "ZebraTC75": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                      "specification/query": "EVALUATE\nROW(\n    \"OnlineDevices\", 'Zebra DB'[OnlineDevices],\n    \"OnlinePercentage\", 'Zebra DB'[OnlinePercentage]\n)",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Compose_ZebraTC75": {
+                  "type": "Compose",
+                  "inputs": "@outputs('ZebraTC75')?['body']?['firstTableRows'][0]?['[OnlineDevices]']",
+                  "runAfter": {
+                    "ZebraTC75": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ComposeZebraTC75P": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(mul(outputs('ZebraTC75')?['body']?['firstTableRows'][0]?['[OnlinePercentage]'], 100), 'N1')",
+                  "runAfter": {
+                    "Compose_ZebraTC75": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_items_-_ZebraTC75": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                      "$filter": "Title eq 'ZebraTC75'"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ComposeZebraTC75P": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_BaselineZebraDevices": {
+                  "type": "Compose",
+                  "inputs": "@body('Get_items_-_ZebraTC75')?['value'][0]?['OnlineDevices']",
+                  "runAfter": {
+                    "Get_items_-_ZebraTC75": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_ZebraDropPercentage": {
+                  "type": "Compose",
+                  "inputs": "@if(greater(outputs('Compose_BaselineZebraDevices'), 0), \r\n   mul(div(sub(outputs('Compose_BaselineZebraDevices'), outputs('Compose_ZebraTC75')), outputs('Compose_BaselineZebraDevices')), 100), \r\n   0)",
+                  "runAfter": {
+                    "Compose_BaselineZebraDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_ZebraDropPercentageHTML": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(outputs('Compose_ZebraDropPercentage'), 'N1')",
+                  "runAfter": {
+                    "Compose_ZebraDropPercentage": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ComposeZebraEmailBody": {
+                  "type": "Compose",
+                  "inputs": "<html>\n  <body>\n    <p><strong>🛑 Alert:</strong> More than 15% of online production devices are offline in ZebraTC75.</p>\n    <p>Online Drop %: <span style=\"font-weight: bold; color: red;\">@{outputs('Compose_ZebraDropPercentageHTML')}%</span></p>\n    <p>Baseline Online Devices:<span style=\"font-weight: bold;\"> @{outputs('Compose_BaselineZebraDevices')}</span></p>\n    <p>Current Online Devices: <span style=\"font-weight: bold;\">@{outputs('Compose_ZebraTC75')}</span></p>\n  </body>\n</html>",
+                  "runAfter": {
+                    "Compose_ZebraDropPercentageHTML": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Condition_ZebraTC75": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@outputs('Compose_ZebraDropPercentage')",
+                          15
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Zebra_TC75": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "dms.support@zebra.com;GMSSBA@zebra.com",
+                          "emailMessage/Subject": "🛑 EVRI Alert:  More than 15% of Production Devices are offline in Zebra TC75 SOTI!",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">@{outputs('ComposeZebraEmailBody')}</p>",
+                          "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                          "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                          "emailMessage/Cc": "globaldmslevel2@zebra.com;michaela.pastourmatzi@zebra.com;darshindran.jeyakumar@zebra.com;elena.brusentsova@zebra.com;Jakub.Polak@zebra.com;GMSSBA@zebra.com",
+                          "emailMessage/Importance": "High"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "ComposeZebraEmailBody": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            },
+            "Scope_BYOD": {
+              "type": "Scope",
+              "actions": {
+                "BYOD": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                      "specification/query": "EVALUATE\nROW(\n    \"Online_BYOD_Devices\", 'Samsung and ET45 DB'[Online_BYOD_Devices],\n    \"Online_BYOD_Percentage\", 'Samsung and ET45 DB'[Online_BYOD_Percentage]\n)",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Compose_BYOD": {
+                  "type": "Compose",
+                  "inputs": "@outputs('BYOD')?['body']?['firstTableRows'][0]?['[Online_BYOD_Devices]']",
+                  "runAfter": {
+                    "BYOD": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ComposeBYODP": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(mul(outputs('BYOD')?['body']?['firstTableRows'][0]?['[Online_BYOD_Percentage]'],100), 'N1')",
+                  "runAfter": {
+                    "Compose_BYOD": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_items_-_BYOD": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                      "$filter": "Title eq 'BYOD'"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ComposeBYODP": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_BaselineBYODDevices": {
+                  "type": "Compose",
+                  "inputs": "@body('Get_items_-_BYOD')?['value'][0]?['OnlineDevices']",
+                  "runAfter": {
+                    "Get_items_-_BYOD": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_BYODDropPercentage": {
+                  "type": "Compose",
+                  "inputs": "@if(greater(outputs('Compose_BaselineBYODDevices'), 0), \n   mul(div(sub(outputs('Compose_BaselineBYODDevices'), outputs('Compose_BYOD')), outputs('Compose_BaselineBYODDevices')), 100), \n   0)",
+                  "runAfter": {
+                    "Compose_BaselineBYODDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_BYODDropPercentageHTML": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(outputs('Compose_BYODDropPercentage'), 'N1')",
+                  "runAfter": {
+                    "Compose_BYODDropPercentage": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_BYODEmailBody": {
+                  "type": "Compose",
+                  "inputs": "<html>\n  <body>\n<html>\n  <body>\n    <p><strong>🛑 Alert:</strong> More than 15% of online production devices are offline in BYOD.</p>\n    <p>Online Drop %: <span style=\"font-weight: bold; color: red;\">@{outputs('Compose_BYODDropPercentageHTML')}</span></p>\n    <p>Baseline Online Devices:<span style=\"font-weight: bold;\">@{outputs('Compose_BaselineBYODDevices')}</span></p>\n    <p>Current Online Devices: <span style=\"font-weight: bold;\">@{outputs('Compose_BYOD')}</span></p>\n  </body>\n</html>",
+                  "runAfter": {
+                    "Compose_BYODDropPercentageHTML": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Condition_BYOD": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@outputs('Compose_BYODDropPercentage')",
+                          15
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Zebra_BYOD": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "dms.support@zebra.com",
+                          "emailMessage/Subject": "🛑 EVRI Alert:  More than 15% of devices are offline in BYOD SOTI.",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">@{outputs('Compose_BYODEmailBody')}</p>",
+                          "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                          "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                          "emailMessage/Cc": "globaldmslevel2@zebra.com;michaela.pastourmatzi@zebra.com;darshindran.jeyakumar@zebra.com;elena.brusentsova@zebra.com;Jakub.Polak@zebra.com;GMSSBA@zebra.com",
+                          "emailMessage/Importance": "High"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Compose_BYODEmailBody": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Scope_ZebraTC75": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Scope_ET45": {
+              "type": "Scope",
+              "actions": {
+                "ET45": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                      "specification/query": "EVALUATE\nROW(\n    \"Online_ET45_Devices\", 'Devices ET45'[Online_ET45_Devices],\n    \"Online_ET45_Percentage\", 'Devices ET45'[Online_ET45_Percentage]\n)",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Compose_ET45": {
+                  "type": "Compose",
+                  "inputs": "@outputs('ET45')?['body']?['firstTableRows'][0]?['[Online_ET45_Devices]']",
+                  "runAfter": {
+                    "ET45": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ComposeET45P": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(mul(outputs('ET45')?['body']?['firstTableRows'][0]?['[Online_ET45_Percentage]'],100), 'N1')",
+                  "runAfter": {
+                    "Compose_ET45": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_items_-_ET45": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                      "$filter": "Title eq 'ET45'"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ComposeET45P": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_BaselineET45Devices": {
+                  "type": "Compose",
+                  "inputs": "@body('Get_items_-_ET45')?['value'][0]?['OnlineDevices']",
+                  "runAfter": {
+                    "Get_items_-_ET45": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_ET45DropPercentage": {
+                  "type": "Compose",
+                  "inputs": "@if(greater(outputs('Compose_BaselineET45Devices'), 0), \r\n   mul(div(sub(outputs('Compose_BaselineET45Devices'), outputs('Compose_ET45')), outputs('Compose_BaselineET45Devices')), 100), \r\n   0)",
+                  "runAfter": {
+                    "Compose_BaselineET45Devices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_ET45DropPercentageHTML": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(outputs('Compose_ET45DropPercentage'), 'N1')",
+                  "runAfter": {
+                    "Compose_ET45DropPercentage": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ComposeET45EmailBody": {
+                  "type": "Compose",
+                  "inputs": "<html>\n  <body>\n<p><strong>🛑 Alert:</strong> More than 25% of online production devices are offline in ET45.</p>\n<p>Online Drop %: <span style=\"font-weight: bold; color: red;\">@{outputs('Compose_ET45DropPercentageHTML')}</span></p>\n <p>Baseline Online Devices:<span style=\"font-weight: bold;\">@{outputs('Compose_BaselineET45Devices')}</span></p>\n    <p>Current Online Devices: <span style=\"font-weight: bold;\">@{outputs('Compose_ET45')}</span></p>\n  </body>\n</html>",
+                  "runAfter": {
+                    "Compose_ET45DropPercentageHTML": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Condition_ET45": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@outputs('Compose_ET45DropPercentage')",
+                          25
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Zebra_ET45": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "PQMN34@zebra.com",
+                          "emailMessage/Subject": "🛑 EVRI Alert:  More than 25% of devices are offline in Zebra ET45 SOTI.",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">@{outputs('ComposeET45EmailBody')}</p>",
+                          "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                          "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                          "emailMessage/Importance": "High"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "ComposeET45EmailBody": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Scope_BYOD": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Delay": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Refresh_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "RefreshDataset",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {}
+        },
+        "Delay": {
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 10,
+              "unit": "Minute"
+            }
+          },
+          "runAfter": {
+            "Refresh_a_dataset": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

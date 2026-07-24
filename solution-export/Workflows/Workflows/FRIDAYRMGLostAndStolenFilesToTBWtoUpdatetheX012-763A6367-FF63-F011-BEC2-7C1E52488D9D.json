@@ -1,0 +1,813 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "Central Europe Standard Time",
+            "schedule": {
+              "weekDays": [
+                "Friday"
+              ],
+              "hours": [
+                "17"
+              ],
+              "minutes": [
+                0
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Master_Scope": {
+          "type": "Scope",
+          "actions": {
+            "_PFW_WIPE_FILE": {
+              "type": "Scope",
+              "actions": {
+                "Compose_Expected_PFW_WIPE_Filename": {
+                  "type": "Compose",
+                  "inputs": "@concat('pfw_gt44days_post_moving_', outputs('Compose_Today''s_Date_String_(yyyyMMdd)'), '.csv')"
+                },
+                "Get_files_(properties_only)_PFWWIPE": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "table": "1333b483-ec3b-48e9-a400-71208aaa9db2",
+                      "$filter": "FileLeafRef eq '@{outputs('Compose_Expected_PFW_WIPE_Filename')}'",
+                      "folderPath": "/Shared Documents/RMG/LOST AND STOLEN/WIPE/PFWD/MOVED"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetFileItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_Expected_PFW_WIPE_Filename": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "paginationPolicy": {
+                      "minimumItemCount": 2000
+                    }
+                  }
+                },
+                "Filter_array_PFWWIPE": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Get_files_(properties_only)_PFWWIPE')?['body/value']",
+                    "where": "@equals(item()?['{FilenameWithExtension}'],outputs('Compose_Expected_PFW_WIPE_Filename'))"
+                  },
+                  "runAfter": {
+                    "Get_files_(properties_only)_PFWWIPE": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Condition_PFWWIPE": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('Filter_array_PFWWIPE'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "For_each": {
+                      "type": "Foreach",
+                      "foreach": "@body('Filter_array_PFWWIPE')",
+                      "actions": {
+                        "Get_file_content_PFW_WIPE_FILE": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                              "id": "@items('For_each')?['{Identifier}']",
+                              "inferContentType": true
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "GetFileContent",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Convert_CSV_Content_to_String_PFWWIPE": {
+                          "type": "Compose",
+                          "inputs": "@string(outputs('Get_file_content_PFW_WIPE_FILE')?['body'])",
+                          "runAfter": {
+                            "Get_file_content_PFW_WIPE_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Split_CSV_into_Lines_PFW_WIPE_FILE": {
+                          "type": "Compose",
+                          "inputs": "@split(outputs('Convert_CSV_Content_to_String_PFWWIPE'), '\\n')",
+                          "runAfter": {
+                            "Convert_CSV_Content_to_String_PFWWIPE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Condition_PFWWIPE_Available": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Split_CSV_into_Lines_PFW_WIPE_FILE'))",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Append_to_array_variable_PFWWIPE": {
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "AttachmentsArray",
+                                "value": {
+                                  "Name": "PFW_Moved_To_WIPE_@{formatDateTime(utcNow(), 'yyyyMMdd')}.csv",
+                                  "ContentBytes": "@body('Get_file_content_PFW_WIPE_FILE')"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          },
+                          "runAfter": {
+                            "Split_CSV_into_Lines_PFW_WIPE_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Compose": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "@length(body('Filter_array_PFWWIPE'))",
+                  "runAfter": {
+                    "Filter_array_PFWWIPE": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            },
+            "_PFW_LOST_FILE": {
+              "type": "Scope",
+              "actions": {
+                "Compose_Expected_PFW_LOST_Filename": {
+                  "type": "Compose",
+                  "inputs": "@concat('pfw_gt14days_post_moving_', outputs('Compose_Today''s_Date_String_(yyyyMMdd)'), '.csv')"
+                },
+                "Get_files_(properties_only)_PFWLOST": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "table": "1333b483-ec3b-48e9-a400-71208aaa9db2",
+                      "$filter": "FileLeafRef eq '@{outputs('Compose_Expected_PFW_LOST_Filename')}'",
+                      "folderPath": "/Shared Documents/RMG/LOST AND STOLEN/LOST/PFWD/MOVED"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetFileItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_Expected_PFW_LOST_Filename": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "paginationPolicy": {
+                      "minimumItemCount": 2000
+                    }
+                  }
+                },
+                "Condition_PFWLOST": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('Filter_array_PFWLOST'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "For_each_PFWLOST": {
+                      "type": "Foreach",
+                      "foreach": "@body('Filter_array_PFWLOST')",
+                      "actions": {
+                        "Get_file_content_PFW_LOST_FILE": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                              "id": "@items('For_each_PFWLOST')?['{Identifier}']",
+                              "inferContentType": true
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "GetFileContent",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Convert_CSV_Content_to_String_PFWLOST": {
+                          "type": "Compose",
+                          "inputs": "@string(outputs('Get_file_content_PFW_LOST_FILE')?['body'])",
+                          "runAfter": {
+                            "Get_file_content_PFW_LOST_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Split_CSV_into_Lines_PFW_LOST_FILE": {
+                          "type": "Compose",
+                          "inputs": "@split(outputs('Convert_CSV_Content_to_String_PFWLOST'), '\\n')",
+                          "runAfter": {
+                            "Convert_CSV_Content_to_String_PFWLOST": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Condition_PFWLOST_Available": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Split_CSV_into_Lines_PFW_LOST_FILE'))",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Append_to_array_variable_PFWLOST": {
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "AttachmentsArray",
+                                "value": {
+                                  "Name": "PFW_Moved_To_LOST_@{formatDateTime(utcNow(), 'yyyyMMdd')}.csv",
+                                  "ContentBytes": "@body('Get_file_content_PFW_LOST_FILE')"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          },
+                          "runAfter": {
+                            "Split_CSV_into_Lines_PFW_LOST_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Filter_array_PFWLOST": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Filter_array_PFWLOST": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Get_files_(properties_only)_PFWLOST')?['body/value']",
+                    "where": "@equals(item()?['{FilenameWithExtension}'],outputs('Compose_Expected_PFW_LOST_Filename'))"
+                  },
+                  "runAfter": {
+                    "Get_files_(properties_only)_PFWLOST": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "_PFW_WIPE_FILE": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "RML_LOST_FILE": {
+              "type": "Scope",
+              "actions": {
+                "Compose_Expected_RML_LOST_Filename": {
+                  "type": "Compose",
+                  "inputs": "@concat('rml_gt14days_post_moving_', outputs('Compose_Today''s_Date_String_(yyyyMMdd)'), '.csv')"
+                },
+                "Get_files_(properties_only)_RMLLOST": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "table": "1333b483-ec3b-48e9-a400-71208aaa9db2",
+                      "folderPath": "/Shared Documents/RMG/LOST AND STOLEN/LOST/RML/MOVED"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetFileItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_Expected_RML_LOST_Filename": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "paginationPolicy": {
+                      "minimumItemCount": 2000
+                    }
+                  }
+                },
+                "Condition_RMLLOST": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('Filter_array_RMLLOST'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "For_each_RMLLOST": {
+                      "type": "Foreach",
+                      "foreach": "@body('Filter_array_RMLLOST')",
+                      "actions": {
+                        "Get_file_content_RML_LOST_FILE": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                              "id": "@items('For_each_RMLLOST')?['{Identifier}']",
+                              "inferContentType": true
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "GetFileContent",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Convert_CSV_Content_to_String_RMLLOST": {
+                          "type": "Compose",
+                          "inputs": "@string(outputs('Get_file_content_RML_LOST_FILE')?['body'])",
+                          "runAfter": {
+                            "Get_file_content_RML_LOST_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Split_CSV_into_Lines_RML_LOST_FILE": {
+                          "type": "Compose",
+                          "inputs": "@split(outputs('Convert_CSV_Content_to_String_RMLLOST'), '\\n')",
+                          "runAfter": {
+                            "Convert_CSV_Content_to_String_RMLLOST": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Condition_RMLLOST_Available": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Split_CSV_into_Lines_RML_LOST_FILE'))",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Append_to_array_variable_RMLLOST": {
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "AttachmentsArray",
+                                "value": {
+                                  "Name": "RML_Moved_To_LOST_@{formatDateTime(utcNow(), 'yyyyMMdd')}.csv",
+                                  "ContentBytes": "@body('Get_file_content_RML_LOST_FILE')"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          },
+                          "runAfter": {
+                            "Split_CSV_into_Lines_RML_LOST_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Filter_array_RMLLOST": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Filter_array_RMLLOST": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Get_files_(properties_only)_RMLLOST')?['body/value']",
+                    "where": "@equals(item()?['{FilenameWithExtension}'],outputs('Compose_Expected_RML_LOST_Filename'))"
+                  },
+                  "runAfter": {
+                    "Get_files_(properties_only)_RMLLOST": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "_PFW_LOST_FILE": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "RML_WIPE_FILE": {
+              "type": "Scope",
+              "actions": {
+                "Compose_Expected_RML_WIPE_Filename": {
+                  "type": "Compose",
+                  "inputs": "@concat('rml_gt44days_post_moving_', outputs('Compose_Today''s_Date_String_(yyyyMMdd)'), '.csv')"
+                },
+                "Get_files_(properties_only)_RMLWIPE": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "table": "1333b483-ec3b-48e9-a400-71208aaa9db2",
+                      "folderPath": "/Shared Documents/RMG/LOST AND STOLEN/WIPE/RML/MOVED"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetFileItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_Expected_RML_WIPE_Filename": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "paginationPolicy": {
+                      "minimumItemCount": 2000
+                    }
+                  }
+                },
+                "Condition_RMLWIPE": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('Filter_array_RMLWIPE'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "For_each_RMLWIPE": {
+                      "type": "Foreach",
+                      "foreach": "@body('Filter_array_RMLWIPE')",
+                      "actions": {
+                        "Get_file_content_RML_WIPE_FILE": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                              "id": "@items('For_each_RMLWIPE')?['{Identifier}']",
+                              "inferContentType": true
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "GetFileContent",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Convert_CSV_Content_to_String_RMLWIPE": {
+                          "type": "Compose",
+                          "inputs": "@string(outputs('Get_file_content_RML_WIPE_FILE')?['body'])",
+                          "runAfter": {
+                            "Get_file_content_RML_WIPE_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Split_CSV_into_Lines_RML_WIPE_FILE": {
+                          "type": "Compose",
+                          "inputs": "@split(outputs('Convert_CSV_Content_to_String_RMLWIPE'), '\\n')",
+                          "runAfter": {
+                            "Convert_CSV_Content_to_String_RMLWIPE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Condition_RMLWIPE_Available": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Split_CSV_into_Lines_RML_WIPE_FILE'))",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Append_to_array_variable_RMLWIPE": {
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "AttachmentsArray",
+                                "value": {
+                                  "Name": "RML_Moved_To_WIPE_@{formatDateTime(utcNow(), 'yyyyMMdd')}.csv",
+                                  "ContentBytes": "@body('Get_file_content_RML_WIPE_FILE')"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          },
+                          "runAfter": {
+                            "Split_CSV_into_Lines_RML_WIPE_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Filter_array_RMLWIPE": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Filter_array_RMLWIPE": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Get_files_(properties_only)_RMLWIPE')?['body/value']",
+                    "where": "@equals(item()?['{FilenameWithExtension}'],outputs('Compose_Expected_RML_WIPE_Filename'))"
+                  },
+                  "runAfter": {
+                    "Get_files_(properties_only)_RMLWIPE": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "RML_LOST_FILE": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@trim(outputs('EmailTO'))",
+                  "emailMessage/Subject": "ACTION REQUIRED: Devices Offline > 14/44 days updated to Lost/Wipe",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Partner Team,</p><p class=\"editor-paragraph\">Attached are this week's reports for Lost and Wiped devices. Please update the asset register X012 with the data provided in these files.</p><ul class=\"editor-list-ul\"><li class=\"editor-listitem\"><b><strong class=\"editor-text-bold\">PFW_Moved_To_LOST.csv:</strong></b> Devices reported as Offline &gt; 14 Days (ParcelForce).</li><li class=\"editor-listitem\"><b><strong class=\"editor-text-bold\">RML_Moved_To_WIPE.csv:</strong></b> Devices reported as Offline &gt; 14 Days (Royal Mail).</li><li class=\"editor-listitem\"><b><strong class=\"editor-text-bold\">RML_Moved_To_LOST.csv:</strong></b> Devices confirmed as Offline &gt; 44 Days (Royal Mail).</li><li class=\"editor-listitem\"><b><strong class=\"editor-text-bold\">PFW_Moved_To_WIPE.csv:</strong></b> Devices confirmed as Offline &gt; 44 Days (ParcelForce).</li></ul><p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">A file will only be attached if there is data to report.</em></i></p><p class=\"editor-paragraph\">This is an automated notification. Should you have any questions regarding the data, please contact the <b><strong class=\"editor-text-bold\">Zebra PDA Service Desk L1</strong></b>.</p><br><p class=\"editor-paragraph\">Kind regards</p><br><p class=\"editor-paragraph\">Strategic Innovation and Automation</p>",
+                  "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@trim(outputs('EmailCC'))",
+                  "emailMessage/Attachments": "@variables('AttachmentsArray')",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "RML_WIPE_FILE": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "AttachmentsArray": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\">FAILED</strong></b> <b><strong class=\"editor-text-bold\">FLOW ALERT</strong></b>: RMG Lost And Stolen Files To TBW to Update the X012! 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨FLOW ALERT: RMG Lost And Stolen Files To TBW to Update the X012! 🚨\n",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 **FLOW ALERT: RMG Lost And Stolen Files To TBW to Update the X012!** 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Master_Scope": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Compose_Today's_Date_String_(yyyyMMdd)": {
+          "type": "Compose",
+          "inputs": "@formatDateTime(utcNow(), 'yyyyMMdd')",
+          "runAfter": {}
+        },
+        "AttachmentsArray": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AttachmentsArray",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\">PASSED</strong></b><b><strong class=\"editor-text-bold\"> </strong></b>FLOW ALERT: RMG Lost And Stolen Files To TBW to Update the X012!<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Master_Scope": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "matthew.kitchen@thebarcodewarehouse.co.uk;duty.managers@thebarcodewarehouse.co.uk;cshaw@zebra.com;ruben.silva@zebra.com;matthew.mcdonnell@zebra.com;jocasta.malinova@zebra.com;Kieran.Smith@thebarcodewarehouse.co.uk;AssetManagement@zebra.com;GMSSBA@zebra.com;PremierL1RMGServiceDesk@zebra.com;darshindran.jeyakumar@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "ZebraSupport@thebarcodewarehouse.co.uk\n",
+          "runAfter": {
+            "Compose_Today's_Date_String_(yyyyMMdd)": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

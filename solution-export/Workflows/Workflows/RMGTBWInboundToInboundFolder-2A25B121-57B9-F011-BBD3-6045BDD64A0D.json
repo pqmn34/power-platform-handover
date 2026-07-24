@@ -1,0 +1,128 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_new_email_arrives_in_a_shared_mailbox_(V2)": {
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "evaluatedRecurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "mailboxAddress": "StrategicInnovationandAutomation@Zebra.com",
+              "importance": "Any",
+              "hasAttachments": false,
+              "includeAttachments": true,
+              "subjectFilter": "RMG Last 24hrs Goods In",
+              "folderId": "Inbox"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SharedMailboxOnNewEmailV2"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "For_each": {
+          "foreach": "@triggerOutputs()?['body/attachments']",
+          "actions": {
+            "Condition": {
+              "actions": {
+                "Create_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/RMG/TBW/INBOUND ASSET LIST",
+                      "name": "@concat(triggerOutputs()?['body/subject'], '_', formatDateTime(utcNow(),'yyyy-MM-dd'), '.xlsx')",
+                      "body": "@base64ToBinary(item()?['contentBytes'])"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "CreateFile"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "endsWith": [
+                      "@outputs('Compose')",
+                      "x"
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "@item()?['name']"
+            }
+          },
+          "runAfter": {},
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

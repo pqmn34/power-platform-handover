@@ -1,0 +1,143 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "Central Europe Standard Time",
+            "schedule": {
+              "hours": [
+                "4"
+              ],
+              "minutes": [
+                10
+              ],
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('RMGX012_TBW'[Address])),\n\t\t\tSEARCH(\"TBW\", 'RMGX012_TBW'[Address], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0Core = \n\t\tSELECTCOLUMNS(\n\t\t\tKEEPFILTERS(\n\t\t\t\tFILTER(\n\t\t\t\t\tKEEPFILTERS(\n\t\t\t\t\t\tSUMMARIZECOLUMNS(\n\t\t\t\t\t\t\t'RMGX012_TBW'[Serial No.],\n\t\t\t\t\t\t\t'RMGX012_TBW'[Address],\n\t\t\t\t\t\t\t'RMG_42Gears_Standard'[Group Path],\n\t\t\t\t\t\t\t__DS0FilterTable,\n\t\t\t\t\t\t\t\"CountRowsRMGX012_TBW\", COUNTROWS('RMGX012_TBW'),\n\t\t\t\t\t\t\t\"CountRowsRMG_42Gears_Standard\", COUNTROWS('RMG_42Gears_Standard')\n\t\t\t\t\t\t)\n\t\t\t\t\t),\n\t\t\t\t\tOR(\n\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\tNOT(ISBLANK('RMGX012_TBW'[Serial No.])),\n\t\t\t\t\t\t\tNOT(ISBLANK('RMGX012_TBW'[Address]))\n\t\t\t\t\t\t),\n\t\t\t\t\t\tNOT(ISBLANK('RMG_42Gears_Standard'[Group Path]))\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t\"'RMGX012_TBW'[Serial No.]\", 'RMGX012_TBW'[Serial No.],\n\t\t\t\"'RMGX012_TBW'[Address]\", 'RMGX012_TBW'[Address],\n\t\t\t\"'RMG_42Gears_Standard'[Group Path]\", 'RMG_42Gears_Standard'[Group Path]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'RMGX012_TBW'[Serial No.],\n\t'RMGX012_TBW'[Address],\n\t'RMG_42Gears_Standard'[Group Path]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "1b1261ef-f8f7-498f-b4f8-e05debeeb9ed"
+          }
+        },
+        "Create_file": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "folderPath": "/Shared Documents/RMG/WORK IN PROGRESS IN X012",
+              "name": "rmg_work_in_progress_in_x012_@{formatDateTime(utcNow(), 'yyyyMMdd')}.csv",
+              "body": "@body('Create_CSV_table')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "Select": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Serial Number": "@item()?['RMGX012_TBW[Serial No.]']",
+              "Address": "@item()?['RMGX012_TBW[Address]']",
+              "Group Path": "@item()?['RMG_42Gears_Standard[Group Path]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_CSV_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "CSV"
+          },
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,755 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "schedule": {
+              "weekDays": [
+                "Friday"
+              ],
+              "hours": [
+                "14"
+              ],
+              "minutes": [
+                10
+              ]
+            },
+            "timeZone": "Central Europe Standard Time"
+          }
+        }
+      },
+      "actions": {
+        "Get_file_content_using_path": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "path": "@outputs('Compose_Wednesday_FilePath')",
+              "inferContentType": true
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetFileContentByPath",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {
+            "Compose_Wednesday_FilePath": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a22e3ae8-80f9-422a-b8ce-6f110c4775f6"
+          }
+        },
+        "Compose_Wednesday_FilePath": {
+          "type": "Compose",
+          "inputs": "@concat('/Shared Documents/RMG/LOST AND STOLEN/WIPE/PFWD/INFORMED/pfw_gt44days_before_moving_', formatDateTime(addDays(utcNow(), -2), 'yyyyMMdd'), '.csv')",
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "487503fd-2a20-40ea-b643-248a5d89244c"
+          }
+        },
+        "Decode_CSV_File_Content": {
+          "type": "Compose",
+          "inputs": "@base64ToString(body('Get_file_content_using_path')?['$content'])",
+          "runAfter": {
+            "Get_file_content_using_path": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3cdd3225-3e85-4171-861f-234614127136"
+          }
+        },
+        "Split_CSV_to_Lines": {
+          "type": "Compose",
+          "inputs": "@split(outputs('Decode_CSV_File_Content'), decodeUriComponent('%0A'))",
+          "runAfter": {
+            "Decode_CSV_File_Content": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a9fd2b1a-09cf-488e-a9ca-03aab7db05e6"
+          }
+        },
+        "Run_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Lost_Offline_GT44_Days_42Gears'[Device Name])),\n\t\t\tAND(\n\t\t\t\tNOT(SEARCH(\"PEAK\", 'Lost_Offline_GT44_Days_42Gears'[Device Name], 1, 0) >= 1),\n\t\t\t\tSEARCH(\"-D\", 'Lost_Offline_GT44_Days_42Gears'[Device Name], 1, 0) >= 1\n\t\t\t)\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days])\n\n\tVAR __DS0FilterTable3 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Lost_Offline_44Days_X012'[Address])),\n\t\t\tNOT(SEARCH(\"NDA\", 'Lost_Offline_44Days_X012'[Address], 1, 0) >= 1)\n\t\t)\n\n\tVAR __DS0FilterTable4 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Lost_Offline_44Days_X012'[Post Code])),\n\t\t\tNOT('Lost_Offline_44Days_X012'[Post Code] IN {\"\"})\n\t\t)\n\n\tVAR __DS0FilterTable5 = \n\t\tTREATAS({\"Home/Lost_Stolen/Lost\"}, 'Lost_Offline_GT44_Days_42Gears'[Group Path])\n\n\tVAR __DS0FilterTable6 = \n\t\tTREATAS({\"Offline\"}, 'PFWD_Offline_14Days_Redlands'[Offline > 14 Days])\n\n\tVAR __DS0FilterTable7 = \n\t\tTREATAS({\"Offline\"}, 'PFWD_Offline_14Days_Redlands'[Offline > 44 Days])\n\n\tVAR __DS0Core = \n\t\tSELECTCOLUMNS(\n\t\t\tKEEPFILTERS(\n\t\t\t\tFILTER(\n\t\t\t\t\tKEEPFILTERS(\n\t\t\t\t\t\tSUMMARIZECOLUMNS(\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Device Name],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[PEAK],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Serial Number],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[IMEI],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[ICCID],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Build],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Stock],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Status],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Asset No.],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Last Seen],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Address],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Post Code],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[DOBI],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[DeviceID],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Group Path],\n\t\t\t\t\t\t\t__DS0FilterTable,\n\t\t\t\t\t\t\t__DS0FilterTable2,\n\t\t\t\t\t\t\t__DS0FilterTable3,\n\t\t\t\t\t\t\t__DS0FilterTable4,\n\t\t\t\t\t\t\t__DS0FilterTable5,\n\t\t\t\t\t\t\t__DS0FilterTable6,\n\t\t\t\t\t\t\t__DS0FilterTable7,\n\t\t\t\t\t\t\t\"CountRowsLost_Offline_GT44_Days_42Gears\", COUNTROWS('Lost_Offline_GT44_Days_42Gears'),\n\t\t\t\t\t\t\t\"CountRowsLost_Offline_44Days_X012\", COUNTROWS('Lost_Offline_44Days_X012')\n\t\t\t\t\t\t)\n\t\t\t\t\t),\n\t\t\t\t\tOR(\n\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Device Name])),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[PEAK]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Serial Number]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[IMEI]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[ICCID]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Build]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Stock]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Status]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Asset No.]))\n\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Last Seen]))\n\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Address]))\n\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Post Code]))\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days]))\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[DOBI]))\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[DeviceID]))\n\t\t\t\t\t\t),\n\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Group Path]))\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Device Name]\", 'Lost_Offline_GT44_Days_42Gears'[Device Name],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[PEAK]\", 'Lost_Offline_GT44_Days_42Gears'[PEAK],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Serial Number]\", 'Lost_Offline_GT44_Days_42Gears'[Serial Number],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[IMEI]\", 'Lost_Offline_GT44_Days_42Gears'[IMEI],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days]\", 'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[ICCID]\", 'Lost_Offline_GT44_Days_42Gears'[ICCID],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Build]\", 'Lost_Offline_GT44_Days_42Gears'[Build],\n\t\t\t\"'Lost_Offline_44Days_X012'[Stock]\", 'Lost_Offline_44Days_X012'[Stock],\n\t\t\t\"'Lost_Offline_44Days_X012'[Status]\", 'Lost_Offline_44Days_X012'[Status],\n\t\t\t\"'Lost_Offline_44Days_X012'[Asset No.]\", 'Lost_Offline_44Days_X012'[Asset No.],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Last Seen]\", 'Lost_Offline_GT44_Days_42Gears'[Last Seen],\n\t\t\t\"'Lost_Offline_44Days_X012'[Address]\", 'Lost_Offline_44Days_X012'[Address],\n\t\t\t\"'Lost_Offline_44Days_X012'[Post Code]\", 'Lost_Offline_44Days_X012'[Post Code],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days]\", 'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days],\n\t\t\t\"'Lost_Offline_44Days_X012'[DOBI]\", 'Lost_Offline_44Days_X012'[DOBI],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[DeviceID]\", 'Lost_Offline_GT44_Days_42Gears'[DeviceID],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Group Path]\", 'Lost_Offline_GT44_Days_42Gears'[Group Path]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Lost_Offline_GT44_Days_42Gears'[Device Name],\n\t'Lost_Offline_GT44_Days_42Gears'[PEAK],\n\t'Lost_Offline_GT44_Days_42Gears'[Serial Number],\n\t'Lost_Offline_GT44_Days_42Gears'[IMEI],\n\t'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days],\n\t'Lost_Offline_GT44_Days_42Gears'[ICCID],\n\t'Lost_Offline_GT44_Days_42Gears'[Build],\n\t'Lost_Offline_44Days_X012'[Stock],\n\t'Lost_Offline_44Days_X012'[Status],\n\t'Lost_Offline_44Days_X012'[Asset No.],\n\t'Lost_Offline_GT44_Days_42Gears'[Last Seen],\n\t'Lost_Offline_44Days_X012'[Address],\n\t'Lost_Offline_44Days_X012'[Post Code],\n\t'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days],\n\t'Lost_Offline_44Days_X012'[DOBI],\n\t'Lost_Offline_GT44_Days_42Gears'[DeviceID],\n\t'Lost_Offline_GT44_Days_42Gears'[Group Path]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "ComposeWednesdayDeviceIDs": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1b1261ef-f8f7-498f-b4f8-e05debeeb9ed"
+          }
+        },
+        "SelectFridayDeviceIDs": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": "@item()?['Lost_Offline_GT44_Days_42Gears[DeviceID]']"
+          },
+          "runAfter": {
+            "Select_for_SharePoint": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1375db70-07cc-4e8a-ae0e-cab03552faab"
+          }
+        },
+        "SelectWednesdayDeviceIDs": {
+          "type": "Select",
+          "inputs": {
+            "from": "@body('Filter_array')",
+            "select": "@split(item(), ',')[0]"
+          },
+          "runAfter": {
+            "Filter_array": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8350ece0-b5db-43fb-ac1d-d1adcb4072c7"
+          }
+        },
+        "Filter_array": {
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('Split_CSV_to_Lines')",
+            "where": "@and(\n  not(equals(item(), '')),\n  not(startsWith(item(), 'DeviceID'))\n)"
+          },
+          "runAfter": {
+            "Split_CSV_to_Lines": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ComposeWednesdayDeviceIDs": {
+          "type": "Compose",
+          "inputs": "@outputs('SelectWednesdayDeviceIDs')?['body']",
+          "runAfter": {
+            "SelectWednesdayDeviceIDs": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ComposeFridayDeviceID": {
+          "type": "Compose",
+          "inputs": "@outputs('SelectFridayDeviceIDs')",
+          "runAfter": {
+            "SelectFridayDeviceIDs": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Apply_to_each": {
+          "type": "Foreach",
+          "foreach": "@outputs('ComposeWednesdayDeviceIDs')",
+          "actions": {
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "contains": [
+                      "@outputs('ComposeFridayDeviceID')?['body']",
+                      "@trim(item())"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Append_to_array_variable": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "MatchDeviceID",
+                    "value": "@trim(item())"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            }
+          },
+          "runAfter": {
+            "MatchDeviceID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "MatchDeviceID": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "MatchDeviceID",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "ComposeFridayDeviceID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Compose_DeviceIDsToMove": {
+          "type": "Compose",
+          "inputs": "@variables('MatchDeviceID')",
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secret_UID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_APIKEY": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secret_PSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_UID": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secret_APIKEY": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-api-key-movedevice-42g"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Create_CSV_table_for_moving_devices": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Filter_array_for_moving_devices": {
+          "type": "Query",
+          "inputs": {
+            "from": "@body('Filter_array')",
+            "where": "@contains(outputs('Compose_DeviceIDsToMove'),split(item(), ',')[0])"
+          },
+          "runAfter": {
+            "Compose_DeviceIDsToMove": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SelectForMovingDevices": {
+          "type": "Select",
+          "inputs": {
+            "from": "@body('Filter_array_for_moving_devices')",
+            "select": {
+              "DeviceID": "@split(item(), ',')[0]",
+              "Serial Number": "@split(item(), ',')[1]",
+              "Device Name": "@split(item(), ',')[2]",
+              "PEAK": "@split(item(), ',')[3]",
+              "IMEI": "@split(item(), ',')[4]",
+              "Offline > 44 Days": "@split(item(), ',')[5]",
+              "ICCID": "@split(item(), ',')[6]",
+              "DOBI": "@split(item(), ',')[7]",
+              "Group Path": "@split(item(), ',')[8]",
+              "Build": "@split(item(), ',')[9]",
+              "Stock": "@split(item(), ',')[10]",
+              "Status": "@split(item(), ',')[11]",
+              "Asset No.": "@split(item(), ',')[12]",
+              "Last Seen": "@split(item(), ',')[13]",
+              "Address": "@split(item(), ',')[14]",
+              "Post Code": "@replace(split(item(), ',')[15], '\\r', '')"
+            }
+          },
+          "runAfter": {
+            "Filter_array_for_moving_devices": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Run_a_query_against_a_dataset_get_WIPE_id": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('royal_mail_groups'[group_path])),\n\t\t\tSEARCH(\"Lost_Stolen/Wipe\", 'royal_mail_groups'[group_path], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'royal_mail_groups',\n\t\t\t\t'royal_mail_groups'[group_name],\n\t\t\t\t'royal_mail_groups'[group_path],\n\t\t\t\t'royal_mail_groups'[group_id]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "Get_secret_PSWD": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Compose_WIPE_ID": {
+          "type": "Compose",
+          "inputs": "@body('Run_a_query_against_a_dataset_get_WIPE_id')?['firstTableRows']?[0]?['royal_mail_groups[group_id]']",
+          "runAfter": {
+            "Run_a_query_against_a_dataset_get_WIPE_id": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SuccessList": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "SuccessList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "Compose_WIPE_ID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "FailureList": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "FailureList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "SuccessList": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "RMG PFW Device Offline > 44 Days Moved to WIPE",
+              "emailMessage/Body": "<p class=\"editor-paragraph\">Greetings!</p><br><p class=\"editor-paragraph\">Please find attached device offline &gt; 44 days that are moved to Wipe folder.</p><br><p class=\"editor-paragraph\">Regards</p><br><p class=\"editor-paragraph\">SIA</p>",
+              "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+              "emailMessage/Attachments": [
+                {
+                  "Name": "PFW_OfflineGT44Days_To_WIPE.csv",
+                  "ContentBytes": "@body('Create_CSV_table_for_moving_devices')"
+                }
+              ],
+              "emailMessage/Importance": "High"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365"
+            }
+          },
+          "runAfter": {
+            "Error_Handling": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_CSV_table_for_moving_devices": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('SelectForMovingDevices')",
+            "format": "CSV"
+          },
+          "runAfter": {
+            "SelectForMovingDevices": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Select_for_SharePoint": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "DeviceID": "@{item()?['Lost_Offline_GT44_Days_42Gears[DeviceID]']}",
+              "Serial Number": "@{item()?['Lost_Offline_GT44_Days_42Gears[Serial Number]']}",
+              "Device Name": "@{item()?['Lost_Offline_GT44_Days_42Gears[Device Name]']}",
+              "PEAK": "@{item()?['Lost_Offline_GT44_Days_42Gears[PEAK]']}",
+              "IMEI": "@{item()?['Lost_Offline_GT44_Days_42Gears[IMEI]']}",
+              "Offline > 44 Days": "@{item()?['Lost_Offline_GT44_Days_42Gears[Offline > 44 Days]']}",
+              "ICCID": "@{item()?['Lost_Offline_GT44_Days_42Gears[ICCID]']}",
+              "DOBI": "@{item()?['Lost_Offline_44Days_X012[DOBI]']}",
+              "Group Path": "@{item()?['Lost_Offline_GT44_Days_42Gears[Group Path]']}",
+              "Build": "@{item()?['Lost_Offline_GT44_Days_42Gears[Build]']}",
+              "Stock": "@{item()?['Lost_Offline_44Days_X012[Stock]']}",
+              "Status": "@{item()?['Lost_Offline_44Days_X012[Status]']}",
+              "Asset No.": "@{item()?['Lost_Offline_44Days_X012[Asset No.]']}",
+              "Last Seen": "@{if(equals(item()?['Lost_Offline_GT44_Days_42Gears[Last Seen]'], null), '', formatDateTime(convertTimeZone(item()?['Lost_Offline_GT44_Days_42Gears[Last Seen]'], 'UTC', 'Central Europe Standard Time'), 'dd/MM/yyyy'))}",
+              "Address": "@{item()?['Lost_Offline_44Days_X012[Address]']}",
+              "Post Code": "@{item()?['Lost_Offline_44Days_X012[Post Code]']}"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          }
+        },
+        "API_Execution": {
+          "type": "Scope",
+          "actions": {
+            "Apply_to_each_to_move_device": {
+              "type": "Foreach",
+              "foreach": "@variables('MatchDeviceID')",
+              "actions": {
+                "HTTP": {
+                  "type": "Http",
+                  "inputs": {
+                    "uri": "https://zebrams001.eu.suremdm.io/api/deviceassignment",
+                    "method": "PUT",
+                    "headers": {
+                      "ApiKey": "@{outputs('Get_secret_APIKEY')?['body/value']}",
+                      "Content-TypeContent-Type": "application/json"
+                    },
+                    "body": [
+                      {
+                        "DeviceId": "@{items('Apply_to_each_to_move_device')}",
+                        "GroupId": "@{outputs('Compose_WIPE_ID')}"
+                      }
+                    ],
+                    "authentication": {
+                      "type": "Basic",
+                      "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                      "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "SuccessCondition": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('HTTP')?['statusCode']",
+                          200
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "SuccessListArray": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "SuccessList",
+                        "value": "@item()"
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "FailureListArray": {
+                        "type": "AppendToArrayVariable",
+                        "inputs": {
+                          "name": "FailureList",
+                          "value": "@item()"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "HTTP": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            },
+            "ComposeSucess": {
+              "type": "Compose",
+              "inputs": "@variables('SuccessList')",
+              "runAfter": {
+                "Apply_to_each_to_move_device": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeFailure": {
+              "type": "Compose",
+              "inputs": "@variables('FailureList')",
+              "runAfter": {
+                "ComposeSucess": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/RMG/LOST AND STOLEN/WIPE/PFWD/MOVED",
+                  "name": "pfw_gt44days_post_moving_@{formatDateTime(utcNow(), 'yyyyMMdd')}.csv",
+                  "body": "@body('Create_CSV_table_for_moving_devices')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "ComposeFailure": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "FailureList": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨FAILED FLOW ALERT: RMG PFW Move Offline GT44 Devices to WIPE Folder🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><p class=\"editor-paragraph\">Failure: @{outputs('ComposeFailure')}</p><p class=\"editor-paragraph\">Success: @{outputs('ComposeSucess')}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨FAILED FLOW ALERT: RMG PFW Move Offline GT44 Devices to WIPE Folder🚨\n",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨FAILED FLOW ALERT: RMG PFW Move Offline GT44 Devices to WIPE Folder🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br>Failure: @{outputs('ComposeFailure')}<br>Success: @{outputs('ComposeSucess')}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "API_Execution": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "SUCCESS_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"color: rgb(255, 255, 255); background-color: rgb(65, 117, 5);\">🚨SUCCESS ALERT: RMG PFW Move Offline GT44 Devices to WIPE Folder🚨</strong></b><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><p class=\"editor-paragraph\">Failure: @{outputs('ComposeFailure')}</p><p class=\"editor-paragraph\">Success: @{outputs('ComposeSucess')}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "SUCCESS_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨SUCCESS ALERT: RMG PFW Move Offline GT44 Devices to WIPE Folder🚨\n",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"color: rgb(255, 255, 255); background-color: rgb(65, 117, 5);\">🚨SUCCESS ALERT: RMG PFW Move Offline GT44 Devices to WIPE Folder🚨<br></strong></b><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br>Failure: @{outputs('ComposeFailure')}<br>Success: @{outputs('ComposeSucess')}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel_1": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "API_Execution": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

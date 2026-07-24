@@ -1,0 +1,137 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "vStartRow": {
+          "runAfter": {},
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "vStartRow",
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "vBatchSize": {
+          "runAfter": {
+            "vStartRow": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "vBatchSize",
+                "type": "integer",
+                "value": 5000
+              }
+            ]
+          }
+        },
+        "vHasMore": {
+          "runAfter": {
+            "vBatchSize": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "vHasMore",
+                "type": "boolean",
+                "value": true
+              }
+            ]
+          }
+        },
+        "Do_until": {
+          "actions": {
+            "Compose_-_DAX_Query": {
+              "type": "Compose",
+              "inputs": "EVALUATE\nSELECTCOLUMNS(\n    FILTER(\n        'RMGX012_TBW',\n        'RMGX012_TBW'[Index] > @{variables('vStartRow')} &&\n        'RMGX012_TBW'[Index] <= @{add(variables('vStartRow'), variables('vBatchSize'))}\n    ),\n    \"Index\", 'RMGX012_TBW'[Index],\n    \"SerialNumber\", 'RMGX012_TBW'[Serial No.],\n    \"OS\", 'RMGX012_TBW'[OS Build Number],\n    \"DOBI\", 'RMGX012_TBW'[DOBI],\n    \"IMEI\", COALESCE('RMGX012_TBW'[IMEI], \"\"),\n    \"LastShippedDate\", 'RMGX012_TBW'[Last Shipped Date],\n    \"AssetNo\", 'RMGX012_TBW'[Asset No.]\n)\n"
+            },
+            "Run_a_query_against_a_dataset": {
+              "runAfter": {
+                "Compose_-_DAX_Query": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                  "specification/query": "@outputs('Compose_-_DAX_Query')",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "vHasMore": [
+              "Succeeded"
+            ]
+          },
+          "expression": "@equals(variables('vHasMore'),'false')",
+          "limit": {
+            "count": 60,
+            "timeout": "PT1H"
+          },
+          "type": "Until"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

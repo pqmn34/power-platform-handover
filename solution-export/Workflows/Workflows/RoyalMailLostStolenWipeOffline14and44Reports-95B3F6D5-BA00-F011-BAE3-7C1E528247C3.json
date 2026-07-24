@@ -1,0 +1,489 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "frequency": "Week",
+            "interval": 1,
+            "timeZone": "W. Europe Standard Time",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Wednesday",
+                "Friday"
+              ],
+              "hours": [
+                "10"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "94e84f5a-ec79-420e-ac27-0e16f862df3b"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "CountLostStolenWipe": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b6ce002a-c129-43e0-b6cb-efc145358b21",
+              "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"v_Lost_Stolen_Dist_Count_Offline___14_Days\", 'RMG_42Gears_Standard'[_Lost_Stolen Dist.Count Offline > 14 Days]\n\t)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "LostStolenWipeCount": {
+          "runAfter": {
+            "CountLostStolenWipe": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "TrigerLostStolenWipe",
+                "type": "float",
+                "value": "@outputs('CountLostStolenWipe')?['body/firstTableRows'][0]?['[v_Lost_Stolen_Dist_Count_Offline___14_Days]']"
+              }
+            ]
+          }
+        },
+        "Condition": {
+          "actions": {
+            "LostStolenWipe_Offline_more_than_14_days": {
+              "metadata": {
+                "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6ce002a-c129-43e0-b6cb-efc145358b21",
+                  "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    TREATAS(\n      {\"Home/Lost_Stolen/Lost\",\n        \"Home/Lost_Stolen/Stolen\",\n        \"Home/Lost_Stolen/Wipe\"},\n      'RMG_42Gears_Standard'[Group Path]\n    )\n\n  VAR __DS0FilterTable2 = \n    TREATAS({\"Offline\"}, 'RMG_42Gears_Standard'[Offline > 14 Days])\n\n  VAR __DS0Core = \n    CALCULATETABLE(\n      SUMMARIZE(\n        'RMG_42Gears_Standard',\n        'RMG_42Gears_Standard'[IMEI],\n        'RMG_42Gears_Standard'[Serial Number],\n        'RMG_42Gears_Standard'[Sure Lock Version],\n        'RMG_42Gears_Standard'[Last Time Stamp],\n        'RMG_42Gears_Standard'[ICCID],\n        'RMG_42Gears_Standard'[Device Name],\n        'RMG_42Gears_Standard'[Group Path],\n        'RMG_42Gears_Standard'[Offline > 14 Days],\n        'RMG_42Gears_Standard'[SW Build]\n      ),\n      KEEPFILTERS(__DS0FilterTable),\n      KEEPFILTERS(__DS0FilterTable2)\n    )\n\nEVALUATE\n  __DS0Core\n\nORDER BY\n  'RMG_42Gears_Standard'[IMEI],\n  'RMG_42Gears_Standard'[Serial Number],\n  'RMG_42Gears_Standard'[Sure Lock Version],\n  'RMG_42Gears_Standard'[Last Time Stamp],\n  'RMG_42Gears_Standard'[ICCID],\n  'RMG_42Gears_Standard'[Device Name],\n  'RMG_42Gears_Standard'[Group Path],\n  'RMG_42Gears_Standard'[Offline > 14 Days],\n  'RMG_42Gears_Standard'[SW Build]\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Select_LostStolenWipe_Offline_more_than_14_days": {
+              "runAfter": {
+                "LostStolenWipe_Offline_more_than_14_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4d5a7203-7ed1-4c9b-bdb3-bbea414cdca1"
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('LostStolenWipe_Offline_more_than_14_days')?['body/firstTableRows']",
+                "select": {
+                  "Device Name": "@item()?['RMG_42Gears_Standard[Device Name]']\r\n",
+                  "IMEI": "@item()?['RMG_42Gears_Standard[IMEI]']\r\n",
+                  "Serial Number": "@item()?['RMG_42Gears_Standard[Serial Number]']\r\n",
+                  "SW Build": "@item()?['RMG_42Gears_Standard[SW Build]']\r\n",
+                  "SureLock Version": "@item()?['RMG_42Gears_Standard[Sure Lock Version]']",
+                  "Last Seen": "@formatDateTime(item()?['RMG_42Gears_Standard[Last Time Stamp]'],'dd/MM/yyyy')",
+                  "Offline > 14 Days": "@item()?['RMG_42Gears_Standard[Offline > 14 Days]']",
+                  "Device Path": "@item()?['RMG_42Gears_Standard[Group Path]']",
+                  "ICCID": "@item()?['RMG_42Gears_Standard[ICCID]']"
+                }
+              }
+            },
+            "Create_CSV_table_LostStolenWipe_Offline_more_than_14_days": {
+              "runAfter": {
+                "Select_LostStolenWipe_Offline_more_than_14_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0049f9e6-4fca-4887-8d6b-dbb0d88a2992"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select_LostStolenWipe_Offline_more_than_14_days')",
+                "format": "CSV"
+              }
+            },
+            "LostStolenWipe_Offline_more_than_44_days": {
+              "runAfter": {
+                "Create_CSV_table_LostStolenWipe_Offline_more_than_14_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6ce002a-c129-43e0-b6cb-efc145358b21",
+                  "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    TREATAS(\n      {\"Home/Lost_Stolen/Lost\",\n        \"Home/Lost_Stolen/Stolen\",\n        \"Home/Lost_Stolen/Wipe\"},\n      'RMG_42Gears_Standard'[Group Path]\n    )\n\n  VAR __DS0FilterTable2 = \n    TREATAS({\"Offline\"}, 'RMG_42Gears_Standard'[Offline > 44 Days])\n\n  VAR __DS0Core = \n    CALCULATETABLE(\n      SUMMARIZE(\n        'RMG_42Gears_Standard',\n        'RMG_42Gears_Standard'[IMEI],\n        'RMG_42Gears_Standard'[Serial Number],\n        'RMG_42Gears_Standard'[Sure Lock Version],\n        'RMG_42Gears_Standard'[Last Time Stamp],\n        'RMG_42Gears_Standard'[ICCID],\n        'RMG_42Gears_Standard'[Device Name],\n        'RMG_42Gears_Standard'[Group Path],\n        'RMG_42Gears_Standard'[Offline > 44 Days],\n        'RMG_42Gears_Standard'[SW Build]\n      ),\n      KEEPFILTERS(__DS0FilterTable),\n      KEEPFILTERS(__DS0FilterTable2)\n    )\n\nEVALUATE\n  __DS0Core\n\nORDER BY\n  'RMG_42Gears_Standard'[IMEI],\n  'RMG_42Gears_Standard'[Serial Number],\n  'RMG_42Gears_Standard'[Sure Lock Version],\n  'RMG_42Gears_Standard'[Last Time Stamp],\n  'RMG_42Gears_Standard'[ICCID],\n  'RMG_42Gears_Standard'[Device Name],\n  'RMG_42Gears_Standard'[Group Path],\n  'RMG_42Gears_Standard'[Offline > 44 Days],\n  'RMG_42Gears_Standard'[SW Build]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Create_CSV_table_Select_LostStolenWipe_Offline_more_than_44_Days": {
+              "runAfter": {
+                "Select_LostStolenWipe_Offline_more_than_44_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f44ef2e2-5cb0-4bf6-a6b9-a33c040a5141"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select_LostStolenWipe_Offline_more_than_44_days')",
+                "format": "CSV"
+              }
+            },
+            "Send_an_email_(V2)": {
+              "runAfter": {
+                "Compose_2": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "731c9672-380e-40ab-a5b4-e73620d1374b"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "jocasta.malinova@zebra.com;dannylee@zebra.com;jose.miranda@zebra.com;matthew.mcdonnell@zebra.com;marketa.draxlova@zebra.com;GMSSBA@zebra.com",
+                  "emailMessage/Subject": "RMG: Lost / Stolen / Wipe Devices Report",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Greetings!</em></i><br><br>Please find attached reports of<br>• Offline &gt;14 days devices under Lost, Stolen and Wipe folders.<br>• Offline &lt;14 days devices under Lost, Stolen and Wipe folders.<br>• Offline &gt; 44 days devices under Lost, Stolen and Wipe folders.<br>@{outputs('Compose_2')}<br><br>If you have any queries or concerns, please email<br>StrategicInnovationandAutomation@zebra.com<br><br><br>Warm regards<br><br><br>Strategic Innovation and Automation</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "RMG_LostStolenWipe_Offline>14Days_@{formatDateTime(utcNow(),'ddMMyyyy','en-GB')}.csv",
+                      "ContentBytes": "@body('Create_CSV_table_LostStolenWipe_Offline_more_than_14_days')"
+                    },
+                    {
+                      "Name": "RMG_LostStolenWipe_Offline>44Days_@{formatDateTime(utcNow(),'ddMMyyyy','en-GB')}.csv",
+                      "ContentBytes": "@body('Create_CSV_table_Select_LostStolenWipe_Offline_more_than_44_Days')"
+                    },
+                    {
+                      "Name": "RMG_LostStolenWipe_Offline<14Days_@{formatDateTime(utcNow(),'ddMMyyyy','en-GB')}.csv",
+                      "ContentBytes": "@body('Create_CSV_table_LostStolenWipe_Offline_LESS_than_14_days')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Select_LostStolenWipe_Offline_more_than_44_days": {
+              "runAfter": {
+                "LostStolenWipe_Offline_more_than_44_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4d5a7203-7ed1-4c9b-bdb3-bbea414cdca1"
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('LostStolenWipe_Offline_more_than_44_days')?['body/firstTableRows']",
+                "select": {
+                  "Device Name": "@item()?['RMG_42Gears_Standard[Device Name]']\r\n",
+                  "IMEI": "@item()?['RMG_42Gears_Standard[IMEI]']\r\n",
+                  "Serial Number": "@item()?['RMG_42Gears_Standard[Serial Number]']\r\n",
+                  "SW Build": "@item()?['RMG_42Gears_Standard[SW Build]']\r\n",
+                  "SureLock Version": "@item()?['RMG_42Gears_Standard[Sure Lock Version]']\r\n",
+                  "Last Seen": "@formatDateTime(item()?['RMG_42Gears_Standard[Last Time Stamp]'],'dd/MM/yyyy')\r\n",
+                  "Offline > 44 Days": "@item()?['RMG_42Gears_Standard[Offline > 44 Days]']\r\n",
+                  "Device Path": "@item()?['RMG_42Gears_Standard[Group Path]']\r\n",
+                  "ICCID": "@item()?['RMG_42Gears_Standard[ICCID]']"
+                }
+              }
+            },
+            "Compose": {
+              "runAfter": {
+                "Create_CSV_table_Select_LostStolenWipe_Offline_more_than_44_Days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "12108a63-72bd-4e24-860a-2db730535b88"
+              },
+              "type": "Compose",
+              "inputs": "@variables('TrigerLostStolenWipe')"
+            },
+            "LostStolenWipe_Offline_LESS_than_14_days": {
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6ce002a-c129-43e0-b6cb-efc145358b21",
+                  "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    TREATAS(\n      {\"Home/Lost_Stolen/Lost\",\n        \"Home/Lost_Stolen/Stolen\",\n        \"Home/Lost_Stolen/Wipe\"},\n      'RMG_42Gears_Standard'[Group Path]\n    )\n\n  VAR __DS0FilterTable2 = \n    TREATAS({\"Active\"}, 'RMG_42Gears_Standard'[Offline > 14 Days])\n\n  VAR __DS0Core = \n    CALCULATETABLE(\n      SUMMARIZE(\n        'RMG_42Gears_Standard',\n        'RMG_42Gears_Standard'[IMEI],\n        'RMG_42Gears_Standard'[Serial Number],\n        'RMG_42Gears_Standard'[Sure Lock Version],\n        'RMG_42Gears_Standard'[Last Time Stamp],\n        'RMG_42Gears_Standard'[ICCID],\n        'RMG_42Gears_Standard'[Device Name],\n        'RMG_42Gears_Standard'[Group Path],\n        'RMG_42Gears_Standard'[Offline > 14 Days],\n        'RMG_42Gears_Standard'[SW Build]\n      ),\n      KEEPFILTERS(__DS0FilterTable),\n      KEEPFILTERS(__DS0FilterTable2)\n    )\n\nEVALUATE\n  __DS0Core\n\nORDER BY\n  'RMG_42Gears_Standard'[IMEI],\n  'RMG_42Gears_Standard'[Serial Number],\n  'RMG_42Gears_Standard'[Sure Lock Version],\n  'RMG_42Gears_Standard'[Last Time Stamp],\n  'RMG_42Gears_Standard'[ICCID],\n  'RMG_42Gears_Standard'[Device Name],\n  'RMG_42Gears_Standard'[Group Path],\n  'RMG_42Gears_Standard'[Offline > 14 Days],\n  'RMG_42Gears_Standard'[SW Build]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Select_LostStolenWipe_Offline_LESS_than_14_days": {
+              "runAfter": {
+                "LostStolenWipe_Offline_LESS_than_14_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4d5a7203-7ed1-4c9b-bdb3-bbea414cdca1"
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('LostStolenWipe_Offline_LESS_than_14_days')?['body/firstTableRows']",
+                "select": {
+                  "Device Name": "@item()?['RMG_42Gears_Standard[Device Name]']\r\n",
+                  "IMEI": "@item()?['RMG_42Gears_Standard[IMEI]']\r\n",
+                  "Serial Number": "@item()?['RMG_42Gears_Standard[Serial Number]']\r\n",
+                  "SW Build": "@item()?['RMG_42Gears_Standard[SW Build]']\r\n",
+                  "SureLock Version": "@item()?['RMG_42Gears_Standard[Sure Lock Version]']\r\n",
+                  "Last Seen": "@formatDateTime(item()?['RMG_42Gears_Standard[Last Time Stamp]'],'dd/MM/yyyy')\r\n",
+                  "Offline < 14 Days": "@item()?['RMG_42Gears_Standard[Offline > 14 Days]']\r\n",
+                  "Device Path": "@item()?['RMG_42Gears_Standard[Group Path]']\r\n",
+                  "ICCID": "@item()?['RMG_42Gears_Standard[ICCID]']"
+                }
+              }
+            },
+            "Create_CSV_table_LostStolenWipe_Offline_LESS_than_14_days": {
+              "runAfter": {
+                "Select_LostStolenWipe_Offline_LESS_than_14_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0049f9e6-4fca-4887-8d6b-dbb0d88a2992"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select_LostStolenWipe_Offline_LESS_than_14_days')",
+                "format": "CSV"
+              }
+            },
+            "LostStolenWipe_OverAll_Count_By_Status": {
+              "runAfter": {
+                "Create_CSV_table_LostStolenWipe_Offline_LESS_than_14_days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6ce002a-c129-43e0-b6cb-efc145358b21",
+                  "specification/query": "DEFINE\n  VAR __DS0FilterTable = \n    TREATAS(\n      {\"Home/Lost_Stolen/Lost\",\n        \"Home/Lost_Stolen/Stolen\",\n        \"Home/Lost_Stolen/Wipe\"},\n      'RMG_42Gears_Standard'[Group Path]\n    )\n\n  VAR __DS0Core = \n    SUMMARIZECOLUMNS(\n      ROLLUPADDISSUBTOTAL(\n        ROLLUPGROUP(\n          'RMG_42Gears_Standard'[Group Path],\n          'RMG_42Gears_Standard'[Connection Status],\n          'RMG_42Gears_Standard'[Offline > 14 Days]\n        ), \"IsGrandTotalRowTotal\"\n      ),\n      __DS0FilterTable,\n      \"v_Dist_Count_of_IMEI\", 'RMG_42Gears_Standard'[_Dist.Count of IMEI]\n    )\n\nEVALUATE\n  __DS0Core \n\nORDER BY\n  [IsGrandTotalRowTotal] DESC,\n  'RMG_42Gears_Standard'[Group Path],\n  'RMG_42Gears_Standard'[Connection Status],\n  'RMG_42Gears_Standard'[Offline > 14 Days]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Select_LostStolenWipe_OverAll_Count_By_Status": {
+              "runAfter": {
+                "LostStolenWipe_OverAll_Count_By_Status": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4d5a7203-7ed1-4c9b-bdb3-bbea414cdca1"
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('LostStolenWipe_OverAll_Count_By_Status')?['body/firstTableRows']",
+                "select": {
+                  "Device Path": "@item()?['RMG_42Gears_Standard[Group Path]']\r\n",
+                  "Count of IMEIs": "@item()?['[v_Dist_Count_of_IMEI]']",
+                  "Offline > 14 Days": "@item()?['RMG_42Gears_Standard[Offline > 14 Days]']\r\n",
+                  "Online Status": "@item()?['RMG_42Gears_Standard[Connection Status]']\r\n"
+                }
+              }
+            },
+            "Create_HTML_table": {
+              "runAfter": {
+                "Select_LostStolenWipe_OverAll_Count_By_Status": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "60dd4ce3-bba6-44d5-add1-69509c07cc6c"
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select_LostStolenWipe_OverAll_Count_By_Status')",
+                "format": "HTML"
+              }
+            },
+            "Compose_2": {
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "8271174b-ad5c-4f06-8c33-a709bc7c30bd"
+              },
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #e74c3c; /* Changed to red */\n        color: #ffffff;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}"
+            }
+          },
+          "runAfter": {
+            "LostStolenWipeCount": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "greaterOrEquals": [
+              "@variables('TrigerLostStolenWipe')",
+              1
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          },
+          "type": "If"
+        },
+        "LostStolenWipe_Offline_LESS_than_14_days_ICCID": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b6ce002a-c129-43e0-b6cb-efc145358b21",
+              "specification/query": "DEFINE\n  VAR __DS0FilterTable = \n    TREATAS(\n      {\"Home/Lost_Stolen/Lost\",\n        \"Home/Lost_Stolen/Stolen\",\n        \"Home/Lost_Stolen/Wipe\"},\n      'RMG_42Gears_Standard'[Group Path]\n    )\n\n  VAR __DS0FilterTable2 = \n    TREATAS({\"Active\"}, 'RMG_42Gears_Standard'[Offline > 14 Days])\n\n  VAR __DS0Core = \n    CALCULATETABLE(\n      DISTINCT('RMG_42Gears_Standard'[ICCID]),\n      KEEPFILTERS(__DS0FilterTable),\n      KEEPFILTERS(__DS0FilterTable2)\n    )\n\nEVALUATE\n  __DS0Core\n\nORDER BY\n  'RMG_42Gears_Standard'[ICCID]\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Initialize_variable": {
+          "runAfter": {
+            "LostStolenWipe_Offline_LESS_than_14_days_ICCID": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "fcecc5b8-8238-4df6-907b-f3bfeed62c3f"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LessThan14ICCID",
+                "type": "string",
+                "value": "@{outputs('LostStolenWipe_Offline_LESS_than_14_days_ICCID')?['body/firstTableRows']}"
+              }
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

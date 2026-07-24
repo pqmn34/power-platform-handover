@@ -1,0 +1,336 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "startTime": "2025-12-18T07:00:00Z",
+            "schedule": {
+              "weekDays": [
+                "Thursday"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: DHL SSIS-Duplicate Devices🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: DHL SSIS-Duplicate Devices🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: DHL SSIS-Duplicate Devices🚨<br><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "GlobalPremierSupport@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "Jakub.Polak@zebra.com;GMSSBA@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+                  "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Duplicate_SerialNumber',\n\t\t\t'Duplicate_SerialNumber'[DeviceName],\n\t\t\t'Duplicate_SerialNumber'[Model],\n\t\t\t'Duplicate_SerialNumber'[Path],\n\t\t\t'Duplicate_SerialNumber'[Site],\n\t\t\t'Duplicate_SerialNumber'[OfflineDays],\n\t\t\t'Duplicate_SerialNumber'[ExtendedOffline],\n\t\t\t'Duplicate_SerialNumber'[SerialNumber],\n\t\t\t'Duplicate_SerialNumber'[Device Offline>3Days],\n\t\t\t'Duplicate_SerialNumber'[Build],\n\t\t\t'Duplicate_SerialNumber'[Action],\n\t\t\t'Duplicate_SerialNumber'[Connection Status],\n\t\t\t'Duplicate_SerialNumber'[Mode],\n\t\t\t'Duplicate_SerialNumber'[DevId],\n\t\t\t'Duplicate_SerialNumber'[EnrollmentTime],\n\t\t\t'Duplicate_SerialNumber'[Last Seen]\n\t\t)\n\n\tVAR __DS0PrimaryWindowed = \n\t\tTOPN(\n\t\t\t501,\n\t\t\t__DS0Core,\n\t\t\t'Duplicate_SerialNumber'[DeviceName],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Model],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Path],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Site],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[OfflineDays],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[ExtendedOffline],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[SerialNumber],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Device Offline>3Days],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Build],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Action],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Connection Status],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Mode],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[DevId],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[EnrollmentTime],\n\t\t\t1,\n\t\t\t'Duplicate_SerialNumber'[Last Seen],\n\t\t\t1\n\t\t)\n\nEVALUATE\n\t__DS0PrimaryWindowed\n\nORDER BY\n\t'Duplicate_SerialNumber'[DeviceName],\n\t'Duplicate_SerialNumber'[Model],\n\t'Duplicate_SerialNumber'[Path],\n\t'Duplicate_SerialNumber'[Site],\n\t'Duplicate_SerialNumber'[OfflineDays],\n\t'Duplicate_SerialNumber'[ExtendedOffline],\n\t'Duplicate_SerialNumber'[SerialNumber],\n\t'Duplicate_SerialNumber'[Device Offline>3Days],\n\t'Duplicate_SerialNumber'[Build],\n\t'Duplicate_SerialNumber'[Action],\n\t'Duplicate_SerialNumber'[Connection Status],\n\t'Duplicate_SerialNumber'[Mode],\n\t'Duplicate_SerialNumber'[DevId],\n\t'Duplicate_SerialNumber'[EnrollmentTime],\n\t'Duplicate_SerialNumber'[Last Seen]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              }
+            },
+            "Select": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                "select": {
+                  "DeviceName": "@item()?['Duplicate_SerialNumber[DeviceName]']",
+                  "SerialNumber": "@string(item()?['Duplicate_SerialNumber[SerialNumber]'])",
+                  "Model": "@item()?['Duplicate_SerialNumber[Mode]']",
+                  "Path": "@item()?['Duplicate_SerialNumber[Path]']",
+                  "Site": "@item()?['Duplicate_SerialNumber[Site]']",
+                  "OfflineDays": "@item()?['Duplicate_SerialNumber[OfflineDays]']",
+                  "EnrollmentTime": "@item()?['Duplicate_SerialNumber[EnrollmentTime]']",
+                  "Last Seen": "@if(empty(item()?['Duplicate_SerialNumber[Last Seen]']), null, formatDateTime(item()?['Duplicate_SerialNumber[Last Seen]'], 'yyyy-MM-dd HH:mm:ss'))",
+                  "ExtendedOffline": "@item()?['Duplicate_SerialNumber[ExtendedOffline]']",
+                  "Device Offline>3Days": "@item()?['Duplicate_SerialNumber[Device Offline>3Days]']",
+                  "Build": "@item()?['Duplicate_SerialNumber[Build]']",
+                  "Action": "@item()?['Duplicate_SerialNumber[Action]']",
+                  "Connection Status": "@item()?['Duplicate_SerialNumber[Connection Status]']",
+                  "DevId": "@item()?['Duplicate_SerialNumber[DevId]']"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Select'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  }
+                },
+                "Set_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContent",
+                    "value": "@body('Create_CSV_table')"
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Set_variable": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                  "runAfter": {
+                    "Create_HTML_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Send_an_email_(V2)": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "@outputs('EmailTO')",
+                      "emailMessage/Subject": "EVRI Premium: Duplicate Devices",
+                      "emailMessage/Body": "<p class=\"editor-paragraph\">Dear team,<br><br>Please find attached the duplicate device report.</p><p class=\"editor-paragraph\">@{outputs('Compose')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                      "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                      "emailMessage/Cc": "@outputs('EmailCC')",
+                      "emailMessage/Attachments": [
+                        {
+                          "Name": "EVRIPremium_DuplicateDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                          "ContentBytes": "@variables('varCSVContent')"
+                        }
+                      ],
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Set_variable_1": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContent",
+                      "value": "DeviceName,\tSerialNumber,\tModel,\tPath,\tSite,\tOfflineDays,\tEnrollmentTime,\tLast Seen,\tExtendedOffline,\tDevice Offline>3Days,\tBuild,\tAction,Connection Status,\tModel,\tDevId"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Select": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/DHLPARCEL/SSIS_DUPLICATEDEVICES/@{formatDateTime(utcNow(),'YYYY')}/@{formatDateTime(utcNow(),'MMMM')}",
+                  "name": "DHL_DuplicateDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                  "body": "@variables('varCSVContent')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Condition": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,517 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams-1": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "schedule": {
+              "hours": [
+                "9",
+                "23"
+              ]
+            },
+            "timeZone": "UTC"
+          }
+        }
+      },
+      "actions": {
+        "HTTP": {
+          "type": "Http",
+          "inputs": {
+            "uri": "https://mlmsti45a.zebra.com/MobiControl/api/token",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Basic @{outputs('EncodeSecret')}",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "body": "grant_type=password&username=@{variables('UID')}&password=@{outputs('Get_secret-pswd')?['body/value']}"
+          },
+          "runAfter": {
+            "EncodeSecret": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "ClientIDSecret": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ClientIDSecret",
+                "type": "string",
+                "value": "@outputs('Get_secret_ClientIDSecret')?['body/value']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_secret-pswd": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "EncodeSecret": {
+          "type": "Compose",
+          "inputs": "@base64(variables('ClientIDSecret'))",
+          "runAfter": {
+            "UID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "UID": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "UID",
+                "type": "string",
+                "value": "prabhat.kumar@zebra.com"
+              }
+            ]
+          },
+          "runAfter": {
+            "ClientIDSecret": [
+              "Succeeded"
+            ]
+          }
+        },
+        "TokenParse_JSON": {
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "token_type": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "expires_in": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Delay": [
+              "Succeeded"
+            ]
+          }
+        },
+        "AccessToken": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AccessToken",
+                "type": "string",
+                "value": "@body('TokenParse_JSON')?['access_token']"
+              }
+            ]
+          },
+          "runAfter": {
+            "TokenParse_JSON": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secret_ClientIDSecret": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-xpo-sti-cidcs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {},
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Delay": {
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 10,
+              "unit": "Second"
+            }
+          },
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secretPSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-xpo-sti-cs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "HTTP_GetDeviceGroupPathID": {
+          "type": "Http",
+          "inputs": {
+            "uri": "https://mlmsti45a.zebra.com/MobiControl/api/devicegroups?filter=path:contains(Lost)",
+            "method": "GET",
+            "headers": {
+              "Authorization": "Bearer @{variables('AccessToken')}",
+              "Content-Type": "application/json"
+            }
+          },
+          "runAfter": {
+            "AccessToken": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "Parse_JSON": {
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP_GetDeviceGroupPathID')",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "Name": {
+                    "type": "string"
+                  },
+                  "Path": {
+                    "type": "string"
+                  },
+                  "Icon": {
+                    "type": "string"
+                  },
+                  "Kind": {
+                    "type": "string"
+                  },
+                  "ReferenceId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "Name",
+                  "Path",
+                  "Icon",
+                  "Kind",
+                  "ReferenceId"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "HTTP_GetDeviceGroupPathID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_items": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "XPO SOTI Devices Group ID"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItems",
+              "connectionName": "shared_sharepointonline-1"
+            }
+          },
+          "runAfter": {
+            "Parse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "paginationPolicy": {
+              "minimumItemCount": 2000
+            }
+          }
+        },
+        "For_each": {
+          "type": "Foreach",
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "Delete_item": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "dedaa80a-6bf0-4a82-9fbe-c3b9b64d71d3",
+                  "id": "@items('For_each')?['ID']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "DeleteItem",
+                  "connectionName": "shared_sharepointonline"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "concurrency": {
+              "repetitions": 50
+            }
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Apply_to_each": {
+              "type": "Foreach",
+              "foreach": "@body('Parse_JSON')",
+              "actions": {
+                "Create_item": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "dedaa80a-6bf0-4a82-9fbe-c3b9b64d71d3",
+                      "item/Title": "\"XPO Zebra Devices Group Path ID\"",
+                      "item/Name": "@items('Apply_to_each')?['Name']",
+                      "item/Path": "@items('Apply_to_each')?['Path']",
+                      "item/ReferenceID": "@items('Apply_to_each')?['ReferenceId']",
+                      "item/Icon": "@items('Apply_to_each')?['Icon']",
+                      "item/Kind": "@items('Apply_to_each')?['Kind']",
+                      "item/FilterPath": "@items('Apply_to_each')?['FilterPath']",
+                      "item/{ContentType}/Id": "0x010029329DA6AAAF964FAC45EAEF0D25266500951AEFDA23DCAB408FDF863686994BC2"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "PostItem",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Delay_1": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Delay_1": {
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 10,
+              "unit": "Minute"
+            }
+          },
+          "runAfter": {
+            "For_each": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">&lt;div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\"&gt;<br>    &lt;div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\"&gt;<br>        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}<br>    &lt;/div&gt;<br>    &lt;div style=\"padding: 15px; background-color: #f9f9f9;\"&gt;<br>        &lt;table style=\"width: 100%; border-collapse: collapse;\"&gt;<br>            &lt;tbody&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #666; width: 30%;\"&gt;&lt;strong&gt;Flow Name:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0;\"&gt;@{workflow()?['tags']['flowDisplayName']}&lt;/td&gt;<br>                &lt;/tr&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #666;\"&gt;&lt;strong&gt;Failed Action:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0;\"&gt;@{body('Filter_array')?[0]?['name']}&lt;/td&gt;<br>                &lt;/tr&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #d83b01;\"&gt;&lt;strong&gt;Error Message:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #d83b01;\"&gt;&lt;b&gt;&lt;u&gt;&lt;/u&gt;&lt;/b&gt;&lt;/td&gt;<br>                &lt;/tr&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #666;\"&gt;&lt;strong&gt;Run ID:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\"&gt;@{workflow()?['run']?['name']}&lt;/td&gt;<br>                &lt;/tr&gt;<br>            &lt;/tbody&gt;<br>        &lt;/table&gt;<br>        &lt;br&gt;<br>        &lt;a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\"&gt;<br>           View Failed Run<br>        &lt;/a&gt;<br>    &lt;/div&gt;<br>&lt;/div&gt;</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams-1"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69d47855-5ed9-43dc-a4af-b9ea6ec2ff02"
+          }
+        },
+        "Get_secret-pswd": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "@'xpo-sti-pswd'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secretPSWD": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

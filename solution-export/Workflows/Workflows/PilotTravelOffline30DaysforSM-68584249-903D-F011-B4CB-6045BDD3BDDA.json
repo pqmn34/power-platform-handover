@@ -1,0 +1,363 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Week",
+            "interval": 1,
+            "timeZone": "W. Europe Standard Time",
+            "schedule": {
+              "weekDays": [
+                "Monday"
+              ],
+              "hours": [
+                "10"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "94e84f5a-ec79-420e-ac27-0e16f862df3b"
+          }
+        }
+      },
+      "actions": {
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@variables('Offline30days')",
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "actions": {},
+              "else": {
+                "actions": {
+                  "Pilot_Travel_Offline_More_Than_30_Days": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                        "datasetid": "6c176de8-1bfb-4322-a464-f749fb13f45d",
+                        "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Offline_Devices_Table',\n\t\t\t'Offline_Devices_Table'[SerialNumber],\n\t\t\t'Offline_Devices_Table'[IMEI],\n\t\t\t'Offline_Devices_Table'[Country],\n\t\t\t'Offline_Devices_Table'[Site],\n\t\t\t'Offline_Devices_Table'[SiteCode],\n\t\t\t'Offline_Devices_Table'[LastSeen],\n\t\t\t'Offline_Devices_Table'[Offline>30 Days],\n\t\t\t'Offline_Devices_Table'[ConnectionStatus],\n\t\t\t'Offline_Devices_Table'[OSVersion]\n\t\t)\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'Offline_Devices_Table'[SerialNumber],\n\t'Offline_Devices_Table'[IMEI],\n\t'Offline_Devices_Table'[Country],\n\t'Offline_Devices_Table'[Site],\n\t'Offline_Devices_Table'[SiteCode],\n\t'Offline_Devices_Table'[LastSeen],\n\t'Offline_Devices_Table'[Offline>30 Days],\n\t'Offline_Devices_Table'[ConnectionStatus],\n\t'Offline_Devices_Table'[OSVersion]\n",
+                        "specification/serializerSettings/includeNulls": false
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                        "operationId": "ExecuteDatasetQuery",
+                        "connectionName": "shared_powerbi"
+                      }
+                    },
+                    "metadata": {
+                      "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                    }
+                  },
+                  "Select_PT_Offline_More_Than_30_Days": {
+                    "type": "Select",
+                    "inputs": {
+                      "from": "@outputs('Pilot_Travel_Offline_More_Than_30_Days')?['body/firstTableRows']",
+                      "select": {
+                        "Serial Number": "@item()?['Offline_Devices_Table[SerialNumber]']",
+                        "IMEI": "@item()?['Offline_Devices_Table[IMEI]']",
+                        "Country": "@item()?['Offline_Devices_Table[Country]']",
+                        "Site": "@item()?['Offline_Devices_Table[Site]']",
+                        "Site Code": "@item()?['Offline_Devices_Table[SiteCode]']",
+                        "Last Seen": "@formatDateTime(item()?['Offline_Devices_Table[LastSeen]'],'MM/dd/yyyy', 'en-US')",
+                        "Offline > 30 Days": "@item()?['Offline_Devices_Table[Offline>30 Days]']",
+                        "Connection Status": "@item()?['Offline_Devices_Table[ConnectionStatus]']",
+                        "OS": "@item()?['Offline_Devices_Table[OSVersion]']"
+                      }
+                    },
+                    "runAfter": {
+                      "Pilot_Travel_Offline_More_Than_30_Days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                    }
+                  },
+                  "Create_CSV_table": {
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('Select_PT_Offline_More_Than_30_Days')",
+                      "format": "CSV"
+                    },
+                    "runAfter": {
+                      "Compose": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                    }
+                  },
+                  "Condition_2": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "equals": [
+                            "@variables('Offline30days')",
+                            ""
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Send_an_email_(V2)-copy": {
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "emailMessage/To": "nicole.beckendorf@zebra.com",
+                            "emailMessage/Subject": "PT: NO Device Offline > 30 Days Devices",
+                            "emailMessage/Body": "<p class=\"editor-paragraph\">Greetings!</p><p class=\"editor-paragraph\">Please find attached reports of</p><p class=\"editor-paragraph\">@{outputs('Compose')}</p><br><p class=\"editor-paragraph\">If you have any questions or concerns, please email pqmn34@zebra.com.</p><br><p class=\"editor-paragraph\">Warm regards</p><br><p class=\"editor-paragraph\">SIA</p>",
+                            "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                            "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                            "emailMessage/Bcc": "PQMN34@zebra.com",
+                            "emailMessage/Attachments": [
+                              {
+                                "Name": "PT_Offline_MoreThan_30Days.csv",
+                                "ContentBytes": "@body('Create_CSV_table')"
+                              }
+                            ],
+                            "emailMessage/Importance": "Normal"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                            "operationId": "SendEmailV2",
+                            "connectionName": "shared_office365"
+                          }
+                        },
+                        "metadata": {
+                          "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Send_an_email_(V2)": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "emailMessage/To": "nicole.beckendorf@zebra.com",
+                              "emailMessage/Subject": "PT: Production Pilot Travel Offline > 30 Days Devices",
+                              "emailMessage/Body": "<p class=\"editor-paragraph\">Greetings!</p><p class=\"editor-paragraph\">Please find attached reports of</p><p class=\"editor-paragraph\">@{outputs('Compose')}</p><br><p class=\"editor-paragraph\">If you have any questions or concerns, please email pqmn34@zebra.com.</p><br><p class=\"editor-paragraph\">Warm regards</p><br><p class=\"editor-paragraph\">SIA</p>",
+                              "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                              "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                              "emailMessage/Cc": "GMSSBA@zebra.com;globaldmslevel2@zebra.com;DMSDeliveryLeads@zebra.com",
+                              "emailMessage/Attachments": [
+                                {
+                                  "Name": "PT_Offline_MoreThan_30Days.csv",
+                                  "ContentBytes": "@body('Create_CSV_table')"
+                                }
+                              ],
+                              "emailMessage/Importance": "Normal"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                              "operationId": "SendEmailV2",
+                              "connectionName": "shared_office365"
+                            }
+                          },
+                          "metadata": {
+                            "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Create_CSV_table": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "17ba7cd5-11ce-4546-8f6a-14785cedaad7"
+                    }
+                  },
+                  "Create_HTML_table": {
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('Select_PT_Offline_More_Than_30_Days')",
+                      "format": "HTML"
+                    },
+                    "runAfter": {
+                      "Select_PT_Offline_More_Than_30_Days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                    }
+                  },
+                  "Compose": {
+                    "type": "Compose",
+                    "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                    "runAfter": {
+                      "Create_HTML_table": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                    }
+                  }
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+              }
+            }
+          },
+          "runAfter": {
+            "Offlinemorethan30days": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n    <div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n    </div>\n    <div style=\"padding: 15px; background-color: #f9f9f9;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tbody>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('Error_Message')}</u></b></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n                    <td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n                </tr>\n            </tbody>\n        </table>\n        <br>\n        <a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\n           View Failed Run\n        </a>\n    </div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\r\n    first(body('Filter_Array'))?['body']?['error']?['message'],\r\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\r\n    first(body('Filter_Array'))?['error']?['message'],\r\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "PTCountMoreThan30DaysOffline": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "6c176de8-1bfb-4322-a464-f749fb13f45d",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"Offline___30Days\", 'pilot_travel_standard'[SN]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          }
+        },
+        "Offlinemorethan30days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Offline30days",
+                "type": "float",
+                "value": "@outputs('PTCountMoreThan30DaysOffline')?['body/firstTableRows'][0]?['[Offline___30Days]']"
+              }
+            ]
+          },
+          "runAfter": {
+            "PTCountMoreThan30DaysOffline": [
+              "SUCCEEDED"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

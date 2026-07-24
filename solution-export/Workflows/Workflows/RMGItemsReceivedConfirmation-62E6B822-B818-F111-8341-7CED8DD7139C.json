@@ -1,0 +1,499 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_microsoftforms": {
+        "api": {
+          "name": "shared_microsoftforms"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedmicrosoftforms_06bec"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_excelonlinebusiness-1": {
+        "api": {
+          "name": "shared_excelonlinebusiness"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedexcelonlinebusiness_d7bcb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams-1": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_new_response_is_submitted": {
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "form_id": "CiY9TUCcBkONrA1kcXA57JtRft8wGGRDkSUQWF_I7nhUMVBNTEZEN0JQQ0Q1VFZEWTc5Tlg3NEs2UC4u"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+              "operationId": "CreateFormWebhook",
+              "connectionName": "shared_microsoftforms"
+            }
+          },
+          "splitOn": "@triggerOutputs()?['body/value']"
+        }
+      },
+      "actions": {
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Get_response_details": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "form_id": "CiY9TUCcBkONrA1kcXA57JtRft8wGGRDkSUQWF_I7nhUMVBNTEZEN0JQQ0Q1VFZEWTc5Tlg3NEs2UC4u",
+                  "response_id": "@triggerOutputs()?['body/resourceData/responseId']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+                  "operationId": "GetFormResponseById",
+                  "connectionName": "shared_microsoftforms"
+                }
+              }
+            },
+            "Combined_Site": {
+              "type": "Compose",
+              "inputs": "@{outputs('Get_response_details')?['body/r37fcd4ec6791491fb69ca85a5fa05f24']}@{outputs('Get_response_details')?['body/r77d1588e5a674e51818bac9852c74b11']}@{outputs('Get_response_details')?['body/rac681adee6824e5cbc5284864372bc96']}@{outputs('Get_response_details')?['body/re1b98277de084640981fbde0c16bb4d3']}@{outputs('Get_response_details')?['body/r904dd7b026844d3c9ec886ec5e8c0eb0']}@{outputs('Get_response_details')?['body/r83377c393876447ab32e8ecd4db40f14']}@{outputs('Get_response_details')?['body/r91cadc8ca5e74eca8a14acf3d6577568']}@{outputs('Get_response_details')?['body/r19326559cab746018b32d37812d83594']}@{outputs('Get_response_details')?['body/re648094d300b4ebb82aaf903ba3cb054']}@{outputs('Get_response_details')?['body/rcb3f33d75edc4280ab934dc7b9fc846d']}@{outputs('Get_response_details')?['body/re7ec7aa1b81c4834a6b95b5707a581d6']}@{outputs('Get_response_details')?['body/r764bc6aceb1a4b1ea62ed1f6a8d0bcf8']}@{outputs('Get_response_details')?['body/r46f9ed7eae3943748194a90f63b7ca5f']}",
+              "runAfter": {
+                "Get_response_details": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_item": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "8f709111-c83b-473c-9aa9-d534c4dfbc13",
+                  "item/Title": "@trim(split(outputs('Combined_Site'), ' - ')[0])",
+                  "item/DOBI": "@trim(split(outputs('Combined_Site'), ' - ')[1])",
+                  "item/SitePostcode": "@outputs('Get_response_details')?['body/r72c60f7ca9064c6a8f2d8393974c9562']",
+                  "item/DateofFitting": "@outputs('Get_response_details')?['body/r3e33ea8b9e6b4bda8e03e58ff6f4df33']",
+                  "item/ContactPerson": "@outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']",
+                  "item/AdditionalComment": "@outputs('Get_response_details')?['body/rad07eeadf18b47259984571e70b695e5']",
+                  "item/Confirmation": "@outputs('Get_response_details')?['body/rf0adc018b0a44ecb896cd3dc2db8e108']",
+                  "item/SubmitterEmail": "@outputs('Get_response_details')?['body/r6db815d0450d454ea487717f1d64c3a6']",
+                  "item/{ContentType}/Id": "0x01005B0D2A05C3778F488040A92B7595DEB900DC16C3394EAD274A9194A5D7F983887B"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "PostItem",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Compose_Clean_Site": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeEmail": {
+              "type": "Compose",
+              "inputs": "@trim(coalesce(outputs('Get_response_details')?['body/r6db815d0450d454ea487717f1d64c3a6'], ''))",
+              "runAfter": {
+                "Create_item": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ScopeUpdateTracker": {
+              "type": "Scope",
+              "actions": {
+                "ConditionHaveYouDispose": {
+                  "type": "If",
+                  "expression": {
+                    "or": [
+                      {
+                        "equals": [
+                          "@outputs('Get_response_details')?['body/rf0adc018b0a44ecb896cd3dc2db8e108']",
+                          "Yes"
+                        ]
+                      },
+                      {
+                        "equals": [
+                          "@outputs('Get_response_details')?['body/rf0adc018b0a44ecb896cd3dc2db8e108']",
+                          "@'No'"
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "List_rows_present_in_a_table": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "source": "groups/d2042984-1b23-4e4d-87c6-fc7947aae44a",
+                          "drive": "b!wqvpS4o_IEKEQjpzvyYQTlYHOahB3exAoyd3Tqkonst8L26-Msh_TYuNfd1yiv0m",
+                          "file": "/Exoskeleton Replacement Project - 2025/RMG Exoskeleton Refresh_Tracker.xlsx",
+                          "table": "{02E3B98E-C9FE-45B6-9062-642F9919593E}",
+                          "$filter": "Site eq '@{outputs('Compose_Clean_Site')}'"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                          "operationId": "GetItems",
+                          "connectionName": "shared_excelonlinebusiness-1"
+                        }
+                      }
+                    },
+                    "Condition": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "greater": [
+                              "@length(outputs('List_rows_present_in_a_table')?['body/value'])",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "For_each": {
+                          "type": "Foreach",
+                          "foreach": "@outputs('List_rows_present_in_a_table')?['body/value']",
+                          "actions": {
+                            "Update_a_row": {
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "source": "groups/d2042984-1b23-4e4d-87c6-fc7947aae44a",
+                                  "drive": "b!wqvpS4o_IEKEQjpzvyYQTlYHOahB3exAoyd3Tqkonst8L26-Msh_TYuNfd1yiv0m",
+                                  "file": "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ",
+                                  "table": "Tracker",
+                                  "idColumn": "Site",
+                                  "id": "@trim(item()?['Site'])",
+                                  "item/RMG - Receipt Confirmed": "@true",
+                                  "item/Receipt Confirmed Date": "@formatDateTime(triggerBody()?['eventTime'], 'yyyy-MM-dd')"
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                                  "operationId": "PatchItem",
+                                  "connectionName": "shared_excelonlinebusiness-1"
+                                }
+                              },
+                              "metadata": {
+                                "01IIGTMPGULTE6IS7O7BC2MLOCWXJSFWTC": "/Projects &  WPR/2025/RMG Exoskeleton Replacement 001/Exo Refresh - Tracker_v3.xlsx",
+                                "tableId": "Tracker",
+                                "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ": "/Exoskeleton Replacement Project - 2025/RMG Exoskeleton Refresh_Tracker.xlsx"
+                              }
+                            },
+                            "OutputMatchedSite": {
+                              "type": "Compose",
+                              "inputs": "@trim(split(outputs('Combined_Site'), ' - ')[0])",
+                              "runAfter": {
+                                "Update_a_row": [
+                                  "Succeeded"
+                                ]
+                              }
+                            },
+                            "MatchedSitesAppend_to_array_variable": {
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "matchedSites",
+                                "value": "@trim(split(outputs('Combined_Site'), ' - ')[0])"
+                              },
+                              "runAfter": {
+                                "OutputMatchedSite": [
+                                  "Succeeded"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Append_to_array_variable": {
+                            "type": "AppendToArrayVariable",
+                            "inputs": {
+                              "name": "mismatchedSites",
+                              "value": "@trim(split(outputs('Combined_Site'), ' - ')[0])"
+                            },
+                            "runAfter": {
+                              "Add_a_row_into_a_table": [
+                                "Succeeded"
+                              ]
+                            }
+                          },
+                          "Add_a_row_into_a_table": {
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "parameters": {
+                                "source": "groups/d2042984-1b23-4e4d-87c6-fc7947aae44a",
+                                "drive": "b!wqvpS4o_IEKEQjpzvyYQTlYHOahB3exAoyd3Tqkonst8L26-Msh_TYuNfd1yiv0m",
+                                "file": "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ",
+                                "table": "{02E3B98E-C9FE-45B6-9062-642F9919593E}",
+                                "item/DOBI Zebra": "@outputs('Create_item')?['body/DOBI']",
+                                "item/Site": "@outputs('Create_item')?['body/Title']",
+                                "item/RMG - Receipt Confirmed": "@{'true'}",
+                                "item/Receipt Confirmed Date": "@formatDateTime(triggerBody()?['eventTime'], 'yyyy-MM-dd')"
+                              },
+                              "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                                "operationId": "AddRowV2",
+                                "connectionName": "shared_excelonlinebusiness-1"
+                              }
+                            },
+                            "metadata": {
+                              "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ": "/Exoskeleton Replacement Project - 2025/RMG Exoskeleton Refresh_Tracker.xlsx",
+                              "tableId": "{02E3B98E-C9FE-45B6-9062-642F9919593E}"
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "List_rows_present_in_a_table": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  }
+                },
+                "Condition_2": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greaterOrEquals": [
+                          "@length(variables('MismatchedSites'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Send_an_email_(V2)_1": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "pqmn34@zebra.com",
+                          "emailMessage/Subject": "New EXO Confirmation: - @{outputs('Combined_Site')}",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,<br><br>Automation was unable to find a match for the following site name:<br>@{join(variables('mismatchedSites'),'<br>')}<br>Automation has matched and updated the following sites:<br>@{join(variables('matchedSites'),'<br>')\r\n}<br>Please check the \"<a href=\"https://https://zebra.sharepoint.com/:x:/r/sites/ROYALMAILCustomerTEAM/_layouts/15/Doc.aspx?sourcedoc=%7BA490A2DE-1BEE-434C-9BAE-8F89ED1B12B0%7D&amp;file=RMG%20Exoskeleton%20Refresh_Tracker.xlsx&amp;action=default&amp;mobileredirect=true\" class=\"editor-link\">Exo Refresh - Tracker_v1.xlsx</a>\" file to ensure this site name exists and does not contain typos or extra spaces.</p>",
+                          "emailMessage/Importance": "Normal"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "runAfter": {
+                    "Compose": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "@length(variables('MismatchedSites'))",
+                  "runAfter": {
+                    "ConditionHaveYouDispose": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "ComposeMailCC": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeMailCC": {
+              "type": "Compose",
+              "inputs": "jocasta.malinova@zebra.com;matthew.mcdonnell@zebra.com",
+              "runAfter": {
+                "ComposeEmail": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@{outputs('ComposeEmail')};matthew.mcdonnell@zebra.com",
+                  "emailMessage/Subject": "New EXO Confirmation: - @{outputs('Combined_Site')}",
+                  "emailMessage/Body": "<div style=\"font-family: Arial, sans-serif; color: #333333; line-height: 1.6;\">\n    <p>Hello,</p>\n    <p>A new EXO installation has been confirmed. Please see the details below:</p>\n\n    <table style=\"width: 100%; max-width: 650px; border-collapse: collapse; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);\">\n        <tbody>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold; width: 30%;\">Site Details</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Combined_Site')}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Site Postcode</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/r72c60f7ca9064c6a8f2d8393974c9562']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Date of Fitting</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/r3e33ea8b9e6b4bda8e03e58ff6f4df33']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Contact Person</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']}\n                </td>\n            </tr>\n            <tr>\n            </tr><tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Have you disposed all old exo skeletons?</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/rf0adc018b0a44ecb896cd3dc2db8e108']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Comments</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/rad07eeadf18b47259984571e70b695e5']}\n                </td>\n            </tr>\n        </tbody>\n    </table>\n\n    <p style=\"margin-top: 20px;\">\n        Regards,<br>\n        <strong>@{outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']}</strong>\n    </p>\n</div>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('ComposeMailCC')",
+                  "emailMessage/Bcc": "PQMN34@zebra.com",
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "ScopeUpdateTracker": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_Clean_Site": {
+              "type": "Compose",
+              "inputs": "@trim(split(outputs('Combined_Site'), ' - ')[0])",
+              "runAfter": {
+                "Combined_Site": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "matchedSites": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams-1"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_array'))?['body']?['error']?['message'],\n    first(body('Filter_array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_array'))?['error']?['message'],\n    'Unknown Error'\n)",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69d47855-5ed9-43dc-a4af-b9ea6ec2ff02"
+          }
+        },
+        "mismatchedSites": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "mismatchedSites",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "matchedSites": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "matchedSites",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "mismatchedSites": [
+              "Succeeded"
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

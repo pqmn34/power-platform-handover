@@ -1,0 +1,675 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams-1": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "description": "Please enter your input",
+                  "title": "ApproverEmail",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "text"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "HTTP": {
+          "type": "Http",
+          "inputs": {
+            "uri": "@{outputs('URI')}token",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Basic @{outputs('EncodeSecret')}",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "body": "grant_type=password&username=@{'prabhat.kumar@zebra.com'}&password=@{'PKumar!!01088001'}"
+          },
+          "runAfter": {
+            "URI": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            },
+            "secureData": {
+              "properties": [
+                "inputs"
+              ]
+            }
+          }
+        },
+        "TokenParse_JSON": {
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "token_type": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "expires_in": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          }
+        },
+        "AccessToken": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AccessToken",
+                "type": "string",
+                "value": "@body('TokenParse_JSON')?['access_token']"
+              }
+            ]
+          },
+          "runAfter": {
+            "TokenParse_JSON": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Offlinemorethan60days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Offline60days",
+                "type": "float",
+                "value": "@outputs('CountOfflineGT60Days')?['body']?['firstTableRows'][0]?['[CountLostSNGT60Days]']"
+              }
+            ]
+          },
+          "runAfter": {
+            "CountOfflineGT60Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        },
+        "CountOfflineGT60Days": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+              "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"CountLostSNGT60Days\", 'LostDevicesGT60DaysDeletion'[CountLostSNGT60Days]\n\t)\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "DeletedFailedList": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          }
+        },
+        "GetsecretCIDCS": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-evri-premium-sti-cidcs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {}
+        },
+        "GetsecretUID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-evri-premium-LnS-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "EncodeSecret": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secretPSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-evri-premium-LnS-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "GetsecretUID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "URI": {
+          "type": "Compose",
+          "inputs": "@'https://mlmsti02app01.zebra.com/MobiControl/api/'",
+          "runAfter": {
+            "Get_secretPSWD": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ClientIDSecret": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ClientIDSecret",
+                "type": "string",
+                "value": "@outputs('GetsecretCIDCS')?['body/value']"
+              }
+            ]
+          },
+          "runAfter": {
+            "GetsecretCIDCS": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EncodeSecret": {
+          "type": "Compose",
+          "inputs": "@base64(variables('ClientIDSecret'))",
+          "runAfter": {
+            "ClientIDSecret": [
+              "Succeeded"
+            ]
+          }
+        },
+        "DeletedSuccessList": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "DeletedSuccessList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "AccessToken": [
+              "Succeeded"
+            ]
+          }
+        },
+        "DeletedFailedList": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "DeletedFailedList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "DeletedSuccessList": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "OfflineGT60Days": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+                  "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'LostDevicesGT60DaysDeletion',\n\t\t\t'LostDevicesGT60DaysDeletion'[DeviceID],\n\t\t\t'LostDevicesGT60DaysDeletion'[DeviceName],\n\t\t\t'LostDevicesGT60DaysDeletion'[DeviceOffline>60Days],\n\t\t\t'LostDevicesGT60DaysDeletion'[HardwareSerialNumber],\n\t\t\t'LostDevicesGT60DaysDeletion'[ICCID],\n\t\t\t'LostDevicesGT60DaysDeletion'[Model],\n\t\t\t'LostDevicesGT60DaysDeletion'[OfflineDays],\n\t\t\t'LostDevicesGT60DaysDeletion'[Path],\n\t\t\t'LostDevicesGT60DaysDeletion'[EnrollmentTime],\n\t\t\t'LostDevicesGT60DaysDeletion'[LastSeen]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'LostDevicesGT60DaysDeletion'[DeviceID],\n\t'LostDevicesGT60DaysDeletion'[DeviceName],\n\t'LostDevicesGT60DaysDeletion'[DeviceOffline>60Days],\n\t'LostDevicesGT60DaysDeletion'[HardwareSerialNumber],\n\t'LostDevicesGT60DaysDeletion'[ICCID],\n\t'LostDevicesGT60DaysDeletion'[Model],\n\t'LostDevicesGT60DaysDeletion'[OfflineDays],\n\t'LostDevicesGT60DaysDeletion'[Path],\n\t'LostDevicesGT60DaysDeletion'[EnrollmentTime],\n\t'LostDevicesGT60DaysDeletion'[LastSeen]\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+              }
+            },
+            "SelectGT60Days": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('OfflineGT60Days')?['body/firstTableRows']",
+                "select": {
+                  "DeviceName": "@{item()?['LostDevicesGT60DaysDeletion[DeviceName]']}",
+                  "HardwareSerialNumber": "@{item()?['LostDevicesGT60DaysDeletion[HardwareSerialNumber]']}",
+                  "Model": "@{item()?['LostDevicesGT60DaysDeletion[Model]']}",
+                  "Offline MoreThan 60 Days": "@{item()?['LostDevicesGT60DaysDeletion[DeviceOffline>60Days]']}",
+                  "EnrollmentTime": "@{if(empty(item()?['LostDevicesGT60DaysDeletion[EnrollmentTime]']), '', formatDateTime(item()?['LostDevicesGT60DaysDeletion[EnrollmentTime]'], 'dd/MM/yyyy'))}",
+                  "LastSeen": "@{if(empty(item()?['LostDevicesGT60DaysDeletion[LastSeen]']), '', formatDateTime(item()?['LostDevicesGT60DaysDeletion[LastSeen]'], 'dd/MM/yyyy'))}",
+                  "OfflineDays": "@{item()?['LostDevicesGT60DaysDeletion[OfflineDays]']}",
+                  "ICCID": "@{item()?['LostDevicesGT60DaysDeletion[ICCID]']}",
+                  "Path": "@{item()?['LostDevicesGT60DaysDeletion[Path]']}",
+                  "DeviceID": "@{item()?['LostDevicesGT60DaysDeletion[DeviceID]']}"
+                }
+              },
+              "runAfter": {
+                "OfflineGT60Days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+              }
+            },
+            "Create_CSV_tableGT60Days": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectGT60Days')",
+                "format": "CSV"
+              },
+              "runAfter": {
+                "SelectGT60Days": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectGT60Days')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Create_CSV_tableGT60Days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+              }
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+              }
+            },
+            "Apply_to_each": {
+              "type": "Foreach",
+              "foreach": "@body('SelectGT60Days')",
+              "actions": {
+                "HTTP_DeleteDevice": {
+                  "type": "Http",
+                  "inputs": {
+                    "uri": "@{outputs('URI')}devices/@{items('Apply_to_each')?['DeviceID']}",
+                    "method": "DELETE",
+                    "headers": {
+                      "Authorization": "Bearer @{variables('AccessToken')}",
+                      "Content-Type": "application/json"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Append_to_array_variable-DeletedSuccessList": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "DeletedSuccessList",
+                    "value": "@concat(\r\n  'DeviceID: ',\r\n  string(items('Apply_to_each')?['DeviceID']),\r\n  ' | DeviceName: ',\r\n  coalesce(items('Apply_to_each')?['DeviceName'], 'N/A')\r\n)"
+                  },
+                  "runAfter": {
+                    "HTTP_DeleteDevice": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Append_to_array_variable-DeletedFailedList": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "DeletedFailedList",
+                    "value": "@concat(\r\n  'DeviceID: ',\r\n  string(items('Apply_to_each')?['DeviceID']),\r\n  ' | DeviceName: ',\r\n  coalesce(items('Apply_to_each')?['DeviceName'], 'N/A')\r\n)"
+                  },
+                  "runAfter": {
+                    "HTTP_DeleteDevice": [
+                      "TimedOut",
+                      "Skipped",
+                      "Failed"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_-_Success_Count": {
+              "type": "Compose",
+              "inputs": "@length(variables('DeletedSuccessList'))",
+              "runAfter": {
+                "Apply_to_each": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_-_Failed_Count": {
+              "type": "Compose",
+              "inputs": "@length(variables('DeletedFailedList'))",
+              "runAfter": {
+                "Compose_-_Success_Count": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_-_Success_HTML": {
+              "type": "Compose",
+              "inputs": "@if(\r\n  equals(length(variables('DeletedSuccessList')), 0),\r\n  '<p>None</p>',\r\n  concat('<ul><li>', join(variables('DeletedSuccessList'), '</li><li>'), '</li></ul>')\r\n)",
+              "runAfter": {
+                "Compose_-_Failed_Count": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_-_Failed_HTML": {
+              "type": "Compose",
+              "inputs": "@if(\r\n  equals(length(variables('DeletedFailedList')), 0),\r\n  '<p>None</p>',\r\n  concat('<ul><li>', join(variables('DeletedFailedList'), '</li><li>'), '</li></ul>')\r\n)",
+              "runAfter": {
+                "Compose_-_Success_HTML": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Respond_to_a_Power_App_or_flow": {
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "title": "Status",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "successcount": {
+                      "title": "SuccessCount",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "failedcount": {
+                      "title": "FailedCount",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "successdevices": {
+                      "title": "SuccessDevices",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "faileddevices": {
+                      "title": "FailedDevices",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    }
+                  },
+                  "additionalProperties": {}
+                },
+                "statusCode": 200,
+                "body": {
+                  "status": "Completed",
+                  "successcount": "@{string(outputs('Compose_-_Success_Count'))}",
+                  "failedcount": "@{string(outputs('Compose_-_Failed_Count'))}",
+                  "successdevices": "@{join(variables('DeletedSuccessList'), '; ')}",
+                  "faileddevices": "@{join(variables('DeletedFailedList'), '; ')}"
+                }
+              },
+              "runAfter": {
+                "Send_an_email_(V2)": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "EVRI Premium Device Deletion Result - Success @{outputs('Compose_-_Success_Count')} | Failed @{outputs('Compose_-_Failed_Count')}",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,<br><br>The EVRi Premium device deletion process has completed.<br>Summary<br>Total successful deletions: @{outputs('Compose_-_Success_Count')}<br><br>Total failed deletions: @{outputs('Compose_-_Failed_Count')}<br><br>Successfully deleted devices<br>@{outputs('Compose_-_Success_HTML')}<br><br><br>Failed devices<br>@{outputs('Compose_-_Failed_HTML')}<br><br><br>Regards,<br>Strategic Innovation and Automation</p><br>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365-1"
+                }
+              },
+              "runAfter": {
+                "Compose_-_Failed_HTML": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Offlinemorethan60days": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ERROR_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_FAILED_message_in_a_chat_or_channel_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams-1"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Failed",
+              "Skipped"
+            ]
+          }
+        },
+        "Post_FAILED_message_in_a_chat_or_channel_1_1": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "poster": "Flow bot",
+              "location": "Channel",
+              "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+              "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+              "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\"></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+              "operationId": "PostMessageToConversation",
+              "connectionName": "shared_teams-1"
+            }
+          },
+          "runAfter": {
+            "HTTP": [
+              "Skipped",
+              "TimedOut",
+              "Failed"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

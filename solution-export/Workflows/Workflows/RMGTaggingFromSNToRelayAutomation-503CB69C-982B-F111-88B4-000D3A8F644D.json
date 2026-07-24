@@ -1,0 +1,403 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "Central Europe Standard Time",
+            "schedule": {
+              "hours": [
+                "18",
+                "10"
+              ],
+              "minutes": [
+                10
+              ],
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday"
+              ]
+            },
+            "startTime": "2025-11-05T08:46:37Z"
+          }
+        }
+      },
+      "actions": {
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Get_secret_UID": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "secretName": "rmg-LnS-42g-uid"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+                  "operationId": "GetSecret",
+                  "connectionName": "shared_keyvault"
+                }
+              },
+              "runAfter": {
+                "Get_secret": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "secureData": {
+                  "properties": [
+                    "inputs",
+                    "outputs"
+                  ]
+                }
+              }
+            },
+            "Get_secret_PSWD": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "secretName": "rmg-LnS-42g-pswd"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+                  "operationId": "GetSecret",
+                  "connectionName": "shared_keyvault"
+                }
+              },
+              "runAfter": {
+                "Get_secret_UID": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "secureData": {
+                  "properties": [
+                    "inputs",
+                    "outputs"
+                  ]
+                }
+              }
+            },
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                  "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\"CountRelayTag\", 'Relay PDA Tagging Table'[CountRelayTag]\n)\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              },
+              "runAfter": {
+                "Get_secret_PSWD": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "@int(coalesce(first(body('Run_a_query_against_a_dataset')?['firstTableRows'])?['[CountRelayTag]'], 0))",
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@outputs('Compose')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "SN_Needs_to_be_Tagged_Relay": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Relay PDA Tagging Table',\n\t\t\t'Relay PDA Tagging Table'[Address],\n\t\t\t'Relay PDA Tagging Table'[Device ID],\n\t\t\t'Relay PDA Tagging Table'[Device Name],\n\t\t\t'Relay PDA Tagging Table'[DOBI],\n\t\t\t'Relay PDA Tagging Table'[Group Path],\n\t\t\t'Relay PDA Tagging Table'[IMEI],\n\t\t\t'Relay PDA Tagging Table'[Serial Number],\n\t\t\t'Relay PDA Tagging Table'[Status],\n\t\t\t'Relay PDA Tagging Table'[Stock],\n\t\t\t'Relay PDA Tagging Table'[Asset No.],\n\t\t\t'Relay PDA Tagging Table'[Asset Tag],\n\t\t\t'Relay PDA Tagging Table'[Contract ID],\n\t\t\t'Relay PDA Tagging Table'[Serial No.]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Relay PDA Tagging Table'[Address],\n\t'Relay PDA Tagging Table'[Device ID],\n\t'Relay PDA Tagging Table'[Device Name],\n\t'Relay PDA Tagging Table'[DOBI],\n\t'Relay PDA Tagging Table'[Group Path],\n\t'Relay PDA Tagging Table'[IMEI],\n\t'Relay PDA Tagging Table'[Serial Number],\n\t'Relay PDA Tagging Table'[Status],\n\t'Relay PDA Tagging Table'[Stock],\n\t'Relay PDA Tagging Table'[Asset No.],\n\t'Relay PDA Tagging Table'[Asset Tag],\n\t'Relay PDA Tagging Table'[Contract ID],\n\t'Relay PDA Tagging Table'[Serial No.]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Select": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('SN_Needs_to_be_Tagged_Relay')?['body/firstTableRows']",
+                    "select": {
+                      "Device Name": "@item()?['Relay PDA Tagging Table[Device Name]']",
+                      "Serial Number": "@item()?['Relay PDA Tagging Table[Serial No.]']",
+                      "IMEI": "@item()?['Relay PDA Tagging Table[IMEI]']",
+                      "Device Group Path": "@item()?['Relay PDA Tagging Table[Group Path]']",
+                      "Address": "@item()?['Relay PDA Tagging Table[Address]']",
+                      "Asset No.": "@item()?['Relay PDA Tagging Table[Asset No.]']",
+                      "Asset Tag": "@item()?['Relay PDA Tagging Table[Asset Tag]']",
+                      "Contract ID": "@item()?['Relay PDA Tagging Table[Contract ID]']",
+                      "DOBI": "@item()?['Relay PDA Tagging Table[DOBI]']",
+                      "Status": "@item()?['Relay PDA Tagging Table[Status]']",
+                      "Stock": "@item()?['Relay PDA Tagging Table[Stock]']",
+                      "Device ID": "@item()?['Relay PDA Tagging Table[Device ID]']"
+                    }
+                  },
+                  "runAfter": {
+                    "SN_Needs_to_be_Tagged_Relay": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  },
+                  "runAfter": {
+                    "Select": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/RMG/PROJECTS/RELAY/RELAY TAGGING/",
+                      "name": "SN_TO_RELAY_TAG_@{concat(formatDateTime(utcNow(), 'dd.MM.yyyy HH:mm'), '.csv')}",
+                      "body": "@body('Create_CSV_table')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Apply_to_each": {
+                  "type": "Foreach",
+                  "foreach": "@body('Select')",
+                  "actions": {
+                    "ComposeDeviceID": {
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Device ID']"
+                    },
+                    "ComposeDeviceName": {
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Device Name']",
+                      "runAfter": {
+                        "ComposeDeviceID": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "ComposeSerialNumber": {
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Serial Number']",
+                      "runAfter": {
+                        "ComposeDeviceName": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "HTTP": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "https://zebrams001.eu.suremdm.io/api/dynamicjob",
+                        "method": "POST",
+                        "headers": {
+                          "ApiKey": "@{outputs('Get_secret')?['body/value']}",
+                          "Content-Type": "application/json"
+                        },
+                        "body": {
+                          "DeviceID": "@{outputs('ComposeDeviceID')}",
+                          "JobType": "Set_Devicename",
+                          "PayLoad": "@{outputs('ComposeSerialNumber')}-R"
+                        },
+                        "authentication": {
+                          "type": "Basic",
+                          "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                          "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                        }
+                      },
+                      "runAfter": {
+                        "ComposeSerialNumber": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "c4a0f7d2-3c92-431c-b147-7397b27532f7"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Get_secret": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "secretName": "rmg-prod42g-key"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+                  "operationId": "GetSecret",
+                  "connectionName": "shared_keyvault"
+                }
+              }
+            }
+          },
+          "runAfter": {}
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">&lt;div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\"&gt;<br>&lt;div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\"&gt;<br>🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}<br>&lt;/div&gt;<br>&lt;div style=\"padding: 15px; background-color: #f9f9f9;\"&gt;<br>&lt;table style=\"width: 100%; border-collapse: collapse;\"&gt;<br>&lt;tbody&gt;<br>&lt;tr&gt;<br>&lt;td style=\"padding: 5px 0; color: #666; width: 30%;\"&gt;&lt;strong&gt;Flow Name:&lt;/strong&gt;&lt;/td&gt;<br>&lt;td style=\"padding: 5px 0;\"&gt;@{workflow()?['tags']['flowDisplayName']}&lt;/td&gt;<br>&lt;/tr&gt;<br>&lt;tr&gt;<br>&lt;td style=\"padding: 5px 0; color: #666;\"&gt;&lt;strong&gt;Failed Action:&lt;/strong&gt;&lt;/td&gt;<br>&lt;td style=\"padding: 5px 0;\"&gt;@{body('Filter_array')?[0]?['name']}&lt;/td&gt;<br>&lt;/tr&gt;<br>&lt;tr&gt;<br>&lt;td style=\"padding: 5px 0; color: #d83b01;\"&gt;&lt;strong&gt;Error Message:&lt;/strong&gt;&lt;/td&gt;<br>&lt;td style=\"padding: 5px 0; color: #d83b01;\"&gt;&lt;b&gt;&lt;u&gt;&lt;/u&gt;&lt;/b&gt;&lt;/td&gt;<br>&lt;/tr&gt;<br>&lt;tr&gt;<br>&lt;td style=\"padding: 5px 0; color: #666;\"&gt;&lt;strong&gt;Run ID:&lt;/strong&gt;&lt;/td&gt;<br>&lt;td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\"&gt;@{workflow()?['run']?['name']}&lt;/td&gt;<br>&lt;/tr&gt;<br>&lt;/tbody&gt;<br>&lt;/table&gt;<br>&lt;br&gt;<br>&lt;a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\"&gt;<br>View Failed Run<br>&lt;/a&gt;<br>&lt;/div&gt;<br>&lt;/div&gt;</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "ERROR_MESSAGE": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "ERROR_MESSAGE": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "SUCCEEDED"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

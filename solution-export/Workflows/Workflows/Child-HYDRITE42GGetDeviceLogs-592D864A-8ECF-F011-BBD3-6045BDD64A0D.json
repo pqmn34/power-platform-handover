@@ -1,0 +1,212 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "9c3eb174-e5a2-422e-9b79-1e8b26a5a802"
+          },
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Initialize_variable": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "26783f88-b915-4532-97af-c9f6958e7d74"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varLogs",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Get_items": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e208b2e1-7678-4b86-b978-d62ba087117d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "4c6f30bf-e31e-47ba-a9d0-08dac1806034"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "HTTP": {
+              "metadata": {
+                "operationMetadataId": "06dc3cd0-194a-4519-bfb1-f947839127f3"
+              },
+              "type": "Http",
+              "inputs": {
+                "uri": "https://zebramdm.42gears.com/api/devicelog/@{items('Apply_to_each')?['Device_ID']}",
+                "method": "GET",
+                "headers": {
+                  "ApiKey": "336241B8-45A8-4DBE-98A6-2050935B3A6F",
+                  "Content-Type": "application/json"
+                },
+                "authentication": {
+                  "type": "Basic",
+                  "username": "L2_HYD_API_22090004",
+                  "password": "Zebr@DMSL@60200!"
+                }
+              }
+            },
+            "Send_an_email_(V2)": {
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "01369c81-61d9-4623-a9e3-a9a9c1a461c1"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": " @{items('Apply_to_each')?['Author/Email']}",
+                  "emailMessage/Subject": "@{items('Apply_to_each')?['Device_ID']}_Device_Logs",
+                  "emailMessage/Body": "<p>Greetings!<br>\n<br>\nPlease find attached the device logs as requested.<br>\n<br>\nRegards<br>\n<br>\nGMSS L2</p>",
+                  "emailMessage/Bcc": "pqmn34@zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "@{items('Apply_To_Each')?['Name']}_@{items('Apply_to_each')?['Device_ID']}.json",
+                      "ContentBytes": "@body('HTTP')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Create_file": {
+              "runAfter": {
+                "HTTP": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "284d4460-628a-4fcf-be73-18a6f5ffd704"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/MS&SS",
+                  "folderPath": "/HYDRITE CHEMICAL/5. DEVICE LOGS",
+                  "name": "@{items('Apply_to_each')?['Device_ID']}_@{utcNow()}.json",
+                  "body": "@body('HTTP')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "CreateFile"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "459cec07-ad46-4f41-8537-1eeff9cb9dc3"
+          },
+          "type": "Foreach"
+        },
+        "Respond_to_a_Power_App_or_flow": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9925d4c2-e22d-46f8-a85c-035551b88a31"
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": {}
+            },
+            "statusCode": 200,
+            "body": {}
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

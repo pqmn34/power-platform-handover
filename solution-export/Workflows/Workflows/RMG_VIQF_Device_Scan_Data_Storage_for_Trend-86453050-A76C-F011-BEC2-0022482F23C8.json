@@ -1,0 +1,379 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "Central Europe Standard Time",
+            "startTime": "2025-03-16T09:00:00Z",
+            "schedule": {
+              "hours": [
+                "23"
+              ],
+              "minutes": [
+                55
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: RMG_VIQF_Device_Scan_Data_Storage_for_Trend!🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: RMG_VIQF_Device_Scan_Data_Storage_for_Trend!🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: RMG_VIQF_Device_Scan_Data_Storage_for_Trend!🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "StrategicInnovationandAutomation@Zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Master": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Master": {
+          "type": "Scope",
+          "actions": {
+            "Scope": {
+              "type": "Scope",
+              "actions": {
+                "Calculate_Loops": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                      "specification/query": "EVALUATE\nROW(\n    \"loopsNeeded\", ROUNDUP(DIVIDE(\n        CALCULATE(DISTINCTCOUNT('VIQF_RMG_Devices_Scans'[Index])),@{variables('incrRows')}),0)\n    )",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Loops2run": {
+                  "type": "Compose",
+                  "inputs": "@outputs('Calculate_Loops')?['body/firstTableRows']?[0]?['[loopsNeeded]']",
+                  "runAfter": {
+                    "Calculate_Loops": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Do_until": {
+                  "type": "Until",
+                  "expression": "@greater(variables('LoopsVar'),outputs('Loops2run'))",
+                  "limit": {
+                    "count": 500,
+                    "timeout": "PT2H"
+                  },
+                  "actions": {
+                    "Run_a_query_against_a_dataset": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                          "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                          "specification/query": "// CORRECTED AND RECOMMENDED DAX QUERY\nDEFINE\n    // This variable defines the slice of rows to retrieve based on an index.\n    // This is a standard pagination pattern.\n    VAR __DS0FilterTable = \n        FILTER(\n            KEEPFILTERS(VALUES('VIQF_RMG_Devices_Scans'[Index])),\n            AND(\n                'VIQF_RMG_Devices_Scans'[Index] >= @{variables('MinRows')},\n                'VIQF_RMG_Devices_Scans'[Index] <= @{variables('incrRows')}\n            )\n        )\n\n    // This variable retrieves the specified columns for the filtered slice of rows.\n    VAR __DS0Core =\n        CALCULATETABLE(\n            SELECTCOLUMNS(\n                'VIQF_RMG_Devices_Scans',\n                \"device_type\", 'VIQF_RMG_Devices_Scans'[device_type],\n                \"master_id\", 'VIQF_RMG_Devices_Scans'[master_id],\n                \"partner_name\", 'VIQF_RMG_Devices_Scans'[partner_name], // Added back\n                \"serial_number\", 'VIQF_RMG_Devices_Scans'[serial_number],\n                \"total_failed_cnt\", 'VIQF_RMG_Devices_Scans'[total_failed_cnt],\n                \"total_scans_cnt\", 'VIQF_RMG_Devices_Scans'[total_scans_cnt],\n                \"total_successful_cnt\", 'VIQF_RMG_Devices_Scans'[total_successful_cnt],\n                \"slot\", 'VIQF_RMG_Devices_Scans'[slot]\n            ),\n            __DS0FilterTable\n        )\nEVALUATE\n    __DS0Core\nORDER BY\n    [serial_number] // Simplified ORDER BY syntax",
+                          "specification/serializerSettings/includeNulls": false
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                          "operationId": "ExecuteDatasetQuery",
+                          "connectionName": "shared_powerbi"
+                        }
+                      }
+                    },
+                    "Create_CSV_table": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('Select')",
+                        "format": "CSV"
+                      },
+                      "runAfter": {
+                        "Select": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "IncrMinRows": {
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "MinRows",
+                        "value": 5000
+                      },
+                      "runAfter": {
+                        "Append_to_string_variable": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "IncrRows2": {
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "incrRows",
+                        "value": 5000
+                      },
+                      "runAfter": {
+                        "IncrMinRows": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "IncrLoops": {
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "LoopsVar",
+                        "value": 1
+                      },
+                      "runAfter": {
+                        "IncrRows2": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Select": {
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                        "select": {
+                          "Master ID": "@item()?['[master_id]']",
+                          "Partner Name": "@item()?['[partner_name]']",
+                          "Serial Number": "@item()?['[serial_number]']",
+                          "Total Failed Count": "@item()?['[total_failed_cnt]']",
+                          "Total Scans Count": "@item()?['[total_scans_cnt]']",
+                          "Total Successful Count": "@item()?['[total_successful_cnt]']",
+                          "Timestamp": "@item()?['[slot]']"
+                        }
+                      },
+                      "runAfter": {
+                        "Run_a_query_against_a_dataset": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Append_to_string_variable": {
+                      "type": "AppendToStringVariable",
+                      "inputs": {
+                        "name": "appendCSV",
+                        "value": "@if(equals(variables('LoopsVar'), 1), body('Create_CSV_Table'), join(skip(split(body('Create_CSV_Table'), decodeUriComponent('%0A')), 1), decodeUriComponent('%0A')))"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Loops2run": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "convert2csv": {
+                  "type": "Compose",
+                  "inputs": "@variables('appendCSV')",
+                  "runAfter": {
+                    "Do_until": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/RMG/VIQF/DEVICE_SCAN",
+                      "name": "viqf_device_scans_@{concat(formatDateTime(utcNow(), 'yyyy-MM-ddTHH-mm-ss'), '.csv')}",
+                      "body": "@variables('appendCSV')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "convert2csv": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "LoopsVar": [
+              "Succeeded"
+            ]
+          }
+        },
+        "MinRows": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "MinRows",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "IncrRows": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "incrRows",
+                "type": "integer",
+                "value": 5000
+              }
+            ]
+          },
+          "runAfter": {
+            "MinRows": [
+              "Succeeded"
+            ]
+          }
+        },
+        "appendCSV": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "appendCSV",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "IncrRows": [
+              "Succeeded"
+            ]
+          }
+        },
+        "LoopsVar": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LoopsVar",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          },
+          "runAfter": {
+            "appendCSV": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

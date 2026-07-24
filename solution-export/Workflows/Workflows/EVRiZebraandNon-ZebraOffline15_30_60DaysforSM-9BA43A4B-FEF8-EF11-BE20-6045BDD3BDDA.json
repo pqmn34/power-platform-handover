@@ -1,0 +1,1299 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_powerbi-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "frequency": "Month",
+            "interval": 1,
+            "timeZone": "W. Europe Standard Time",
+            "startTime": "2025-02-01T09:00:00Z"
+          },
+          "metadata": {
+            "operationMetadataId": "94e84f5a-ec79-420e-ac27-0e16f862df3b"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "EVRiCountMoreThan15DaysOffline": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"M_Zebra_Offline___15_Days\", 'Zebra DB'[M Zebra Offline > 15 Days]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Offlinemorethan15days": {
+          "runAfter": {
+            "NonZebraEVRiCountMoreThan60DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Offline15days",
+                "type": "float",
+                "value": "@outputs('EVRiCountMoreThan15DaysOffline')?['body/firstTableRows'][0]?['[M_Zebra_Offline___15_Days]']"
+              }
+            ]
+          }
+        },
+        "Condition15Days": {
+          "actions": {},
+          "runAfter": {
+            "NonZebraOfflinemorethan60days": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "EVRi_Offline_More_Than_15_Days": {
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"EMEA\"}, 'Zebra DB'[Region Path])\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Zebra DB'[Offline > 15 Days])\n\n\tVAR __DS0FilterTable3 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Zebra DB'[Business Division])),\n\t\t\tNOT('Zebra DB'[Business Division] IN {\"LOST & STOLEN\"})\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Zebra DB',\n\t\t\t\t'Zebra DB'[EnrollmentTime],\n\t\t\t\t'Zebra DB'[Offline Days],\n\t\t\t\t'Zebra DB'[Device Name],\n\t\t\t\t'Zebra DB'[DeviceGroupPath],\n\t\t\t\t'Zebra DB'[Model],\n\t\t\t\t'Zebra DB'[SerialNo],\n\t\t\t\t'Zebra DB'[Business Division],\n\t\t\t\t'Zebra DB'[Business Site],\n\t\t\t\t'Zebra DB'[Business Unit],\n\t\t\t\t'Zebra DB'[Offline > 15 Days],\n\t\t\t\t'Zebra DB'[Star ID],\n\t\t\t\t'Zebra DB'[LastDisConnTime],\n\t\t\t\t'Zebra DB'[ICCID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2),\n\t\t\tKEEPFILTERS(__DS0FilterTable3)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Zebra DB'[ICCID] DESC,\n\t'Zebra DB'[EnrollmentTime],\n\t'Zebra DB'[Offline Days],\n\t'Zebra DB'[Device Name],\n\t'Zebra DB'[DeviceGroupPath],\n\t'Zebra DB'[Model],\n\t'Zebra DB'[SerialNo],\n\t'Zebra DB'[Business Division],\n\t'Zebra DB'[Business Site],\n\t'Zebra DB'[Business Unit],\n\t'Zebra DB'[Offline > 15 Days],\n\t'Zebra DB'[Star ID],\n\t'Zebra DB'[LastDisConnTime]",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "connectionName": "shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "Select_EVRI_Offline_More_Than_15_Days": {
+                "runAfter": {
+                  "EVRi_Offline_More_Than_15_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                },
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('EVRi_Offline_More_Than_15_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Zebra DB[Device Name]']",
+                    "Serial Number": "@item()?['Zebra DB[SerialNo]']",
+                    "Model": "@item()?['Zebra DB[Model]']",
+                    "Business Division": "@item()?['Zebra DB[Business Division]']",
+                    "Business Site": "@item()?['Zebra DB[Business Site]']",
+                    "Business Unit": "@item()?['Zebra DB[Business Unit]']",
+                    "Offline Days": "@item()?['Zebra DB[Offline Days]']",
+                    "Offline > 15 Days": "@item()?['Zebra DB[Offline > 15 Days]']",
+                    "Last Seen": "@if(equals(item()?['Zebra DB[LastDisConnTime]'], null), '', formatDateTime(item()?['Zebra DB[LastDisConnTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Zebra DB[EnrollmentTime]'], null), '', formatDateTime(item()?['Zebra DB[EnrollmentTime]'],'dd/MM/yyyy HH:mm', 'en-GB'))",
+                    "Star ID": "@item()?['Zebra DB[Star ID]']",
+                    "Device Group Path": "@item()?['Zebra DB[DeviceGroupPath]']",
+                    "ICCID": "@concat('`', item()?['Zebra DB[ICCID]'], '`')"
+                  }
+                }
+              },
+              "Create_CSV_table": {
+                "runAfter": {
+                  "Compose": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Offline_More_Than_15_Days')",
+                  "format": "CSV"
+                }
+              },
+              "Create_HTML_table": {
+                "runAfter": {
+                  "Select_EVRI_Offline_More_Than_15_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Offline_More_Than_15_Days')",
+                  "format": "HTML"
+                }
+              },
+              "Compose": {
+                "runAfter": {
+                  "Create_HTML_table": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                },
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}"
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('Offline15days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          },
+          "type": "If"
+        },
+        "EVRiCountMoreThan30DaysOffline": {
+          "runAfter": {
+            "NonZebraEVRiCountMoreThan15DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"M_Zebra_Offline___15_Days\", 'Zebra DB'[M Zebra Offline > 30 Days]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "EVRiCountMoreThan60DaysOffline": {
+          "runAfter": {
+            "NonZebraEVRiCountMoreThan30DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"M_Zebra_Offline___15_Days\", 'Zebra DB'[M Zebra Offline > 60 Days]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Offlinemorethan30days": {
+          "runAfter": {
+            "NonZebraOfflinemorethan15days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Offline30days",
+                "type": "float",
+                "value": "@outputs('EVRiCountMoreThan30DaysOffline')?['body/firstTableRows'][0]?['[M_Zebra_Offline___30_Days]']"
+              }
+            ]
+          }
+        },
+        "Offlinemorethan60days": {
+          "runAfter": {
+            "NonZebraOfflinemorethan30days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Offline60days",
+                "type": "float",
+                "value": "@outputs('EVRiCountMoreThan60DaysOffline')?['body/firstTableRows'][0]?['[M_Zebra_Offline___60_Days]']"
+              }
+            ]
+          }
+        },
+        "Condition_for_Email": {
+          "actions": {
+            "Send_an_email_(V2)": {
+              "metadata": {
+                "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "elena.brusentsova@zebra.com;HUKAsset.Management@hermes-europe.co.uk;HUKITProc@hermes-europe.co.uk;Debbie.Bakes@Evri.com;Paul.Tate@Evri.com",
+                  "emailMessage/Subject": "EVRi: Zebra and Non-Zebra Offline Devices ",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,<br><br>Please find the report of offline devices attached.<br><br>Evri team, please follow up with the site managers on the devices offline for 15 days.<br>Devices offline for more than 30 days will be moved to LOST folder and locked if they come online.<br>Devices offline for more than 60 days will be deleted from SOTI. Zebra Service Desk please deactivate SIM cards for these devices.<br>ZEBRA DEVICES<br>@{outputs('Compose_3')}<br><br>NON-ZEBRA DEVICES<br>@{outputs('NonZebraCompose3')}<br>If there are any issues with this report, please contact your Zebra Service Manager (elena.brusentsova@zebra.com).<br><br>Warm regards<br><br>Zebra DMS Support</p>",
+                  "emailMessage/From": "dms.support@zebra.com",
+                  "emailMessage/Cc": "pqmn34@zebra.com;michaela.pastourmatzi@zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "ZebraOfflineMoreThan15Days.csv",
+                      "ContentBytes": "@body('Create_CSV_table')"
+                    },
+                    {
+                      "Name": "ZebraOfflineMoreThan30Days.csv",
+                      "ContentBytes": "@body('Create_CSV_table_1')"
+                    },
+                    {
+                      "Name": "ZebraOfflineMoreThan60Days.csv",
+                      "ContentBytes": "@body('Create_CSV_table_2')"
+                    },
+                    {
+                      "Name": "NonZebraOfflineMoreThan15Days.csv",
+                      "ContentBytes": "@body('NonZebraCreate_CSV15Days')"
+                    },
+                    {
+                      "Name": "NonZebraOfflineMoreThan30Days.csv",
+                      "ContentBytes": "@body('NonZebraCreate_CSV30Days')"
+                    },
+                    {
+                      "Name": "NonZebraOfflineMoreThan60Days.csv",
+                      "ContentBytes": "@body('NonZebraCreate_CSV60Days')"
+                    }
+                  ],
+                  "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "NonZebraCompose3": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Send_an_email_(V2)_": {
+                "metadata": {
+                  "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "emailMessage/To": "Paul.Tate@Evri.com;Debbie.Bakes@Evri.com;elena.brusentsova@zebra.com;HUKITProc@hermes-europe.co.uk;HUKAsset.Management@hermes-europe.co.uk",
+                    "emailMessage/Subject": "EVRi: Zebra and Non-Zebra Offline Devices ",
+                    "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,<br><br>Please find the report of offline devices attached.<br><br>Evri team, please follow up with the site managers on the devices offline for 15 days.<br>Devices offline for more than 30 days will be moved to LOST folder and locked if they come online.<br>Devices offline for more than 60 days will be deleted from SOTI. Zebra Service Desk please deactivate SIM cards for these devices.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">ZEBRA DEVICES</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose_3')}</p><br><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">NON-ZEBRA DEVICES</strong></b></p><p class=\"editor-paragraph\">@{outputs('NonZebraCompose3')}</p><p class=\"editor-paragraph\">If there are any issues with this report, please contact your Zebra Service Manager (elena.brusentsova@zebra.com).</p><br><p class=\"editor-paragraph\">Warm regards</p><br><p class=\"editor-paragraph\">Zebra DMS Support</p>",
+                    "emailMessage/From": "dms.support@zebra.com",
+                    "emailMessage/Cc": "michaela.pastourmatzi@zebra.com;dennis.melzer@zebra.com",
+                    "emailMessage/Bcc": "PQMN34@zebra.com",
+                    "emailMessage/Attachments": [
+                      {
+                        "Name": "ZebraOfflineMoreThan15Days.csv",
+                        "ContentBytes": "@body('Create_CSV_table')"
+                      },
+                      {
+                        "Name": "ZebraOfflineMoreThan30Days.csv",
+                        "ContentBytes": "@body('Create_CSV_table_1')"
+                      },
+                      {
+                        "Name": "ZebraOfflineMoreThan60Days.csv",
+                        "ContentBytes": "@body('Create_CSV_table_2')"
+                      },
+                      {
+                        "Name": "NonZebraOfflineMoreThan15Days.csv",
+                        "ContentBytes": "@body('NonZebraCreate_CSV15Days')"
+                      },
+                      {
+                        "Name": "NonZebraOfflineMoreThan30Days.csv",
+                        "ContentBytes": "@body('NonZebraCreate_CSV30Days')"
+                      },
+                      {
+                        "Name": "NonZebraOfflineMoreThan60Days.csv",
+                        "ContentBytes": "@body('NonZebraCreate_CSV60Days')"
+                      }
+                    ],
+                    "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                    "emailMessage/Importance": "High"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                    "connectionName": "shared_office365",
+                    "operationId": "SendEmailV2"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@outputs('EVRiCountMoreThan15DaysOffline')?['body/firstTableRows'][0]?['[Offline > 15 Days]']",
+                  ""
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "17ba7cd5-11ce-4546-8f6a-14785cedaad7"
+          },
+          "type": "If"
+        },
+        "Condition30Days": {
+          "actions": {},
+          "runAfter": {
+            "NonZebraCondition15Days": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "EVRi_Offline_More_Than_30_Days": {
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"EMEA\"}, 'Zebra DB'[Region Path])\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Zebra DB'[Offline > 30 Days])\n\n\tVAR __DS0FilterTable3 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Zebra DB'[Business Division])),\n\t\t\tNOT('Zebra DB'[Business Division] IN {\"LOST & STOLEN\"})\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Zebra DB',\n\t\t\t\t'Zebra DB'[EnrollmentTime],\n\t\t\t\t'Zebra DB'[Offline Days],\n\t\t\t\t'Zebra DB'[Device Name],\n\t\t\t\t'Zebra DB'[DeviceGroupPath],\n\t\t\t\t'Zebra DB'[Model],\n\t\t\t\t'Zebra DB'[SerialNo],\n\t\t\t\t'Zebra DB'[Business Division],\n\t\t\t\t'Zebra DB'[Business Site],\n\t\t\t\t'Zebra DB'[Business Unit],\n\t\t\t\t'Zebra DB'[Offline > 30 Days],\n\t\t\t\t'Zebra DB'[Star ID],\n\t\t\t\t'Zebra DB'[LastDisConnTime],\n\t\t\t\t'Zebra DB'[ICCID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2),\n\t\t\tKEEPFILTERS(__DS0FilterTable3)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Zebra DB'[ICCID] DESC,\n\t'Zebra DB'[EnrollmentTime],\n\t'Zebra DB'[Offline Days],\n\t'Zebra DB'[Device Name],\n\t'Zebra DB'[DeviceGroupPath],\n\t'Zebra DB'[Model],\n\t'Zebra DB'[SerialNo],\n\t'Zebra DB'[Business Division],\n\t'Zebra DB'[Business Site],\n\t'Zebra DB'[Business Unit],\n\t'Zebra DB'[Offline > 30 Days],\n\t'Zebra DB'[Star ID],\n\t'Zebra DB'[LastDisConnTime]",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "connectionName": "shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "Create_CSV_table_1": {
+                "runAfter": {
+                  "Compose_1": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Offline_More_Than_30_Days')",
+                  "format": "CSV"
+                }
+              },
+              "Create_HTML_table_1": {
+                "runAfter": {
+                  "Select_EVRI_Offline_More_Than_30_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Offline_More_Than_30_Days')",
+                  "format": "HTML"
+                }
+              },
+              "Compose_1": {
+                "runAfter": {
+                  "Create_HTML_table_1": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                },
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table_1')}"
+              },
+              "Select_EVRI_Offline_More_Than_30_Days": {
+                "runAfter": {
+                  "EVRi_Offline_More_Than_30_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                },
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('EVRi_Offline_More_Than_30_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Zebra DB[Device Name]']",
+                    "Serial Number": "@item()?['Zebra DB[SerialNo]']",
+                    "Model": "@item()?['Zebra DB[Model]']",
+                    "Business Division": "@item()?['Zebra DB[Business Division]']",
+                    "Business Site": "@item()?['Zebra DB[Business Site]']",
+                    "Business Unit": "@item()?['Zebra DB[Business Unit]']",
+                    "Offline Days": "@item()?['Zebra DB[Offline Days]']",
+                    "Offline > 30 Days": "@item()?['Zebra DB[Offline > 30 Days]']",
+                    "Last Seen": "@if(equals(item()?['Zebra DB[LastDisConnTime]'], null), '', formatDateTime(item()?['Zebra DB[LastDisConnTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Zebra DB[EnrollmentTime]'], null), '', formatDateTime(item()?['Zebra DB[EnrollmentTime]'],'dd/MM/yyyy HH:mm', 'en-GB'))\r\n",
+                    "Star ID": "@item()?['Zebra DB[Star ID]']",
+                    "Device Group Path": "@item()?['Zebra DB[DeviceGroupPath]']",
+                    "ICCID": "@concat('`', item()?['Zebra DB[ICCID]'], '`')"
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('Offline60days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          },
+          "type": "If"
+        },
+        "Condition60Days": {
+          "actions": {},
+          "runAfter": {
+            "NonZebraCondition30Days": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "EVRi_Offline_More_Than_60_Days": {
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"EMEA\"}, 'Zebra DB'[Region Path])\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Zebra DB'[Offline > 60 Days])\n\n\tVAR __DS0FilterTable3 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Zebra DB'[Business Division])),\n\t\t\tNOT('Zebra DB'[Business Division] IN {\"LOST & STOLEN\"})\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Zebra DB',\n\t\t\t\t'Zebra DB'[EnrollmentTime],\n\t\t\t\t'Zebra DB'[Offline Days],\n\t\t\t\t'Zebra DB'[Device Name],\n\t\t\t\t'Zebra DB'[DeviceGroupPath],\n\t\t\t\t'Zebra DB'[Model],\n\t\t\t\t'Zebra DB'[SerialNo],\n\t\t\t\t'Zebra DB'[Business Division],\n\t\t\t\t'Zebra DB'[Business Site],\n\t\t\t\t'Zebra DB'[Business Unit],\n\t\t\t\t'Zebra DB'[Offline > 60 Days],\n\t\t\t\t'Zebra DB'[Star ID],\n\t\t\t\t'Zebra DB'[LastDisConnTime],\n\t\t\t\t'Zebra DB'[ICCID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2),\n\t\t\tKEEPFILTERS(__DS0FilterTable3)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'Zebra DB'[ICCID] DESC,\n\t'Zebra DB'[EnrollmentTime],\n\t'Zebra DB'[Offline Days],\n\t'Zebra DB'[Device Name],\n\t'Zebra DB'[DeviceGroupPath],\n\t'Zebra DB'[Model],\n\t'Zebra DB'[SerialNo],\n\t'Zebra DB'[Business Division],\n\t'Zebra DB'[Business Site],\n\t'Zebra DB'[Business Unit],\n\t'Zebra DB'[Offline > 60 Days],\n\t'Zebra DB'[Star ID],\n\t'Zebra DB'[LastDisConnTime]",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "connectionName": "shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "Create_CSV_table_2": {
+                "runAfter": {
+                  "Compose_2": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Offline_More_Than_60_Days')",
+                  "format": "CSV"
+                }
+              },
+              "Create_HTML_table_2": {
+                "runAfter": {
+                  "Select_EVRI_Offline_More_Than_60_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Select_EVRI_Offline_More_Than_60_Days')",
+                  "format": "HTML"
+                }
+              },
+              "Compose_2": {
+                "runAfter": {
+                  "Create_HTML_table_2": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                },
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table_2')}"
+              },
+              "Select_EVRI_Offline_More_Than_60_Days": {
+                "runAfter": {
+                  "EVRi_Offline_More_Than_60_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                },
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('EVRi_Offline_More_Than_60_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Zebra DB[Device Name]']",
+                    "Serial Number": "@item()?['Zebra DB[SerialNo]']",
+                    "Model": "@item()?['Zebra DB[Model]']",
+                    "Business Division": "@item()?['Zebra DB[Business Division]']",
+                    "Business Site": "@item()?['Zebra DB[Business Site]']",
+                    "Business Unit": "@item()?['Zebra DB[Business Unit]']",
+                    "Offline Days": "@item()?['Zebra DB[Offline Days]']",
+                    "Offline > 60 Days": "@item()?['Zebra DB[Offline > 60 Days]']",
+                    "Last Seen": "@if(equals(item()?['Zebra DB[LastDisConnTime]'], null), '', formatDateTime(item()?['Zebra DB[LastDisConnTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Zebra DB[EnrollmentTime]'], null), '', formatDateTime(item()?['Zebra DB[EnrollmentTime]'],'dd/MM/yyyy HH:mm', 'en-GB'))",
+                    "Star ID": "@item()?['Zebra DB[Star ID]']",
+                    "Device Group Path": "@item()?['Zebra DB[DeviceGroupPath]']",
+                    "ICCID": "@concat('`', item()?['Zebra DB[ICCID]'], '`')"
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('Offline30days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          },
+          "type": "If"
+        },
+        "Run_a_query_against_a_dataset": {
+          "runAfter": {
+            "NonZebraCondition60Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "21791557-9260-4d12-950e-145fd73ea165"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"M_Zebra_Offline___15_Days\", 'Zebra DB'[M Zebra Offline > 15 Days],\n\t\t\"M_Zebra_Offline___30_Days\", 'Zebra DB'[M Zebra Offline > 30 Days],\n\t\t\"M_Zebra_Offline___60_Days\", 'Zebra DB'[M Zebra Offline > 60 Days]\n\t)\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi-1",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Select": {
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0d4da0c0-deb0-4020-9f3e-9545dbbed1f4"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Offline > 15 Days": "@item()?['[M_Zebra_Offline___15_Days]']",
+              "Offline > 30 Days": "@item()?['[M_Zebra_Offline___30_Days]']",
+              "Offline > 60 Days": "@item()?['[M_Zebra_Offline___60_Days]']"
+            }
+          }
+        },
+        "NonZebraEVRiCountMoreThan15DaysOffline": {
+          "runAfter": {
+            "EVRiCountMoreThan15DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "fa16b1e5-5362-49b8-bf63-4b6301106fae"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"M_BYOD_Offline___15_Days\", 'Samsung and ET45 DB'[M BYOD Offline > 15 Days]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "NonZebraEVRiCountMoreThan30DaysOffline": {
+          "runAfter": {
+            "EVRiCountMoreThan30DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"M_BYOD_Offline___30_Days\", 'Samsung and ET45 DB'[M BYOD Offline > 30 Days]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "NonZebraEVRiCountMoreThan60DaysOffline": {
+          "runAfter": {
+            "EVRiCountMoreThan60DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"M_BYOD_Offline___60_Days\",'Samsung and ET45 DB'[M BYOD Offline > 60 Days]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "NonZebraOfflinemorethan15days": {
+          "runAfter": {
+            "Offlinemorethan15days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "NonZebraOffline15days",
+                "type": "float",
+                "value": "@outputs('NonZebraEVRiCountMoreThan15DaysOffline')?['body/firstTableRows'][0]?['[M_BYOD_Offline___15_Days]']"
+              }
+            ]
+          }
+        },
+        "NonZebraOfflinemorethan30days": {
+          "runAfter": {
+            "Offlinemorethan30days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "NonZebraOffline30days",
+                "type": "float",
+                "value": "@outputs('NonZebraEVRiCountMoreThan30DaysOffline')?['body/firstTableRows'][0]?['[M_BYOD_Offline___30_Days]']"
+              }
+            ]
+          }
+        },
+        "NonZebraOfflinemorethan60days": {
+          "runAfter": {
+            "Offlinemorethan60days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "NonZebraOffline60days",
+                "type": "float",
+                "value": "@outputs('NonZebraEVRiCountMoreThan60DaysOffline')?['body/firstTableRows'][0]?['[M_BYOD_Offline___60_Days]']"
+              }
+            ]
+          }
+        },
+        "NonZebraCondition15Days": {
+          "actions": {},
+          "runAfter": {
+            "Condition15Days": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "NonZebraEVRi_Offline_More_Than_15_Days": {
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Samsung and ET45 DB'[SerialNo])),\n\t\t\tNOT('Samsung and ET45 DB'[SerialNo] IN {BLANK()})\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Samsung and ET45 DB'[Offline > 15 Days])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Samsung and ET45 DB',\n\t\t\t\t'Samsung and ET45 DB'[Asset ID],\n\t\t\t\t'Samsung and ET45 DB'[SerialNo],\n\t\t\t\t'Samsung and ET45 DB'[Model],\n\t\t\t\t'Samsung and ET45 DB'[EnrollmentTime],\n\t\t\t\t'Samsung and ET45 DB'[LastDisConnTime],\n\t\t\t\t'Samsung and ET45 DB'[Offline Days],\n\t\t\t\t'Samsung and ET45 DB'[Offline > 15 Days],\n\t\t\t\t'Samsung and ET45 DB'[Business Division],\n\t\t\t\t'Samsung and ET45 DB'[Business Site],\n\t\t\t\t'Samsung and ET45 DB'[Business Unit],\n\t\t\t\t'Samsung and ET45 DB'[DeviceGroupPath],\n\t\t\t\t'Samsung and ET45 DB'[ICCID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'Samsung and ET45 DB'[Offline Days],\n\t'Samsung and ET45 DB'[Asset ID],\n\t'Samsung and ET45 DB'[SerialNo],\n\t'Samsung and ET45 DB'[Model],\n\t'Samsung and ET45 DB'[EnrollmentTime],\n\t'Samsung and ET45 DB'[LastDisConnTime],\n\t'Samsung and ET45 DB'[Offline > 15 Days],\n\t'Samsung and ET45 DB'[Business Division],\n\t'Samsung and ET45 DB'[Business Site],\n\t'Samsung and ET45 DB'[Business Unit],\n\t'Samsung and ET45 DB'[DeviceGroupPath],\n\t'Samsung and ET45 DB'[ICCID]",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "connectionName": "shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "NonZebraSelect_EVRI_Offline_More_Than_15_Days": {
+                "runAfter": {
+                  "NonZebraEVRi_Offline_More_Than_15_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                },
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('NonZebraEVRi_Offline_More_Than_15_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Samsung and ET45 DB[Asset ID]']",
+                    "Serial Number": "@item()?['Samsung and ET45 DB[Asset ID]']",
+                    "Model": "@item()?['Samsung and ET45 DB[Model]']",
+                    "Business Division": "@item()?['Samsung and ET45 DB[Business Division]']",
+                    "Business Site": "@item()?['Samsung and ET45 DB[Business Site]']",
+                    "Business Unit": "@item()?['Samsung and ET45 DB[Business Unit]']",
+                    "Offline Days": "@item()?['Samsung and ET45 DB[Offline Days]']",
+                    "Offline > 15 Days": "@item()?['Samsung and ET45 DB[Offline > 15 Days]']",
+                    "Last Seen": "@if(equals(item()?['Samsung and ET45 DB[LastDisConnTime]'], null), '', formatDateTime(item()?['Samsung and ET45 DB[LastDisConnTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Samsung and ET45 DB[EnrollmentTime]'], null), '', formatDateTime(item()?['Samsung and ET45 DB[EnrollmentTime]'],'dd/MM/yyyy HH:mm', 'en-GB'))",
+                    "Device Group Path": "@item()?['Samsung and ET45 DB[DeviceGroupPath]']",
+                    "ICCID": "@concat('`', item()?['Samsung and ET45 DB[ICCID]'], '`')"
+                  }
+                }
+              },
+              "NonZebraCreate_CSV15Days": {
+                "runAfter": {
+                  "NonZebraCompose15Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('NonZebraSelect_EVRI_Offline_More_Than_15_Days')",
+                  "format": "CSV"
+                }
+              },
+              "NonZebraCreate_HTML_table15Days": {
+                "runAfter": {
+                  "NonZebraSelect_EVRI_Offline_More_Than_15_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('NonZebraSelect_EVRI_Offline_More_Than_15_Days')",
+                  "format": "HTML"
+                }
+              },
+              "NonZebraCompose15Days": {
+                "runAfter": {
+                  "NonZebraCreate_HTML_table15Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                },
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('NonZebraCreate_HTML_table15Days')}"
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('NonZebraOffline15days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          },
+          "type": "If"
+        },
+        "NonZebraCondition30Days": {
+          "actions": {},
+          "runAfter": {
+            "Condition30Days": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "NonZebraEVRi_Offline_More_Than_30_Days": {
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Samsung and ET45 DB'[SerialNo])),\n\t\t\tNOT('Samsung and ET45 DB'[SerialNo] IN {BLANK()})\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Samsung and ET45 DB'[Offline > 30 Days])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Samsung and ET45 DB',\n\t\t\t\t'Samsung and ET45 DB'[Asset ID],\n\t\t\t\t'Samsung and ET45 DB'[SerialNo],\n\t\t\t\t'Samsung and ET45 DB'[Model],\n\t\t\t\t'Samsung and ET45 DB'[EnrollmentTime],\n\t\t\t\t'Samsung and ET45 DB'[LastDisConnTime],\n\t\t\t\t'Samsung and ET45 DB'[Offline Days],\n\t\t\t\t'Samsung and ET45 DB'[Business Division],\n\t\t\t\t'Samsung and ET45 DB'[Business Site],\n\t\t\t\t'Samsung and ET45 DB'[Business Unit],\n\t\t\t\t'Samsung and ET45 DB'[DeviceGroupPath],\n\t\t\t\t'Samsung and ET45 DB'[Offline > 30 Days],\n\t\t\t\t'Samsung and ET45 DB'[ICCID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'Samsung and ET45 DB'[Offline Days],\n\t'Samsung and ET45 DB'[Asset ID],\n\t'Samsung and ET45 DB'[SerialNo],\n\t'Samsung and ET45 DB'[Model],\n\t'Samsung and ET45 DB'[EnrollmentTime],\n\t'Samsung and ET45 DB'[LastDisConnTime],\n\t'Samsung and ET45 DB'[Business Division],\n\t'Samsung and ET45 DB'[Business Site],\n\t'Samsung and ET45 DB'[Business Unit],\n\t'Samsung and ET45 DB'[DeviceGroupPath],\n\t'Samsung and ET45 DB'[Offline > 30 Days],\n\t'Samsung and ET45 DB'[ICCID]",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "connectionName": "shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "NonZebraCreate_CSV30Days": {
+                "runAfter": {
+                  "NonZebraCompose30Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('NonZebraSelect_EVRI_Offline_More_Than_30_Days')",
+                  "format": "CSV"
+                }
+              },
+              "NonZebraCreate_HTML_table30Days": {
+                "runAfter": {
+                  "NonZebraSelect_EVRI_Offline_More_Than_30_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('NonZebraSelect_EVRI_Offline_More_Than_30_Days')",
+                  "format": "HTML"
+                }
+              },
+              "NonZebraCompose30Days": {
+                "runAfter": {
+                  "NonZebraCreate_HTML_table30Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                },
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('NonZebraCreate_HTML_table30Days')}"
+              },
+              "NonZebraSelect_EVRI_Offline_More_Than_30_Days": {
+                "runAfter": {
+                  "NonZebraEVRi_Offline_More_Than_30_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                },
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('NonZebraEVRi_Offline_More_Than_30_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Samsung and ET45 DB[Asset ID]']",
+                    "Serial Number": "@item()?['Samsung and ET45 DB[SerialNo]']",
+                    "Model": "@item()?['Samsung and ET45 DB[Model]']",
+                    "Business Division": "@item()?['Samsung and ET45 DB[Business Division]']",
+                    "Business Site": "@item()?['Samsung and ET45 DB[Business Site]']",
+                    "Business Unit": "@item()?['Samsung and ET45 DB[Business Unit]']",
+                    "Offline Days": "@item()?['Samsung and ET45 DB[Offline Days]']",
+                    "Offline > 30 Days": "@item()?['Samsung and ET45 DB[Offline > 30 Days]']",
+                    "Last Seen": "@if(equals(item()?['Samsung and ET45 DB[LastDisConnTime]'], null), '', formatDateTime(item()?['Samsung and ET45 DB[LastDisConnTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Samsung and ET45 DB[EnrollmentTime]'], null), '', formatDateTime(item()?['Samsung and ET45 DB[EnrollmentTime]'],'dd/MM/yyyy HH:mm', 'en-GB'))",
+                    "Device Group Path": "@item()?['Samsung and ET45 DB[DeviceGroupPath]']",
+                    "ICCID": "@concat('`', item()?['Samsung and ET45 DB[ICCID]'], '`')"
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('NonZebraOffline30days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          },
+          "type": "If"
+        },
+        "NonZebraCondition60Days": {
+          "actions": {},
+          "runAfter": {
+            "Condition60Days": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "NonZebraEVRi_Offline_More_Than_60_Days": {
+                "metadata": {
+                  "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                    "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                    "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Samsung and ET45 DB'[SerialNo])),\n\t\t\tNOT('Samsung and ET45 DB'[SerialNo] IN {BLANK()})\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Samsung and ET45 DB'[Offline > 60 Days])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Samsung and ET45 DB',\n\t\t\t\t'Samsung and ET45 DB'[Asset ID],\n\t\t\t\t'Samsung and ET45 DB'[SerialNo],\n\t\t\t\t'Samsung and ET45 DB'[Model],\n\t\t\t\t'Samsung and ET45 DB'[EnrollmentTime],\n\t\t\t\t'Samsung and ET45 DB'[LastDisConnTime],\n\t\t\t\t'Samsung and ET45 DB'[Offline Days],\n\t\t\t\t'Samsung and ET45 DB'[Business Division],\n\t\t\t\t'Samsung and ET45 DB'[Business Site],\n\t\t\t\t'Samsung and ET45 DB'[Business Unit],\n\t\t\t\t'Samsung and ET45 DB'[DeviceGroupPath],\n\t\t\t\t'Samsung and ET45 DB'[Offline > 60 Days],\n\t\t\t\t'Samsung and ET45 DB'[ICCID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'Samsung and ET45 DB'[Offline Days],\n\t'Samsung and ET45 DB'[Asset ID],\n\t'Samsung and ET45 DB'[SerialNo],\n\t'Samsung and ET45 DB'[Model],\n\t'Samsung and ET45 DB'[EnrollmentTime],\n\t'Samsung and ET45 DB'[LastDisConnTime],\n\t'Samsung and ET45 DB'[Business Division],\n\t'Samsung and ET45 DB'[Business Site],\n\t'Samsung and ET45 DB'[Business Unit],\n\t'Samsung and ET45 DB'[DeviceGroupPath],\n\t'Samsung and ET45 DB'[Offline > 60 Days],\n\t'Samsung and ET45 DB'[ICCID]",
+                    "specification/serializerSettings/includeNulls": false
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                    "connectionName": "shared_powerbi",
+                    "operationId": "ExecuteDatasetQuery"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "NonZebraCreate_CSV60Days": {
+                "runAfter": {
+                  "NonZebraCompose60Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "c0ac1ad5-275c-4ce6-92c5-b3db106290ec"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('NonZebraSelect_EVRI_Offline_More_Than_60_Days')",
+                  "format": "CSV"
+                }
+              },
+              "NonZebraCreate_HTML_table60Days": {
+                "runAfter": {
+                  "NonZebraSelect_EVRI_Offline_More_Than_60_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('NonZebraSelect_EVRI_Offline_More_Than_60_Days')",
+                  "format": "HTML"
+                }
+              },
+              "NonZebraCompose60Days": {
+                "runAfter": {
+                  "NonZebraCreate_HTML_table60Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                },
+                "type": "Compose",
+                "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('NonZebraCreate_HTML_table60Days')}"
+              },
+              "NonZebraSelect_EVRI_Offline_More_Than_60_Days": {
+                "runAfter": {
+                  "NonZebraEVRi_Offline_More_Than_60_Days": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                },
+                "type": "Select",
+                "inputs": {
+                  "from": "@outputs('NonZebraEVRi_Offline_More_Than_60_Days')?['body/firstTableRows']",
+                  "select": {
+                    "Device Name": "@item()?['Samsung and ET45 DB[Asset ID]']",
+                    "Serial Number": "@item()?['Samsung and ET45 DB[SerialNo]']",
+                    "Model": "@item()?['Samsung and ET45 DB[Model]']",
+                    "Business Division": "@item()?['Samsung and ET45 DB[Business Division]']",
+                    "Business Site": "@item()?['Samsung and ET45 DB[Business Site]']",
+                    "Business Unit": "@item()?['Samsung and ET45 DB[Business Unit]']",
+                    "Offline Days": "@item()?['Samsung and ET45 DB[Offline Days]']",
+                    "Offline > 60 Days": "@item()?['Samsung and ET45 DB[Offline > 60 Days]']",
+                    "Last Seen": "@if(equals(item()?['Samsung and ET45 DB[LastDisConnTime]'], null), '', formatDateTime(item()?['Samsung and ET45 DB[LastDisConnTime]'],'dd/MM/yyyy', 'en-GB'))",
+                    "Enrollment Time": "@if(equals(item()?['Samsung and ET45 DB[EnrollmentTime]'], null), '', formatDateTime(item()?['Samsung and ET45 DB[EnrollmentTime]'],'dd/MM/yyyy HH:mm', 'en-GB'))",
+                    "Device Group Path": "@item()?['Samsung and ET45 DB[DeviceGroupPath]']",
+                    "ICCID": "@concat('`', item()?['Samsung and ET45 DB[ICCID]'], '`')"
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('Offline60days')",
+                  ""
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9c8feab9-b5fa-4fea-8809-7c01cad2c477"
+          },
+          "type": "If"
+        },
+        "NonZebraSelectAll": {
+          "runAfter": {
+            "NonZebraRun_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3664f256-5bc0-474a-ade8-93dc8c174c06"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('NonZebraRun_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Offline > 15 Days": "@item()?['[M_BYOD_Offline___15_Days]']",
+              "Offline > 30 Days": "@item()?['[M_BYOD_Offline___30_Days]']",
+              "Offline > 60 Days": "@item()?['[M_BYOD_Offline___60_Days]']"
+            }
+          }
+        },
+        "NonZebraCreate_HTMLtable": {
+          "runAfter": {
+            "NonZebraSelectAll": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('NonZebraSelectAll')",
+            "format": "HTML"
+          }
+        },
+        "NonZebraCompose3": {
+          "runAfter": {
+            "NonZebraCreate_HTMLtable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+          },
+          "type": "Compose",
+          "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('NonZebraCreate_HTMLtable')}"
+        },
+        "Create_HTML_table_3": {
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b2df05d6-5cb6-4736-a2e6-c0a4c845bd10"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "HTML"
+          }
+        },
+        "Compose_3": {
+          "runAfter": {
+            "Create_HTML_table_3": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "85212b43-bb7d-417d-9af2-15edf551a259"
+          },
+          "type": "Compose",
+          "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table_3')}"
+        },
+        "NonZebraRun_a_query_against_a_dataset": {
+          "runAfter": {
+            "Compose_3": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "854ac311-f894-4593-83da-6cd6a7ea5586"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\t\"M_BYOD_Offline___15_Days\", 'Samsung and ET45 DB'[M BYOD Offline > 15 Days],\n\t\t\"M_BYOD_Offline___30_Days\", 'Samsung and ET45 DB'[M BYOD Offline > 30 Days],\n\t\t\"M_BYOD_Offline___60_Days\", 'Samsung and ET45 DB'[M BYOD Offline > 60 Days]\n\t)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi-1",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

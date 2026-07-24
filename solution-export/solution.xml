@@ -1,0 +1,303 @@
+<ImportExportXml version="9.2.26063.166" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26063.166" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26063.00166">
+  <SolutionManifest>
+    <UniqueName>Strategic_Innovation_and_Automation</UniqueName>
+    <LocalizedNames>
+      <LocalizedName description="SIA" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions />
+    <Version>1.0.0.2</Version>
+    <Managed>0</Managed>
+    <Publisher>
+      <UniqueName>DefaultPublisherorgdc11286b</UniqueName>
+      <LocalizedNames>
+        <LocalizedName description="Default Publisher for orgdc11286b" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <Description description="Default publisher for this organization" languagecode="1033" />
+      </Descriptions>
+      <EMailAddress xsi:nil="true"></EMailAddress>
+      <SupportingWebsiteUrl xsi:nil="true"></SupportingWebsiteUrl>
+      <CustomizationPrefix>new</CustomizationPrefix>
+      <CustomizationOptionValuePrefix>10000</CustomizationOptionValuePrefix>
+      <Addresses>
+        <Address>
+          <AddressNumber>1</AddressNumber>
+          <AddressTypeCode xsi:nil="true"></AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode xsi:nil="true"></ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+        <Address>
+          <AddressNumber>2</AddressNumber>
+          <AddressTypeCode xsi:nil="true"></AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode xsi:nil="true"></ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+      </Addresses>
+    </Publisher>
+    <RootComponents>
+      <RootComponent type="1" schemaName="new_servicemanagementactions" behavior="0" />
+      <RootComponent type="1" schemaName="new_servicemanagementtaskslist" behavior="0" />
+      <RootComponent type="9" schemaName="channelaccessprofile_emailaccess" behavior="0" />
+      <RootComponent type="20" id="{a0a59a4a-b5a8-4e6f-a094-a866573c17d4}" behavior="0" />
+      <RootComponent type="29" id="{00562213-aecb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{00944c7c-f2db-f011-8544-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{00a49ae8-445e-f011-bec1-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{00d94526-ff3e-f111-88b4-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{02cf5e28-5803-f011-bae3-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{03562213-aecb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{03cebde1-43cd-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{08e991d7-35cc-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{0d579c1f-c29e-f011-b41c-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{0df63498-4736-f011-8c4e-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{0e4edc57-88f7-f011-8406-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{1048bddd-5a06-f111-8407-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{11f8e0d4-7c05-f011-bae2-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{12e9a150-31d1-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{130b020f-4d87-f011-b4cc-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{133eb337-8fcf-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{14947589-4654-f011-877a-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{173eb337-8fcf-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{183eb337-8fcf-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{193e0026-ee4d-f111-bec6-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{193eb337-8fcf-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{1e411d19-aecb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{1f333cf2-5ec5-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{209d4960-9335-f111-88b4-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{22584ec8-1445-f011-8779-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{22947e2d-72ab-f011-bbd3-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{23584ec8-1445-f011-8779-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{23ca8b19-6fdb-f011-8544-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{24584ec8-1445-f011-8779-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{24db52df-19cd-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{253f0f10-e612-f111-8406-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{26bd7e86-d4cb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{27361385-20cd-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{28d678ca-9c6c-f011-bec2-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{2a25b121-57b9-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{2b25b121-57b9-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{2c25b121-57b9-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{2d25b121-57b9-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{2ef2c648-fffc-f011-8406-000d3a1b678a}" behavior="0" />
+      <RootComponent type="29" id="{2f25028d-4c87-f011-b4cc-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{2f39d511-a35d-f111-a826-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{3071946b-313d-f011-b4cb-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{38e63f4d-fef8-ef11-be20-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{3b562213-aecb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{3c562213-aecb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{3ca36e07-236d-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{3f3f9114-cacb-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{45c080e8-4c87-f011-b4cc-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{475cca8a-8bcb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{48ff393c-30f8-f011-8406-7ced8d210053}" behavior="0" />
+      <RootComponent type="29" id="{4962db58-5592-f011-b4cb-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{4ab22ad5-7c05-f011-bae2-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{4d62ea7d-f954-f011-877a-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{4f5b7939-8fcf-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{503cb69c-982b-f111-88b4-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{505b7939-8fcf-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{509160ab-751f-f111-8342-7ced8d210053}" behavior="0" />
+      <RootComponent type="29" id="{50de7966-ff63-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{535b7939-8fcf-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{53a3a42d-3880-f111-ab0f-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{549430d4-342c-f111-88b4-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{55507bee-c371-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{555e7b9c-fd7c-f011-b4cc-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{57be93fa-0417-f111-8341-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{5857983e-a1aa-f011-bbd3-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{58be93fa-0417-f111-8341-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{592d864a-8ecf-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{5baf571c-a9d9-f011-8544-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{5c8a0cfc-6d1c-f111-8341-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{5d8a0cfc-6d1c-f111-8341-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{5eb50e84-d863-f111-a826-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{6031251c-7168-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{60e6b822-b818-f111-8341-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{61517ddf-d360-f111-a826-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{61e6b822-b818-f111-8341-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{625b7939-8fcf-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{62af019d-e2db-f011-8544-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{62b0b610-a35d-f111-a826-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{62e6b822-b818-f111-8341-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{63b0b610-a35d-f111-a826-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{64b0b610-a35d-f111-a826-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{65b0b610-a35d-f111-a826-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{65bbd04f-2892-f011-b4cb-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{66d8a206-2dd1-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{68584249-903d-f011-b4cb-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{6a25b121-57b9-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{6b632b39-a594-f011-b4cb-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{6c86ab20-e8c5-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{6da7afb1-ad3c-f111-88b5-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{6e02f46d-fef8-ef11-be20-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{7119f916-87cc-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{72a4a818-13f9-ef11-be20-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{73647dce-96cc-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{746e8b9c-7e20-f111-8341-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{7523fc24-a56c-f011-bec2-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{763a6367-ff63-f011-bec2-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{77d42b79-57cc-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{797f75b5-80e5-f011-8544-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{810e99c0-8d67-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{836d7aa6-97ce-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{845f7e64-28d1-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{84b4625e-f22d-f111-88b3-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{84eb5747-8910-f111-8406-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{85024ac7-2a46-f011-877a-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{8569da9d-d837-f111-88b5-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{86453050-a76c-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{875b7939-8fcf-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{87f7ab1f-57b9-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{895b7939-8fcf-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{89f7ab1f-57b9-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{8a0a365d-30e6-f011-8544-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{8af7ab1f-57b9-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{9154f33d-0f63-f111-a826-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{91d3c4c7-fd7c-f011-b4cc-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{9446bf12-aecb-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{9546bf12-aecb-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{95513dc4-1445-f011-877a-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{95b0b610-a35d-f111-a826-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{95b3f6d5-ba00-f011-bae3-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{96a43a4b-fef8-ef11-be20-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{9839363e-3bd1-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{98a43a4b-fef8-ef11-be20-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{98c0da8e-b068-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{9b3ae84b-846c-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{9ba43a4b-fef8-ef11-be20-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{9c39363e-3bd1-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{9c5070da-0155-f011-877a-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{9d1e74a9-6ac5-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{9d78155c-9335-f111-88b5-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{a0b13f52-9dfa-f011-8406-7ced8d210053}" behavior="0" />
+      <RootComponent type="29" id="{ab462dd2-8e61-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{ab58a9a5-4c87-f011-b4cc-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{abed8525-ce73-f111-ab0f-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{ae8ecdab-fb29-f111-88b3-7c1e524aa539}" behavior="0" />
+      <RootComponent type="29" id="{b8cf5665-62c5-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{b9f7ab1f-57b9-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{ba3f4996-882a-f111-88b3-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{c0fd3bc8-ca22-f111-8341-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{c1876e18-afcb-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{c5e28d6a-4a3d-f011-b4cb-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{c6ceb544-62cd-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{c6d286ff-0c0f-f011-9989-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{c873a3db-c9f6-f011-8406-7ced8d210053}" behavior="0" />
+      <RootComponent type="29" id="{c8df0836-8b35-f011-8c4e-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{d0955283-5fcd-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{d0b352bf-8665-f111-a826-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{d82c98ae-c53a-f011-b4cc-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{d9c4b0a6-1b0a-f011-bae3-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{da845504-a26c-f011-bec2-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{dc451744-e7f6-f011-8406-7c1e5217a349}" behavior="0" />
+      <RootComponent type="29" id="{dc53a973-29d1-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{dd024821-2ccd-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{de022694-002e-f111-88b3-7ced8dd7139c}" behavior="0" />
+      <RootComponent type="29" id="{de34e74c-903d-f011-b4cc-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{deb8ab25-57b9-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{df34e74c-903d-f011-b4cc-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{df7dcd06-89f8-f011-8406-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{e0b82000-b3f1-ee11-904c-002248280236}" behavior="0" />
+      <RootComponent type="29" id="{e3a1608a-6bc5-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{e3ac3d3e-a9c4-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{e491cc6b-caf6-f011-8406-7ced8d210053}" behavior="0" />
+      <RootComponent type="29" id="{ebac3d0e-9935-f011-8c4e-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{ebe1a530-d243-f111-88b5-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{ec01e61b-162b-f011-8c4d-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{edea3914-10cd-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{ee002cec-3654-f011-877a-7c1e528247c3}" behavior="0" />
+      <RootComponent type="29" id="{ef6f9b0a-2b3e-f111-88b5-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{f06b7b50-e551-f011-877a-6045bdd3bdda}" behavior="0" />
+      <RootComponent type="29" id="{f14fb0ab-860e-f111-8406-7c1e525a880a}" behavior="0" />
+      <RootComponent type="29" id="{f2189102-33cd-f011-bbd3-7c1e5267a40e}" behavior="0" />
+      <RootComponent type="29" id="{f2cf9786-52db-f011-8544-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{f58c9d3c-c3b0-f011-bbd3-0022482f23c8}" behavior="0" />
+      <RootComponent type="29" id="{f5b63d3e-3bd1-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{f8e71e6a-90cc-f011-bbd3-6045bdd64a0d}" behavior="0" />
+      <RootComponent type="29" id="{f938d511-a35d-f111-a826-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{f9543d00-c5f6-f011-8406-7ced8d210053}" behavior="0" />
+      <RootComponent type="29" id="{fa249263-4d87-f011-b4cc-7c1e52488d9d}" behavior="0" />
+      <RootComponent type="29" id="{fa38d511-a35d-f111-a826-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{fb38d511-a35d-f111-a826-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{fc38d511-a35d-f111-a826-000d3a8f644d}" behavior="0" />
+      <RootComponent type="29" id="{fc6f64ed-c228-f011-8c4e-7c1e528247c3}" behavior="0" />
+      <RootComponent type="62" schemaName="new_SMModelDrivenApp" behavior="0" />
+      <RootComponent type="63" id="{1eb54ab1-58b7-4d14-bf39-4f3e402616e8}" behavior="0" />
+      <RootComponent type="300" schemaName="new_dailybauactionscontrol_c60e2" behavior="0" />
+      <RootComponent type="300" schemaName="new_msservicemanagement_a1007" behavior="0" />
+      <RootComponent type="300" schemaName="new_rmg42gearsjobsfolderids_0edd3" behavior="0" />
+      <RootComponent type="300" schemaName="new_rmg42ggetdevicelogs_591d0" behavior="0" />
+      <RootComponent type="300" schemaName="new_siaformapp_7447b" behavior="0" />
+      <RootComponent type="300" schemaName="new_srmrcaapp_71dcb" behavior="0" />
+    </RootComponents>
+    <MissingDependencies>
+      <MissingDependency>
+        <Required type="20" displayName="Dataverse Search Role" solution="S2SApplicationRoles (1.0.0.126)" id="{a0a59a4a-b5a8-4e6f-a094-a866573c17d4}">
+          <package appName="Microsoft S2SCDSCoreApplication Package" version="1.0.1.29">MicrosoftS2SApplicationIdentitiesCoreTst (1.0.1.29)</package>
+        </Required>
+        <Dependent type="20" displayName="Dataverse Search Role" id="{a0a59a4a-b5a8-4e6f-a094-a866573c17d4}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="connectionreference" displayName="msdyn_ContentConversion" solution="msdynce_KnowledgeManagementPVAExtension (9.0.22101.5016)" id.connectionreferencelogicalname="msdyn_ContentConversion">
+          <package appName="msdynce_KnowledgeManagement" version="9.0.26062.3024">msdynce_KnowledgeManagementAnchor (9.0.26062.3024)</package>
+        </Required>
+        <Dependent type="connectionreference" displayName="msdyn_ContentConversion" id.connectionreferencelogicalname="msdyn_ContentConversion" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="connectionreference" displayName="msdyn_Dataverse" solution="msdynce_KnowledgeManagementPVAExtension (9.0.22101.5016)" id.connectionreferencelogicalname="msdyn_Dataverse">
+          <package appName="msdynce_KnowledgeManagement" version="9.0.26062.3024">msdynce_KnowledgeManagementAnchor (9.0.26062.3024)</package>
+        </Required>
+        <Dependent type="connectionreference" displayName="msdyn_Dataverse" id.connectionreferencelogicalname="msdyn_Dataverse" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="EnvironmentVariableDefinition" displayName="msdyn_ShouldShowPeekButton" solution="msdynce_ServiceManagementControlsExtension (9.1.22091.1008)" id.schemaname="msdyn_ShouldShowPeekButton">
+          <package appName="msdynce_ServiceLevelAgreement" version="9.0.26062.2000">msdynce_ServiceLevelAgreementAnchor (9.0.26062.2000)</package>
+        </Required>
+        <Dependent type="29" displayName="Royal Mail Group PBI Refresh after Updating the Master Sites List" id="{e0b82000-b3f1-ee11-904c-002248280236}" />
+      </MissingDependency>
+    </MissingDependencies>
+  </SolutionManifest>
+</ImportExportXml>

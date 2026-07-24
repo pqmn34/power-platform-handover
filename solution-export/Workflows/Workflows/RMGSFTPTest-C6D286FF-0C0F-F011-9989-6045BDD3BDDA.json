@@ -1,0 +1,107 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sftpwithssh-1": {
+        "api": {
+          "name": "shared_sftpwithssh"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsftpwithssh_e6bdc"
+        },
+        "runtimeSource": "invoker"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "csv_to_RMG_CMDB": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "L3NlcnZpY2Vub3cvaW5jb21pbmc="
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+              "operationId": "ListFolder",
+              "connectionName": "shared_sftpwithssh-1"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "L3NlcnZpY2Vub3cvaW5jb21pbmc=": "/servicenow/incoming"
+          }
+        },
+        "List_files_in_folder-copy_2": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "L3Rid3JlcG9ydGluZy9pbmNvbWluZw=="
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+              "operationId": "ListFolder",
+              "connectionName": "shared_sftpwithssh-1"
+            }
+          },
+          "runAfter": {
+            "csv_to_RMG_CMDB": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "L3NlcnZpY2Vub3cvaW5jb21pbmc=": "/servicenow/incoming",
+            "L3Rid3JlcG9ydGluZy9pbmNvbWluZw==": "/tbwreporting/incoming"
+          }
+        },
+        "List_files_in_folder-copy_3": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "L3Rid3JlcG9ydGluZ3BwL2luY29taW5n"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+              "operationId": "ListFolder",
+              "connectionName": "shared_sftpwithssh-1"
+            }
+          },
+          "runAfter": {
+            "List_files_in_folder-copy_2": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "L3NlcnZpY2Vub3cvaW5jb21pbmc=": "/servicenow/incoming",
+            "L3Rid3JlcG9ydGluZ3BwL2luY29taW5n": "/tbwreportingpp/incoming"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

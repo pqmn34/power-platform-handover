@@ -1,0 +1,778 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_d102c"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "description": "",
+                  "title": "ApproverEmail",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "text"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "HTTP": {
+          "type": "Http",
+          "inputs": {
+            "uri": "@{outputs('URI')}api/token",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Basic @{outputs('EncodeSecret')}",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "body": "grant_type=password&username=@{'prabhat.kumar@zebra.com'}&password=@{'PKumar!!01088001'}"
+          },
+          "runAfter": {
+            "URI": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "f2f80696-269a-4c5b-b307-fb545d2409fa"
+          }
+        },
+        "ClientIDSecret": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ClientIDSecret",
+                "type": "string",
+                "value": "@outputs('Get_secret_ClientID')?['body/value']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_secret_ClientCS": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e787621f-edd0-432a-b05e-592f985be9f9"
+          }
+        },
+        "EncodeSecret": {
+          "type": "Compose",
+          "inputs": "@base64(variables('ClientIDSecret'))",
+          "runAfter": {
+            "Get_secretPSWD": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1cdac49a-2b2e-43ee-a1e3-d32e254ad595"
+          }
+        },
+        "TokenParse_JSON": {
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "token_type": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "expires_in": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6fea45a2-f4c0-4c52-a80e-6b982d89b85a"
+          }
+        },
+        "Get_secret_ClientID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-evri-premium-sti-cidcs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "DeletedFailedList": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secret_ClientCS": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-evri-premium-sti-cs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_ClientID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTo": {
+          "type": "Compose",
+          "inputs": "michaela.pastourmatzi@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "Jakub.Polak@zebra.com;gmssba@zebra.com",
+          "runAfter": {
+            "EmailTo": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n    <div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n    </div>\n    <div style=\"padding: 15px; background-color: #f9f9f9;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tbody>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('Error_Message')}</u></b></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n                    <td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n                </tr>\n            </tbody>\n        </table>\n        <br>\n        <a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\n           View Failed Run\n        </a>\n    </div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\r\n    first(body('Filter_Array'))?['body']?['error']?['message'],\r\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\r\n    first(body('Filter_Array'))?['error']?['message'],\r\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Condition_PreDeletionList": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "lessOrEquals": [
+                      "@outputs('Compose_-_DeviceCount')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Terminate": {
+                  "type": "Terminate",
+                  "inputs": {
+                    "runStatus": "Succeeded"
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Apply_to_each": {
+                    "type": "Foreach",
+                    "foreach": "@body('SelectDHLOfflineMoreThan40Days')",
+                    "actions": {
+                      "HTTP_DeleteDevice": {
+                        "type": "Http",
+                        "inputs": {
+                          "uri": "@{outputs('URI')}api/devices/@{items('Apply_to_each')?['Device ID']}",
+                          "method": "DELETE",
+                          "headers": {
+                            "Authorization": "Bearer @{variables('AccessToken')}"
+                          }
+                        },
+                        "runtimeConfiguration": {
+                          "contentTransfer": {
+                            "transferMode": "Chunked"
+                          }
+                        }
+                      },
+                      "Append_to_array_variable-DeletedSuccessList": {
+                        "type": "AppendToArrayVariable",
+                        "inputs": {
+                          "name": "DeletedSuccessList",
+                          "value": "@concat(\n  'DeviceID: ',\n  string(items('Apply_to_each')?['DeviceID']),\n  ' | DeviceName: ',\n  coalesce(items('Apply_to_each')?['DeviceName'], 'N/A')\n)"
+                        },
+                        "runAfter": {
+                          "HTTP_DeleteDevice": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Append_to_array_variable-DeletedFailedList": {
+                        "type": "AppendToArrayVariable",
+                        "inputs": {
+                          "name": "DeletedFailedList",
+                          "value": "@concat(\n  'DeviceID: ',\n  string(items('Apply_to_each')?['DeviceID']),\n  ' | DeviceName: ',\n  coalesce(items('Apply_to_each')?['DeviceName'], 'N/A')\n)"
+                        },
+                        "runAfter": {
+                          "HTTP_DeleteDevice": [
+                            "TimedOut",
+                            "Skipped",
+                            "Failed"
+                          ]
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Delay": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Send_an_email_(V2)": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "emailMessage/To": "@triggerBody()?['text']",
+                        "emailMessage/Subject": "EVRI Premium (DHL): RMA Devices Delivered at Repair Center",
+                        "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Greetings</em></i>,<br><br>Please find the report titled \"<b><strong class=\"editor-text-bold\">RMA Devices Received at Repair Center</strong></b>\" which has now been deleted.<br><br>The following devices have been deleted from SOTI.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">EVRI Premium (DHL) RMA DEVICES</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose')}</p><br><p class=\"editor-paragraph\">@{outputs('EmailFooter-Internal')}<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                        "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                        "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                        "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                        "emailMessage/Attachments": [
+                          {
+                            "Name": "evri_premium_rma_received_at_repair.csv",
+                            "ContentBytes": "@body('Create_CSV_table')"
+                          }
+                        ],
+                        "emailMessage/Importance": "High"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                        "operationId": "SendEmailV2",
+                        "connectionName": "shared_office365-1"
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_-_Failed_HTML": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                    }
+                  },
+                  "Delay": {
+                    "type": "Wait",
+                    "inputs": {
+                      "interval": {
+                        "count": 5,
+                        "unit": "Minute"
+                      }
+                    }
+                  },
+                  "Compose_-_Success_Count": {
+                    "type": "Compose",
+                    "inputs": "@length(variables('DeletedSuccessList'))",
+                    "runAfter": {
+                      "Apply_to_each": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_-_Failed_Count": {
+                    "type": "Compose",
+                    "inputs": "@length(variables('DeletedFailedList'))",
+                    "runAfter": {
+                      "Compose_-_Success_Count": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_-_Success_HTML": {
+                    "type": "Compose",
+                    "inputs": "@if(\n  equals(length(variables('DeletedSuccessList')), 0),\n  '<p>None</p>',\n  concat('<ul><li>', join(variables('DeletedSuccessList'), '</li><li>'), '</li></ul>')\n)",
+                    "runAfter": {
+                      "Compose_-_Failed_Count": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_-_Failed_HTML": {
+                    "type": "Compose",
+                    "inputs": "@if(\n  equals(length(variables('DeletedFailedList')), 0),\n  '<p>None</p>',\n  concat('<ul><li>', join(variables('DeletedFailedList'), '</li><li>'), '</li></ul>')\n)",
+                    "runAfter": {
+                      "Compose_-_Success_HTML": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "17ba7cd5-11ce-4546-8f6a-14785cedaad7"
+              }
+            },
+            "Respond_to_a_Power_App_or_flow": {
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "title": "Status",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "successcount": {
+                      "title": "SuccessCount",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "failedcount": {
+                      "title": "FailedCount",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "successdevices": {
+                      "title": "SuccessDevices",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "faileddevices": {
+                      "title": "FailedDevices",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    }
+                  },
+                  "additionalProperties": {}
+                },
+                "statusCode": 200,
+                "body": {
+                  "status": "Completed",
+                  "successcount": "@{string(outputs('Compose_-_Success_Count'))}",
+                  "failedcount": "@{string(outputs('Compose_-_Failed_Count'))}",
+                  "successdevices": "@{join(variables('DeletedSuccessList'), '; ')}",
+                  "faileddevices": "@{join(variables('DeletedFailedList'), '; ')}"
+                }
+              },
+              "runAfter": {
+                "Condition_PreDeletionList": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          }
+        },
+        "AccessToken": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AccessToken",
+                "type": "string",
+                "value": "@body('TokenParse_JSON')?['access_token']"
+              }
+            ]
+          },
+          "runAfter": {
+            "TokenParse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5efc3169-4b11-4d88-beb7-8daa016b9e08"
+          }
+        },
+        "DHLCountRMAReceivedByZebra": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"RMACountSN\", 'RMA Repaired Devices'[RMACountSN]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "AccessToken": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          }
+        },
+        "Offlinemorethan40days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "RMAReceived",
+                "type": "array",
+                "value": "@body('DHLCountRMAReceivedByZebra')?['firstTableRows']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Compose_-_DeviceCount": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        },
+        "DHLRMAReceivedByZebra": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+              "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('RMA Repaired Devices'[OfflineDays])),\n\t\t\t'RMA Repaired Devices'[OfflineDays] >= 1\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('RMA Repaired Devices'[Path])),\n\t\t\tNOT(SEARCH(\"Staging\", 'RMA Repaired Devices'[Path], 1, 0) >= 1)\n\t\t)\n\n\tVAR __DS0FilterTable3 = \n\t\tTREATAS({\"Offline\"}, 'RMA Repaired Devices'[Connection Status])\n\t\n\tVAR __DS0FilterTable4 = \n\t\tTREATAS({\"Received\"}, 'RMA Repaired Devices'[Line Status])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'RMA Repaired Devices',\n\t\t\t\t'RMA Repaired Devices'[DeviceName],\n\t\t\t\t'RMA Repaired Devices'[DeviceOffline>30Days],\n\t\t\t\t'RMA Repaired Devices'[DeviceOffline>40Days],\n\t\t\t\t'RMA Repaired Devices'[DevID],\n\t\t\t\t'RMA Repaired Devices'[HardwareSerialNumber],\n\t\t\t\t'RMA Repaired Devices'[ICCID],\n\t\t\t\t'RMA Repaired Devices'[IMEI],\n\t\t\t\t'RMA Repaired Devices'[Line Status],\n\t\t\t\t'RMA Repaired Devices'[OfflineDays],\n\t\t\t\t'RMA Repaired Devices'[Path],\n\t\t\t\t'RMA Repaired Devices'[RMA #],\n\t\t\t\t'RMA Repaired Devices'[Serial # In],\n\t\t\t\t'RMA Repaired Devices'[Site],\n\t\t\t\t'RMA Repaired Devices'[Ship Date],\n\t\t\t\t'RMA Repaired Devices'[Connection Status],\n\t\t\t\t'RMA Repaired Devices'[Billed Account Name]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2),\n\t\t\tKEEPFILTERS(__DS0FilterTable3),\n\t\t\tKEEPFILTERS(__DS0FilterTable4)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'RMA Repaired Devices'[Connection Status],\n\t'RMA Repaired Devices'[DeviceName],\n\t'RMA Repaired Devices'[DeviceOffline>30Days],\n\t'RMA Repaired Devices'[DeviceOffline>40Days],\n\t'RMA Repaired Devices'[DevID],\n\t'RMA Repaired Devices'[HardwareSerialNumber],\n\t'RMA Repaired Devices'[ICCID],\n\t'RMA Repaired Devices'[IMEI],\n\t'RMA Repaired Devices'[Line Status],\n\t'RMA Repaired Devices'[OfflineDays],\n\t'RMA Repaired Devices'[Path],\n\t'RMA Repaired Devices'[RMA #],\n\t'RMA Repaired Devices'[Serial # In],\n\t'RMA Repaired Devices'[Site],\n\t'RMA Repaired Devices'[Ship Date],\n\t'RMA Repaired Devices'[Billed Account Name]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "Offlinemorethan40days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+          }
+        },
+        "SelectDHLOfflineMoreThan40Days": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('DHLRMAReceivedByZebra')?['body/firstTableRows']",
+            "select": {
+              "Device Name": "@item()?['RMA Repaired Devices[DeviceName]']",
+              "Connection Status": "@item()?['RMA Repaired Devices[Connection Status]']",
+              "Serial Number": "@item()?['RMA Repaired Devices[HardwareSerialNumber]']",
+              "IMEI": "@item()?['RMA Repaired Devices[IMEI]']",
+              "Path": "@item()?['RMA Repaired Devices[Path]']",
+              "Offline Days": "@item()?['RMA Repaired Devices[OfflineDays]']",
+              "Line Status": "@item()?['RMA Repaired Devices[Line Status]']",
+              "Device Offline > 30Days": "@item()?['RMA Repaired Devices[DeviceOffline>30Days]']",
+              "Device Offline > 40Days": "@item()?['RMA Repaired Devices[DeviceOffline>40Days]']",
+              "ICCID": "@item()?['RMA Repaired Devices[ICCID]']",
+              "Ship Date": "@if(empty(item()?['RMA Repaired Devices[Ship Date]']), '', formatDateTime(item()?['RMA Repaired Devices[Ship Date]'],'yyyy/MM/dd'))",
+              "Serial In": "@item()?['RMA Repaired Devices[Serial # In]']",
+              "RMA Number": "@item()?['RMA Repaired Devices[RMA #]']",
+              "Device ID": "@item()?['RMA Repaired Devices[DevID]']"
+            }
+          },
+          "runAfter": {
+            "DHLRMAReceivedByZebra": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+          }
+        },
+        "Create_HTML_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('SelectDHLOfflineMoreThan40Days')",
+            "format": "HTML"
+          },
+          "runAfter": {
+            "SelectDHLOfflineMoreThan40Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+          }
+        },
+        "Compose": {
+          "type": "Compose",
+          "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+          "runAfter": {
+            "Create_HTML_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+          }
+        },
+        "Create_CSV_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('SelectDHLOfflineMoreThan40Days')",
+            "format": "CSV"
+          },
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5aa50498-ae57-4002-b86c-afc4485cf2d4"
+          }
+        },
+        "Get_secretUID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-evri-premium-LnS-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "ClientIDSecret": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secretPSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-evri-premium-LnS-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secretUID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Compose_-_DeviceCount": {
+          "type": "Compose",
+          "inputs": "@int(coalesce(outputs('DHLCountRMAReceivedByZebra')?['body']?['firstTableRows']?[0]?['[RMACountSN]'], 0))",
+          "runAfter": {
+            "DHLCountRMAReceivedByZebra": [
+              "Succeeded"
+            ]
+          }
+        },
+        "URI": {
+          "type": "Compose",
+          "inputs": "@'https://mlmsti02app01.zebra.com/mobicontrol/'",
+          "runAfter": {
+            "EncodeSecret": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailFooter-Internal": {
+          "type": "Compose",
+          "inputs": "<hr>\n<div style=\"font-family: Calibri, sans-serif; font-size: 11pt; color: #595959;\">\n    <p>\n        <i><b>Important:</b> This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</i>\n    </p>\n    <ul>\n        <li>Send an email to <a href=\"mailto:strategicinnovationandautomation@zebra.com\">strategicinnovationandautomation@zebra.com</a> if there is any error in the data or email.</li>\n        <li><a href=\"https://apps.powerapps.com/play/e/79b05c38-71f1-4aab-b05e-a84fc8639bc8/a/4b38b2ea-8805-4f86-8dfc-782be0184e3d?tenantId=4d3d260a-9c40-4306-8dac-0d64717039ec&hint=b66d7893-cd22-40bd-8c2e-b0380e970971&source=sharebutton&sourcetime=1776331989538#\">Raise the CSI</a> if there is any change or improvement required.</li>\n    </ul>\n    <p>\n        Regards,<br>\n        Strategic Innovation and Automation\n    </p>\n    <p style=\"font-size: 10pt; color: #7F7F7F;\">\n        <b>- CONFIDENTIAL -</b><br>\n        This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.\n    </p>\n</div>\n",
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "DeletedSuccessList": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "DeletedSuccessList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailFooter-Internal": [
+              "Succeeded"
+            ]
+          }
+        },
+        "DeletedFailedList": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "DeletedFailedList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "DeletedSuccessList": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

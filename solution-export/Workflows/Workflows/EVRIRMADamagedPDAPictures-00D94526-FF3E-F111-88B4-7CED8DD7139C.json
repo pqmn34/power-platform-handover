@@ -1,0 +1,332 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sftpwithssh": {
+        "api": {
+          "name": "shared_sftpwithssh"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsftpwithssh_37123"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 4,
+            "frequency": "Hour",
+            "timeZone": "UTC",
+            "startTime": "2026-04-22T20:00:00Z"
+          }
+        }
+      },
+      "actions": {
+        "List_files_in_folder": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "L2ZpbGVz"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+              "operationId": "ListFolder",
+              "connectionName": "shared_sftpwithssh"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "L2ZpbGVz": "/files"
+          }
+        },
+        "Get_past_time": {
+          "type": "Expression",
+          "kind": "GetPastTime",
+          "inputs": {
+            "interval": 4,
+            "timeUnit": "Hour"
+          },
+          "runAfter": {
+            "List_files_in_folder": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Apply_to_each_-_Root": {
+              "type": "Foreach",
+              "foreach": "@body('List_files_in_folder')",
+              "actions": {
+                "Condition": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('Compose-Is-Folder')",
+                          1
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "List_files_in_Subfolder": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "id": "@substring(items('Apply_to_each_-_Root')?['Path'], 1)"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+                          "operationId": "ListFolder",
+                          "connectionName": "shared_sftpwithssh"
+                        }
+                      }
+                    },
+                    "Apply_to_each_-_Subfolder": {
+                      "type": "Foreach",
+                      "foreach": "@body('List_files_in_Subfolder')",
+                      "actions": {
+                        "Condition_-_Folders_in_Past_4hours": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "equals": [
+                                  "@outputs('Compose-Is-Folder')",
+                                  1
+                                ]
+                              },
+                              {
+                                "greaterOrEquals": [
+                                  "@item()?['LastModified']",
+                                  "@body('Get_past_time')"
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Get_file_content_of_Folders_Past4Hours": {
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "id": "@item()?['Id']",
+                                  "inferContentType": true
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+                                  "operationId": "GetFileContent",
+                                  "connectionName": "shared_sftpwithssh"
+                                }
+                              }
+                            },
+                            "Create_file_-_Modified_Past4Hours": {
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                                  "folderPath": "/Shared Documents/EVRi/DAMAGED_PDA_PHOTO/@{items('Apply_to_each_-_Root')?['Name']}",
+                                  "name": "@item()?['Name']",
+                                  "body": "@body('Get_file_content_of_Folders_Past4Hours')"
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                                  "operationId": "CreateFile",
+                                  "connectionName": "shared_sharepointonline-1"
+                                }
+                              },
+                              "runAfter": {
+                                "Get_file_content_of_Folders_Past4Hours": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "runtimeConfiguration": {
+                                "contentTransfer": {
+                                  "transferMode": "Chunked"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "List_files_in_Subfolder": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Condition_-_File": {
+                        "type": "If",
+                        "expression": {
+                          "and": [
+                            {
+                              "greaterOrEquals": [
+                                "@items('Apply_to_each_-_Root')?['LastModified']",
+                                "@body('Get_past_time')"
+                              ]
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "Get_file_content": {
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "parameters": {
+                                "id": "@items('Apply_to_each_-_Root')?['Id']",
+                                "inferContentType": true
+                              },
+                              "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+                                "operationId": "GetFileContent",
+                                "connectionName": "shared_sftpwithssh"
+                              }
+                            }
+                          },
+                          "Create_file": {
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "parameters": {
+                                "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                                "folderPath": "/Shared Documents/EVRi/DAMAGED_PDA_PHOTO",
+                                "name": "@items('Apply_to_each_-_Root')?['Name']",
+                                "body": "@body('Get_file_content')"
+                              },
+                              "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                                "operationId": "CreateFile",
+                                "connectionName": "shared_sharepointonline-1"
+                              }
+                            },
+                            "runAfter": {
+                              "Get_file_content": [
+                                "Succeeded"
+                              ]
+                            },
+                            "runtimeConfiguration": {
+                              "contentTransfer": {
+                                "transferMode": "Chunked"
+                              }
+                            }
+                          }
+                        },
+                        "else": {
+                          "actions": {}
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Compose-Is-Folder": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose-Is-Folder": {
+                  "type": "Compose",
+                  "inputs": "@if(equals(item()?['IsFolder'], true), 1, 0)"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Get_past_time": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n    <div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n    </div>\n    <div style=\"padding: 15px; background-color: #f9f9f9;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tbody>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('Error_Message')}</u></b></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n                    <td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n                </tr>\n            </tbody>\n        </table>\n        <br>\n        <a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\n           View Failed Run\n        </a>\n    </div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

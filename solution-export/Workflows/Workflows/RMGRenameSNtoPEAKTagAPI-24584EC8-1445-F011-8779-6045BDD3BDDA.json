@@ -1,0 +1,279 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_f3d13"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_powerbi": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsharepointonline_cc95c"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "cad14e10-9c82-4e4a-a556-b77105023ad1"
+          },
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Send_an_email_(V2)": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7c3fe2b6-6299-4743-9de4-4346bd52418b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "FAILED : PEAK RENAMING FAILED",
+              "emailMessage/Body": "<p>FAILED : PEAK RENAMING FAILED</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SendEmailV2"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@body('Select_PEAK_Devices')",
+          "actions": {
+            "DeviceID": {
+              "metadata": {
+                "operationMetadataId": "fac5819c-969d-4a67-8ff4-d58d225ec2f5"
+              },
+              "type": "Compose",
+              "inputs": "@items('Apply_to_each')?['Device ID']"
+            },
+            "HTTP": {
+              "runAfter": {
+                "SerialNumber": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c4a0f7d2-3c92-431c-b147-7397b27532f7"
+              },
+              "type": "Http",
+              "inputs": {
+                "uri": "https://zebrams001.eu.suremdm.io/api/dynamicjob",
+                "method": "POST",
+                "headers": {
+                  "ApiKey": "13967834-72B0-42F0-8F8C-66A69BE028D8",
+                  "Content-Type": "application/json"
+                },
+                "body": {
+                  "DeviceID": "@{outputs('DeviceID')}",
+                  "JobType": "Set_Devicename",
+                  "PayLoad": "@{outputs('SerialNumber')}-PEAK"
+                },
+                "authentication": {
+                  "type": "Basic",
+                  "username": "L2_RM_API_21070007",
+                  "password": "Zebr@DMSL@60200!"
+                }
+              }
+            },
+            "DeviceName": {
+              "runAfter": {
+                "DeviceID": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5609e7b9-295f-4d2c-a9da-b09ddd9624c2"
+              },
+              "type": "Compose",
+              "inputs": "@items('Apply_to_each')?['Device ID']"
+            },
+            "SerialNumber": {
+              "runAfter": {
+                "DeviceName": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17a0bd52-fcd5-49ec-9a89-845a6b87ffe8"
+              },
+              "type": "Compose",
+              "inputs": "@items('Apply_to_each')?['Serial Number']"
+            }
+          },
+          "runAfter": {
+            "Delay": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "250cb36d-b255-42ce-8ad4-02dbe8b94e69"
+          },
+          "type": "Foreach"
+        },
+        "Run_a_query_against_a_dataset_APK_All_Devices": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "aa4fcb43-90b7-444e-82ee-6b0209c240c7"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "43f98eac-2cda-4fe1-8209-419b9adf4e98",
+              "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'PEAK-Pre Prod',\n\t\t\t'PEAK-Pre Prod'[Device Name],\n\t\t\t'PEAK-Pre Prod'[IMEI],\n\t\t\t'PEAK-Pre Prod'[Serial Number],\n\t\t\t'PEAK-Pre Prod'[Device ID],\n\t\t\t'PEAK-Pre Prod'[Model],\n\t\t\t'PEAK-Pre Prod'[Device Registered],\n\t\t\t'PEAK-Pre Prod'[Last Connected Time],\n\t\t\t'PEAK-Pre Prod'[Online Status],\n\t\t\t'PEAK-Pre Prod'[Offline >1 Day],\n\t\t\t'PEAK-Pre Prod'[Offline >14 Days],\n\t\t\t'PEAK-Pre Prod'[Offline >44 Days],\n\t\t\t'PEAK-Pre Prod'[OfflineDays],\n\t\t\t'PEAK-Pre Prod'[Agent Version],\n\t\t\t'PEAK-Pre Prod'[Device Phone Number],\n\t\t\t'PEAK-Pre Prod'[Sim Serial Number],\n\t\t\t'PEAK-Pre Prod'[UTCTime],\n\t\t\t'PEAK-Pre Prod'[Group Path]\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'PEAK-Pre Prod'[Device ID],\n\t'PEAK-Pre Prod'[Device Name],\n\t'PEAK-Pre Prod'[IMEI],\n\t'PEAK-Pre Prod'[Serial Number],\n\t'PEAK-Pre Prod'[Model],\n\t'PEAK-Pre Prod'[Device Registered],\n\t'PEAK-Pre Prod'[Last Connected Time],\n\t'PEAK-Pre Prod'[Online Status],\n\t'PEAK-Pre Prod'[Offline >1 Day],\n\t'PEAK-Pre Prod'[Offline >14 Days],\n\t'PEAK-Pre Prod'[Offline >44 Days],\n\t'PEAK-Pre Prod'[OfflineDays],\n\t'PEAK-Pre Prod'[Agent Version],\n\t'PEAK-Pre Prod'[Device Phone Number],\n\t'PEAK-Pre Prod'[Sim Serial Number],\n\t'PEAK-Pre Prod'[UTCTime],\n\t'PEAK-Pre Prod'[Group Path]\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "Select_PEAK_Devices": {
+          "runAfter": {
+            "Run_a_query_against_a_dataset_APK_All_Devices": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "61201853-f96c-44e5-8fed-b994a420280f"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset_APK_All_Devices')?['body/firstTableRows']",
+            "select": {
+              "Device Name": "@item()?['PEAK-Pre Prod[Device Name]']",
+              "IMEI": "@item()?['PEAK-Pre Prod[IMEI]']",
+              "Serial Number": "@item()?['PEAK-Pre Prod[Serial Number]']",
+              "Device ID": "@item()?['PEAK-Pre Prod[Device ID]']",
+              "Group Path": "@item()?['PEAK-Pre Prod[Group Path]']"
+            }
+          }
+        },
+        "Create_CSV_table": {
+          "runAfter": {
+            "Select_PEAK_Devices": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "95da2fd7-8af6-4768-8afe-147eda557427"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select_PEAK_Devices')",
+            "format": "CSV"
+          }
+        },
+        "Create_file": {
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6d6d942b-d46f-418c-8caa-67df4f8125b7"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/MS&SS",
+              "folderPath": "/RMG/5. PROJECT/PEAK 2023_24",
+              "name": "PEAK_2023_@{utcNow()}.csv",
+              "body": "@body('Create_CSV_table')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "CreateFile"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "Delay": {
+          "runAfter": {
+            "Create_file": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "4bef0500-128e-4056-9c3f-cffff01bc5ab"
+          },
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 5,
+              "unit": "Second"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

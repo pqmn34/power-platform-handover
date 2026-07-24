@@ -1,0 +1,391 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "Central Europe Standard Time",
+            "startTime": "2025-03-16T09:00:00Z",
+            "schedule": {
+              "hours": [
+                "4"
+              ],
+              "minutes": [
+                45
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: RMG: X012 to RMG is FAILED!🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨FLOW FAILED ALERT: RMG: X012 to RMG is FAILED!🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨FLOW FAILED ALERT: RMG: X012 to RMG is FAILED!🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "StrategicInnovationandAutomation@Zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Master": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Master": {
+          "type": "Scope",
+          "actions": {
+            "Scope": {
+              "type": "Scope",
+              "actions": {
+                "Calculate_Loops": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                      "specification/query": "EVALUATE\nROW(\n    \"loopsNeeded\", ROUNDUP(\n        CALCULATE(DISTINCTCOUNT('RMGX012_TBW'[Index]))/@{variables('incrRows')}, 1) + 1\n    )",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Loops2run": {
+                  "type": "Compose",
+                  "inputs": "@outputs('Calculate_Loops')?['body/firstTableRows']?[0]?['[loopsNeeded]']",
+                  "runAfter": {
+                    "Calculate_Loops": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Do_until": {
+                  "type": "Until",
+                  "expression": "@greaterOrEquals(variables('LoopsVar'),outputs('Loops2run'))",
+                  "limit": {
+                    "count": 60,
+                    "timeout": "PT1H"
+                  },
+                  "actions": {
+                    "Run_a_query_against_a_dataset": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                          "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                          "specification/query": "DEFINE\n    VAR __DS0FilterTable = FILTER(KEEPFILTERS(VALUES('RMGX012_TBW'[Index])), AND('RMGX012_TBW'[Index] >= @{variables('MinRows')}, 'RMGX012_TBW'[Index] <= @{variables('incrRows')}))\nVAR __DS0Core = \n        CALCULATETABLE(\n            SELECTCOLUMNS(\n                'RMGX012_TBW',\n                \"RMGX012_TBW[Stock]\", 'RMGX012_TBW'[Stock],\n                \"RMGX012_TBW[Serial No.]\", 'RMGX012_TBW'[Serial No.],\n                \"RMGX012_TBW[Asset No.]\", 'RMGX012_TBW'[Asset No.],\n                \"RMGX012_TBW[Address]\", 'RMGX012_TBW'[Address],\n                \"RMGX012_TBW[Post Code]\", 'RMGX012_TBW'[Post Code],\n                \"RMGX012_TBW[DOBI]\", 'RMGX012_TBW'[DOBI],\n                \"RMGX012_TBW[Tel No.]\", COALESCE('RMGX012_TBW'[Tel No.], \"\"),\n                \"RMGX012_TBW[SIM No.]\", COALESCE('RMGX012_TBW'[SIM No.], \"\"),\n                \"RMGX012_TBW[Contract ID]\", 'RMGX012_TBW'[Contract ID],\n                \"RMGX012_TBW[Additional Information 5]\", 'RMGX012_TBW'[Additional Information 5],\n                \"RMGX012_TBW[Last Shipped Date]\", 'RMGX012_TBW'[Last Shipped Date],\n                \"RMGX012_TBW[Operational Status]\", 'RMGX012_TBW'[Operational Status],\n                \"RMGX012_TBW[Name]\", 'RMGX012_TBW'[Name],\n                \"RMGX012_TBW[Build Profile]\", \n                    VAR JoinCol = 'RMGX012_TBW'[Serial No.]\n                    VAR NewCol = IF(ISBLANK('RMGX012_TBW'[Serial No.]), \"\", CALCULATE(MAX('Device Info X012'[SW-Build]), 'Device Info X012'[Serial Number] = JoinCol))\n                    RETURN NewCol,\n                \"RMGX012_TBW[Client Version]\", COALESCE('RMGX012_TBW'[Client Version], \"\"),\n                \"RMGX012_TBW[Build Date]\", \n                    VAR JoinCol = 'RMGX012_TBW'[Serial No.]\n                    VAR NewCol = IF(ISBLANK('RMGX012_TBW'[Serial No.]), BLANK(), CALCULATE(MAX('Device Info X012'[MSPI]), 'Device Info X012'[Serial Number] = JoinCol))\n                    RETURN NewCol,\n                \"RMGX012_TBW[OS Build Number]\", COALESCE('RMGX012_TBW'[OS Build Number], \"\"),\n                \"RMGX012_TBW[Status]\", 'RMGX012_TBW'[Status],\n                \"RMGX012_TBW[IMEI]\", COALESCE('RMGX012_TBW'[IMEI], \"\")\n            ),\n            __DS0FilterTable\n        )\nEVALUATE\n    __DS0Core\nORDER BY\n    'RMGX012_TBW'[Serial No.]",
+                          "specification/serializerSettings/includeNulls": false
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                          "operationId": "ExecuteDatasetQuery",
+                          "connectionName": "shared_powerbi"
+                        }
+                      }
+                    },
+                    "Create_CSV_table": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('Select')",
+                        "format": "CSV"
+                      },
+                      "runAfter": {
+                        "Select": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "IncrMinRows": {
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "MinRows",
+                        "value": 5000
+                      },
+                      "runAfter": {
+                        "Create_CSV_table": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "IncrRows2": {
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "incrRows",
+                        "value": 5000
+                      },
+                      "runAfter": {
+                        "IncrMinRows": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "IncrLoops": {
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "LoopsVar",
+                        "value": 1
+                      },
+                      "runAfter": {
+                        "IncrRows2": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Append_to_string_variable": {
+                      "type": "AppendToStringVariable",
+                      "inputs": {
+                        "name": "appendCSV",
+                        "value": "@if(equals(variables('LoopsVar'), 2), body('Create_CSV_Table'), join(skip(split(body('Create_CSV_Table'), decodeUriComponent('%0A')),1), decodeUriComponent('%0A')))"
+                      },
+                      "runAfter": {
+                        "IncrLoops": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Select": {
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                        "select": {
+                          "Stock": "@item()?['RMGX012_TBW[Stock]']",
+                          "Serial No.": "@item()?['RMGX012_TBW[Serial No.]']",
+                          "Asset No.": "@item()?['RMGX012_TBW[Asset No.]']",
+                          "IMEI": "@item()?['RMGX012_TBW[IMEI]']",
+                          "Status": "@item()?['RMGX012_TBW[Status]']",
+                          "Address": "@item()?['RMGX012_TBW[Address]']",
+                          "Post Code": "@item()?['RMGX012_TBW[Post Code]']",
+                          "DOBI": "@item()?['RMGX012_TBW[DOBI]']",
+                          "Tel No.": "@item()?['RMGX012_TBW[Tel No.]']",
+                          "SIM No.": "@item()?['RMGX012_TBW[SIM No.]']",
+                          "Contract ID": "@item()?['RMGX012_TBW[Contract ID]']",
+                          "Additional Information 5": "@item()?['RMGX012_TBW[Additional Information 5]']",
+                          "Last Shipped Date": "@item()?['RMGX012_TBW[Last Shipped Date]']",
+                          "Operational Status": "@item()?['RMGX012_TBW[Operational Status]']",
+                          "Name": "@item()?['RMGX012_TBW[Name]']",
+                          "Build Profile": "@item()?['RMGX012_TBW[Build Profile]']",
+                          "Client Version": "@item()?['RMGX012_TBW[Client Version]']",
+                          "Build Date": "@item()?['RMGX012_TBW[Build Date]']",
+                          "OS Build Number": "@item()?['RMGX012_TBW[OS Build Number]']"
+                        }
+                      },
+                      "runAfter": {
+                        "Run_a_query_against_a_dataset": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Loops2run": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "convert2csv": {
+                  "type": "Compose",
+                  "inputs": "@variables('appendCSV')",
+                  "runAfter": {
+                    "Do_until": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/RMG/42GEARS/DAILY MID NIGHT DEVICE INFO/@{formatDateTime(utcNow(), 'yyyy')}/@{formatDateTime(utcNow(), 'MMMM')}/",
+                      "name": "42gears_device_info_@{concat(formatDateTime(utcNow(), 'yyyy-MM-ddTHH-mm-ss'), '.csv')}",
+                      "body": "@outputs('convert2csv')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "convert2csv": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "LoopsVar": [
+              "Succeeded"
+            ]
+          }
+        },
+        "MinRows": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "MinRows",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "IncrRows": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "incrRows",
+                "type": "integer",
+                "value": 5000
+              }
+            ]
+          },
+          "runAfter": {
+            "MinRows": [
+              "Succeeded"
+            ]
+          }
+        },
+        "appendCSV": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "appendCSV",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "IncrRows": [
+              "Succeeded"
+            ]
+          }
+        },
+        "LoopsVar": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LoopsVar",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          },
+          "runAfter": {
+            "appendCSV": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

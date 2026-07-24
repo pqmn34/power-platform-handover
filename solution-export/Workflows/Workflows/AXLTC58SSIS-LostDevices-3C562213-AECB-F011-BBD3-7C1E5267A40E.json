@@ -1,0 +1,336 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "startTime": "2025-12-05T01:00:00Z",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "15"
+              ],
+              "minutes": [
+                30
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "Jakub.Polak@zebra.com;sammy.license@zebra.com;nh6432@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "GMSSBA@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                  "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('LostDevices TC58'[DeviceGroupPath])),\n\t\t\tSEARCH(\"Lost\", 'LostDevices TC58'[DeviceGroupPath], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'LostDevices TC58',\n\t\t\t\t'LostDevices TC58'[SerialNumber],\n\t\t\t\t'LostDevices TC58'[DeviceName],\n\t\t\t\t'LostDevices TC58'[DeviceModelName],\n\t\t\t\t'LostDevices TC58'[ConnectionStatus],\n\t\t\t\t'LostDevices TC58'[BatteryLevel],\n\t\t\t\t'LostDevices TC58'[Site Name],\n\t\t\t\t'LostDevices TC58'[Hours Disconnected],\n\t\t\t\t'LostDevices TC58'[Deployment Mode]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'LostDevices TC58'[SerialNumber],\n\t'LostDevices TC58'[DeviceName],\n\t'LostDevices TC58'[DeviceModelName],\n\t'LostDevices TC58'[ConnectionStatus],\n\t'LostDevices TC58'[BatteryLevel],\n\t'LostDevices TC58'[Site Name],\n\t'LostDevices TC58'[Hours Disconnected],\n\t'LostDevices TC58'[Deployment Mode]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            },
+            "Select": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                "select": {
+                  "Device Serial Number": "@string(item()?['axl_device_info_42g[SerialNumber]'])",
+                  "Device Friendly name": "@item()?['axl_device_info_42g[DeviceName]']",
+                  "Model": "@item()?['axl_device_info_42g[DeviceModelName]']",
+                  "Status": "@item()?['axl_device_info_42g[ConnectionStatus]']",
+                  "Last Known Battery Level": "@item()?['axl_device_info_42g[BatteryLevel]']",
+                  "Site Name": "@item()?['axl_device_info_42g[Site Name]']",
+                  "Hours Disconnected": "@item()?['axl_device_info_42g[Hours Disconnected]']",
+                  "Seasonal_deploymentMode": "@item()?['axl_device_info_42g[Deployment Mode]']"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Select'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  }
+                },
+                "Set_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContent",
+                    "value": "@body('Create_CSV_table')"
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Set_variable_1": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContent",
+                      "value": "HardwareSerialNumber,FriendlyName,Model,Status,BatteryStatus,Site,Hrs_Disconnected,Seasonal_DeploymentMode"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Select": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/ARROWXL/SSIS_LOSTDEVICES/@{formatDateTime(utcNow(), 'yyyy')}/@{formatDateTime(utcNow(), 'MM-MMMM')}",
+                  "name": "axl_lost_tc58_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                  "body": "@variables('varCSVContent')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Condition": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "1st_Of_Month": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@dayOfMonth(utcNow())",
+                      1
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Send_an_email_(V2)": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "@outputs('EmailTO')",
+                      "emailMessage/Subject": "AXL TC58: Arrow XL Lost Devices Monthly Report",
+                      "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Customer,<br><br>Please find attached the monthly lost devices report.<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at premier.analytics@zebra.com.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential, and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                      "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                      "emailMessage/Attachments": [
+                        {
+                          "Name": "AXL_MonthlyLostDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                          "ContentBytes": "@variables('varCSVContent')"
+                        }
+                      ],
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Terminate": {
+                    "type": "Terminate",
+                    "inputs": {
+                      "runStatus": "Succeeded"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: AXL TC58 SSIS-Lost Devices 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: AXL TC58 SSIS-Lost Devices 🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: AXL TC58 SSIS-Lost Devices 🚨<br><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

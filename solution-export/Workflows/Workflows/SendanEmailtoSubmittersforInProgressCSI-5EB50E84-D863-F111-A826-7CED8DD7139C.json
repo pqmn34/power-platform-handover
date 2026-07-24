@@ -1,0 +1,212 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "invoker"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "invoker"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "44ed4b5d-bec2-4ac9-b64e-ef3ba4ad02c2"
+          }
+        }
+      },
+      "actions": {
+        "Get_items": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "35ba265e-5f8c-41b6-b747-3f4309051ff7",
+              "$filter": "Status eq 'In Progress' and SubmitterEmail ne 'PQMN34@zebra.com'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "481c3c70-ae2f-4067-bec9-7632adb83b5a"
+          }
+        },
+        "Apply_to_each": {
+          "type": "Foreach",
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "EmailTo": {
+              "type": "Compose",
+              "inputs": "@if(or(empty(items('Apply_to_each')?['ImplimentorEmail']), equals(toLower(items('Apply_to_each')?['SubmitterEmail']), toLower(items('Apply_to_each')?['ImplimentorEmail']))), items('Apply_to_each')?['SubmitterEmail'], concat(items('Apply_to_each')?['SubmitterEmail'], ';', items('Apply_to_each')?['ImplimentorEmail']))"
+            },
+            "EmailCC": {
+              "type": "Compose",
+              "inputs": "@items('Apply_to_each')?['SubmitterManager']",
+              "runAfter": {
+                "EmailTo": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Get_MeetingNotes": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "7f4071b0-f066-4a03-85a0-60a7cabdcde4",
+                  "$filter": "CSI_ID_Link eq @{items('Apply_to_each')?['ID']}",
+                  "$orderby": "@'NotesDateTime desc'",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "EmailCC": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "or": [
+                  {
+                    "equals": [
+                      "@or(\r\n  empty(outputs('Get_MeetingNotes')?['body/value']),\r\n  empty(first(outputs('Get_MeetingNotes')?['body/value'])?['NotesDateTime']),\r\n  greater(\r\n    div(\r\n      sub(\r\n        ticks(utcNow()),\r\n        ticks(first(outputs('Get_MeetingNotes')?['body/value'])?['NotesDateTime'])\r\n      ),\r\n      864000000000\r\n    ),\r\n    7\r\n  )\r\n)",
+                      true
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "LastMeetingNote_Text": {
+                  "type": "Compose",
+                  "inputs": "@if(empty(outputs('Get_MeetingNotes')?['body/value']), 'No update notes found.', first(outputs('Get_MeetingNotes')?['body/value'])?['MeetingNotes'])"
+                },
+                "LastMeetingNote_Date": {
+                  "type": "Compose",
+                  "inputs": "@if(empty(outputs('Get_MeetingNotes')?['body/value']), '', first(outputs('Get_MeetingNotes')?['body/value'])?['NotesDateTime'])",
+                  "runAfter": {
+                    "LastMeetingNote_Text": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "LastUpdate_HTML": {
+                  "type": "Compose",
+                  "inputs": "@if(\r\n  empty(outputs('Get_MeetingNotes')?['body/value']),\r\n\r\n  concat(\r\n    '<span style=\"color:#D83B01; font-weight:bold;\">⚠️ No update since CSI raised</span>'\r\n  ),\r\n\r\n  concat(\r\n    '<span style=\"color:#D83B01; font-weight:bold;\">⚠️ Pending for the update more than 7 days</span><br>',\r\n    '<small style=\"color:#888;\">Last noted on: ',\r\n    formatDateTime(first(outputs('Get_MeetingNotes')?['body/value'])?['NotesDateTime'], 'dd MMM yyyy HH:mm'),\r\n    ' by ',\r\n    first(outputs('Get_MeetingNotes')?['body/value'])?['NotesBy'],\r\n    '</small><br><br>',\r\n    first(outputs('Get_MeetingNotes')?['body/value'])?['MeetingNotes']\r\n  )\r\n)",
+                  "runAfter": {
+                    "LastMeetingNote_Date": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Send_an_email_(V2)": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "@outputs('EmailTo')",
+                      "emailMessage/Subject": "CSI UPDATE: Update Needed for @{items('Apply_to_each')?['CSI_ID']}-@{items('Apply_to_each')?['Title']}",
+                      "emailMessage/Body": "<div style=\"font-family: 'Segoe UI', sans-serif; font-size: 11pt; color: #333;\">\n    \n    <p>Hi @{items('Apply_to_each')?['Submitter_x0020_Name/DisplayName']},</p>\n    \n    <p>We are conducting our weekly check-in! Your Continuous Service Improvement project is currently marked as <b>In Progress</b>.</p>\n    \n    <p>Could you please reply to this email to provide a brief update on how the implementation is going?</p>\n<table style=\"border-collapse: collapse; width: 100%; max-width: 800px; background-color: #ffffff; margin-top: 15px;\">\n    <tbody><tr>\n        <th style=\"background-color: #005A9E; color: white; border: 1px solid #005A9E; padding: 8px; width: 25%; text-align: left;\">Last Notes Date</th>\n        <th style=\"background-color: #005A9E; color: white; border: 1px solid #005A9E; padding: 8px; width: 75%; text-align: left;\">Last Updated Notes</th>\n    </tr>\n    <tr>\n        <td style=\"font-weight: bold; border: 1px solid #ddd; padding: 8px; vertical-align: top;\">\n    @{if(\r\n  empty(outputs('Get_MeetingNotes')?['body/value']),\r\n  formatDateTime(items('Apply_to_each')?['Modified'], 'dd MMM yyyy'),\r\n  formatDateTime(\r\n    first(outputs('Get_MeetingNotes')?['body/value'])?['NotesDateTime'],\r\n    'dd MMM yyyy'\r\n  )\r\n)}\n</td>\n        <td style=\"border: 1px solid #ddd; padding: 8px; font-size: 10pt; color: #555; vertical-align: top;\">\n@{outputs('LastUpdate_HTML')}\n        </td>\n    </tr>\n</tbody></table>\n    <!-- --- PROJECT SUMMARY TABLE --- -->\n    <h3 style=\"color: #005A9E; border-bottom: 1px solid #ccc; padding-bottom: 5px;\">Project Details</h3>\n    <table style=\"border-collapse: collapse; width: 100%; max-width: 600px; margin-bottom: 20px;\">\n        <tbody><tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px; width: 30%;\">CSI ID</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">@{items('Apply_to_each')?['CSI_ID']}</td>\n        </tr>\n        <tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">Title</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">@{items('Apply_to_each')?['Title']}</td>\n        </tr>\n        <tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">Status</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\"> <span style=\"color:#ff8c00; font-weight:bold;\">@{items('Apply_to_each')?['StatusTxt']}</span></td>\n        </tr>\n        <tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">Category</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">@{items('Apply_to_each')?['Category']}</td>\n        </tr>\n        <tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">Sub Category</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">@{items('Apply_to_each')?['SubCategory']}</td>\n        </tr>\n        <tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">Problem Statement</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">@{items('Apply_to_each')?['ProblemStatement']}</td>\n        </tr>\n        <tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">As-Is</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">@{items('Apply_to_each')?['AsIs']}</td>\n        </tr>\n        <tr>\n        </tr><tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">Current Efforts / Base Metrics</td>\n            \n            <!-- --- THE NEW CONDITIONAL RED TEXT INJECTION --- -->\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">\n                @{if(or(empty(string(items('Apply_to_each')?['BaseMetricsCurrentEfforts'])), equals(string(items('Apply_to_each')?['BaseMetricsCurrentEfforts']), '0')), '<span style=\"color:#D83B01; font-weight:bold;\">MISSING - Please provide measured current efforts in your reply</span>', items('Apply_to_each')?['BaseMetricsCurrentEfforts'])}\n            </td>\n        </tr>\n        <tr>\n            <td style=\"background-color: #f2f2f2; font-weight: bold; border: 1px solid #ddd; padding: 8px;\">Expected Benefits</td>\n            <td style=\"border: 1px solid #ddd; padding: 8px;\">@{items('Apply_to_each')?['ExpectedBenefits']}</td>\n        </tr>\n    </tbody></table>\n\n    <!-- --- THE IMPLEMENTATION CHECKLIST (NOW A TABLE) --- -->\n    <div style=\"background-color: #e6f2ff; border-left: 4px solid #005A9E; padding: 15px; margin-top: 15px;\">\n        <h3 style=\"margin-top: 0; color: #005A9E;\">✅ Is this project already finished and implemented?</h3>\n        <p>If yes, please hit <b>Reply</b> and fill out the empty boxes in the table below so the committee can officially close it out.</p>\n        <p><i>Please coordinate with the Implementer @{items('Apply_to_each')?['Implementer_x0020_Name/DisplayName']} (@{items('Apply_to_each')?['ImplimentorEmail']}) to prepare the required information if needed.</i></p>\n        \n        <table style=\"border-collapse: collapse; width: 100%; max-width: 800px; background-color: #ffffff; margin-top: 15px;\">\n            <tbody><tr>\n                <th style=\"background-color: #005A9E; color: white; border: 1px solid #005A9E; padding: 8px; width: 25%; text-align: left;\">Requirement</th>\n                <th style=\"background-color: #005A9E; color: white; border: 1px solid #005A9E; padding: 8px; width: 25%; text-align: left;\">Description</th>\n                <th style=\"background-color: #005A9E; color: white; border: 1px solid #005A9E; padding: 8px; width: 50%; text-align: left;\">Your Response (Type Here):</th>\n            </tr>\n            <tr>\n                <td style=\"font-weight: bold; border: 1px solid #ddd; padding: 8px; vertical-align: top;\">Post Benefits</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; font-size: 10pt; color: #555; vertical-align: top;\">What was the actual, tangible result along with the calculated numbers?</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; vertical-align: top;\"><br><br><br></td>\n            </tr>\n            <tr>\n                <td style=\"font-weight: bold; border: 1px solid #ddd; padding: 8px; vertical-align: top;\">Sustainment Plan</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; font-size: 10pt; color: #555; vertical-align: top;\">How will this process be maintained moving forward? (e.g., share the knowledge article or new/updated process link)</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; vertical-align: top;\"><br><br><br></td>\n            </tr>\n            <tr>\n                <td style=\"font-weight: bold; border: 1px solid #ddd; padding: 8px; vertical-align: top;\">Tools Used</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; font-size: 10pt; color: #555; vertical-align: top;\">What specific tools or software did you use along with the cost if any paid tool or AI tokens are introduced?</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; vertical-align: top;\"><br><br><br></td>\n            </tr>\n            <tr>\n                <td style=\"font-weight: bold; border: 1px solid #ddd; padding: 8px; vertical-align: top;\">Lessons Learned</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; font-size: 10pt; color: #555; vertical-align: top;\">Are there any takeaways or roadblocks you overcame that the team should know about?</td>\n                <td style=\"border: 1px solid #ddd; padding: 8px; vertical-align: top;\"><br><br><br></td>\n            </tr>\n        </tbody></table>\n    </div>\n<p style=\"color: #005A9E; border-bottom: 1px solid #ccc; padding-bottom: 5px;\">Strategic and Innovative Initiative Management Portal</p>\n\n<p><br>Thank you for driving continuous improvement! Please visit the <a href=\"https://apps.powerapps.com/play/e/79b05c38-71f1-4aab-b05e-a84fc8639bc8/a/4b38b2ea-8805-4f86-8dfc-782be0184e3d?tenantId=4d3d260a-9c40-4306-8dac-0d64717039ec&amp;hint=b66d7893-cd22-40bd-8c2e-b0380e970971&amp;source=sharebutton&amp;sourcetime=1784017997742\">Strategic and Innovative Initiative Management Portal</a> for more information</p>\n\n    <p><b>Global Services Strategic and Innovative Initiative</b></p>\n    \n</div>",
+                      "emailMessage/From": "StrategicInnovationandAutomation@Zebra.com",
+                      "emailMessage/Cc": "@outputs('EmailCC')",
+                      "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
+                  },
+                  "runAfter": {
+                    "LastUpdate_HTML": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "5395b534-3156-49bd-a5da-019e5ceed781"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {
+                "Delay": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Delay": {
+              "type": "Wait",
+              "inputs": {
+                "interval": {
+                  "count": 2,
+                  "unit": "Minute"
+                }
+              },
+              "runAfter": {
+                "Get_MeetingNotes": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f1af96aa-def1-40aa-a388-177f9fdeeb7e"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

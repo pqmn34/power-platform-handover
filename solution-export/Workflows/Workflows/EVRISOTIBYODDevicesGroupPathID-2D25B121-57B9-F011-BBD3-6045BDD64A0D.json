@@ -1,0 +1,509 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "api": {
+          "name": "shared_keyvault"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "startTime": "2025-09-15T07:00:00Z",
+            "schedule": {
+              "weekDays": [
+                "Saturday"
+              ],
+              "hours": [
+                "8"
+              ],
+              "minutes": [
+                0
+              ]
+            }
+          },
+          "evaluatedRecurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "startTime": "2025-09-15T07:00:00Z",
+            "schedule": {
+              "weekDays": [
+                "Saturday"
+              ],
+              "hours": [
+                "8"
+              ],
+              "minutes": [
+                0
+              ]
+            }
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Master": {
+          "actions": {
+            "Scope": {
+              "actions": {
+                "HTTP_GetDeviceGroupPathID": {
+                  "type": "Http",
+                  "inputs": {
+                    "uri": "https://mlmsti31.zebra.com:443/MobiControl/api/devicegroups?filter=path:contains(Lost)",
+                    "method": "GET",
+                    "headers": {
+                      "Authorization": "Bearer @{variables('AccessToken')}",
+                      "Content-Type": "application/json"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Parse_JSON": {
+                  "runAfter": {
+                    "HTTP_GetDeviceGroupPathID": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "ParseJson",
+                  "inputs": {
+                    "content": "@body('HTTP_GetDeviceGroupPathID')",
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "Name": {
+                            "type": "string"
+                          },
+                          "Path": {
+                            "type": "string"
+                          },
+                          "Icon": {
+                            "type": "string"
+                          },
+                          "Kind": {
+                            "type": "string"
+                          },
+                          "ReferenceId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "Name",
+                          "Path",
+                          "Icon",
+                          "Kind",
+                          "ReferenceId"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "type": "Scope"
+            },
+            "Scope_2": {
+              "actions": {
+                "Get_items": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "b0c448d9-1541-49b4-a0ff-aaec0e4ef5de"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "GetItems"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "For_each": {
+                  "foreach": "@outputs('Get_items')?['body/value']",
+                  "actions": {
+                    "Delete_item": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                          "table": "b0c448d9-1541-49b4-a0ff-aaec0e4ef5de",
+                          "id": "@items('For_each')?['ID']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "DeleteItem"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_items": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "Scope": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Scope"
+            },
+            "Scope_3": {
+              "actions": {
+                "Apply_to_each": {
+                  "foreach": "@body('Parse_JSON')",
+                  "actions": {
+                    "Create_item": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                          "table": "b0c448d9-1541-49b4-a0ff-aaec0e4ef5de",
+                          "item/Title": "\"EVRI Zebra Devices Group Path ID\"",
+                          "item/Name": "@items('Apply_to_each')?['Name']",
+                          "item/Path": "@items('Apply_to_each')?['Path']",
+                          "item/ReferenceID": "@items('Apply_to_each')?['ReferenceId']",
+                          "item/Icon": "@items('Apply_to_each')?['Icon']",
+                          "item/Kind": "@items('Apply_to_each')?['Kind']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "PostItem"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "Scope_2": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Scope"
+            }
+          },
+          "runAfter": {
+            "AccessToken": [
+              "Succeeded"
+            ]
+          },
+          "type": "Scope"
+        },
+        "Error_Handling": {
+          "actions": {
+            "FAILED_Send_an_email_(V2)": {
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨FLOW FAILED ALERT: EVRI SOTI BYOD Devices Group Path ID!🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨FLOW FAILED ALERT: EVRI SOTI BYOD Devices Group Path ID!🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨FLOW FAILED ALERT: EVRI SOTI BYOD Devices Group Path ID!🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "connectionName": "shared_teams",
+                  "operationId": "PostMessageToConversation"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Master": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "type": "Scope"
+        },
+        "Get_secret_ClientIDSecret": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-sti31"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "connectionName": "shared_keyvault",
+              "operationId": "GetSecret"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secretPSWD": {
+          "runAfter": {
+            "Get_secret_ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-sti31-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "connectionName": "shared_keyvault",
+              "operationId": "GetSecret"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "ClientIDSecret": {
+          "runAfter": {
+            "Get_secretPSWD": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ClientIDSecret",
+                "type": "string",
+                "value": "@outputs('Get_secret_ClientIDSecret')?['body/value']"
+              }
+            ]
+          }
+        },
+        "UID": {
+          "runAfter": {
+            "ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "UID",
+                "type": "string",
+                "value": "prabhat.kumar@zebra.com"
+              }
+            ]
+          }
+        },
+        "Password": {
+          "runAfter": {
+            "UID": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Password",
+                "type": "string",
+                "value": "Passwordpka!1"
+              }
+            ]
+          }
+        },
+        "EncodeSecret": {
+          "runAfter": {
+            "Password": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@base64(variables('ClientIDSecret'))"
+        },
+        "HTTP": {
+          "runAfter": {
+            "EncodeSecret": [
+              "Succeeded"
+            ]
+          },
+          "type": "Http",
+          "inputs": {
+            "uri": "https://mlmsti31.zebra.com/MobiControl/api/token",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Basic @{outputs('EncodeSecret')}",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "body": "grant_type=password&username=@{variables('UID')}&password=@{variables('Password')}"
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "TokenParse_JSON": {
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "token_type": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "expires_in": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "AccessToken": {
+          "runAfter": {
+            "TokenParse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AccessToken",
+                "type": "string",
+                "value": "@body('TokenParse_JSON')?['access_token']"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

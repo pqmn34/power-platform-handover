@@ -1,0 +1,491 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-2": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_d102c"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_approvals": {
+        "api": {
+          "name": "shared_approvals"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedapprovals_bf85b"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams-1": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Month",
+            "interval": 1,
+            "timeZone": "UTC",
+            "startTime": "2026-06-01T13:30:00Z"
+          },
+          "metadata": {
+            "operationMetadataId": "1908fb05-d50f-460e-9975-a135280d7aa9"
+          }
+        }
+      },
+      "actions": {
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "dms.support@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "DMSDeliveryLeads@zebra.com;Jakub.Polak@zebra.com;MS_CRM@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "OfflineGT60Days": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+                  "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'LostDevicesGT60DaysDeletion',\n\t\t\t'LostDevicesGT60DaysDeletion'[DeviceID],\n\t\t\t'LostDevicesGT60DaysDeletion'[DeviceName],\n\t\t\t'LostDevicesGT60DaysDeletion'[DeviceOffline>60Days],\n\t\t\t'LostDevicesGT60DaysDeletion'[HardwareSerialNumber],\n\t\t\t'LostDevicesGT60DaysDeletion'[ICCID],\n\t\t\t'LostDevicesGT60DaysDeletion'[Model],\n\t\t\t'LostDevicesGT60DaysDeletion'[OfflineDays],\n\t\t\t'LostDevicesGT60DaysDeletion'[Path],\n\t\t\t'LostDevicesGT60DaysDeletion'[EnrollmentTime],\n\t\t\t'LostDevicesGT60DaysDeletion'[LastSeen]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'LostDevicesGT60DaysDeletion'[DeviceID],\n\t'LostDevicesGT60DaysDeletion'[DeviceName],\n\t'LostDevicesGT60DaysDeletion'[DeviceOffline>60Days],\n\t'LostDevicesGT60DaysDeletion'[HardwareSerialNumber],\n\t'LostDevicesGT60DaysDeletion'[ICCID],\n\t'LostDevicesGT60DaysDeletion'[Model],\n\t'LostDevicesGT60DaysDeletion'[OfflineDays],\n\t'LostDevicesGT60DaysDeletion'[Path],\n\t'LostDevicesGT60DaysDeletion'[EnrollmentTime],\n\t'LostDevicesGT60DaysDeletion'[LastSeen]\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-2"
+                }
+              }
+            },
+            "SelectGT60Days": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('OfflineGT60Days')?['body/firstTableRows']",
+                "select": {
+                  "DeviceName": "@{item()?['LostDevicesGT60DaysDeletion[DeviceName]']}",
+                  "HardwareSerialNumber": "@{item()?['LostDevicesGT60DaysDeletion[HardwareSerialNumber]']}",
+                  "Model": "@{item()?['LostDevicesGT60DaysDeletion[Model]']}",
+                  "Offline MoreThan 60 Days": "@{item()?['LostDevicesGT60DaysDeletion[DeviceOffline>60Days]']}",
+                  "EnrollmentTime": "@{if(empty(item()?['LostDevicesGT60DaysDeletion[EnrollmentTime]']), '', formatDateTime(item()?['LostDevicesGT60DaysDeletion[EnrollmentTime]'], 'dd/MM/yyyy'))}",
+                  "LastSeen": "@{if(empty(item()?['LostDevicesGT60DaysDeletion[LastSeen]']), '', formatDateTime(item()?['LostDevicesGT60DaysDeletion[LastSeen]'], 'dd/MM/yyyy'))}",
+                  "OfflineDays": "@{item()?['LostDevicesGT60DaysDeletion[OfflineDays]']}",
+                  "ICCID": "@{item()?['LostDevicesGT60DaysDeletion[ICCID]']}",
+                  "Path": "@{item()?['LostDevicesGT60DaysDeletion[Path]']}",
+                  "DeviceID": "@{item()?['LostDevicesGT60DaysDeletion[DeviceID]']}"
+                }
+              },
+              "runAfter": {
+                "OfflineGT60Days": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_CSV_tableGT60Days": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectGT60Days')",
+                "format": "CSV"
+              },
+              "runAfter": {
+                "SelectGT60Days": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectGT60Days')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Compose_-_Devices_JSON_String": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+              }
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@dayOfMonth(utcNow())",
+                      1
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Condition_PreMovingList": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('CountOfflineGT60Days')?['body']?['firstTableRows'][0]?['[CountLostSNGT60Days]']",
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Terminate": {
+                      "type": "Terminate",
+                      "inputs": {
+                        "runStatus": "Succeeded"
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Send_an_email_(V2)": {
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "emailMessage/To": "@outputs('EmailTO')",
+                            "emailMessage/Subject": "EVRi Premium: Offline > 60 Days Lost Devices",
+                            "emailMessage/Body": "<p class=\"editor-paragraph\">@{outputs('Compose_Email')}<br><b><strong class=\"editor-text-bold\">EVRI PREMIUM DEVICES</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose')}</p><br><p class=\"editor-paragraph\">For any questions regarding the report data, please contact your Zebra Service Manager (jakub.polak@zebra.com).<br><br><i><em class=\"editor-text-italic\">Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</em></i><br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p><br>",
+                            "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                            "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                            "emailMessage/Cc": "@outputs('EmailCC')",
+                            "emailMessage/Bcc": "PQMN34@zebra.com",
+                            "emailMessage/Attachments": [
+                              {
+                                "Name": "evri_premium_offlineGT60days_lost.csv",
+                                "ContentBytes": "@body('Create_CSV_tableGT60Days')"
+                              }
+                            ],
+                            "emailMessage/Importance": "High"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                            "operationId": "SendEmailV2",
+                            "connectionName": "shared_office365"
+                          }
+                        },
+                        "runAfter": {
+                          "Compose_Email": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                        }
+                      },
+                      "Compose_Email": {
+                        "type": "Compose",
+                        "inputs": "<html>\n<head>\n  <meta charset=\"UTF-8\">\n</head>\n<body style=\"font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #000000; line-height: 1.6;\">\n  \n  <p>Greetings!,</p>\n\n  <p>Please find attached the report of <b>Offline &gt; 60 Days Lost devices</b>.</p>\n\n  <p>As per the <b>Lost and Stolen Process Automation</b>:</p>\n\n  <ul>\n    <li>\n      <b>1st of the Month:</b> Receive the list of devices offline for more than 15 days for the Service Desk record only.\n    </li>\n    <li>\n      <b>15th of the Month:</b> Receive the list of devices offline for more than 30 days before moving the devices to the <b>\"Lost\"</b> category for the Service Desk record.\n      <br>\n      Review the report: If there is any <b>PEAK</b> device, move it back to the site folder mentioned in the attached report.\n    </li>\n    <li>\n      <b>28th of the Month:</b> Receive the list of Lost Devices offline for more than 60 days for the Service Desk record.\n    </li>\n  </ul>\n\n  <p><b>1st of the Month (again):</b> Receive the list of Lost Devices offline for more than 60 days for the Service Desk actions.</p>\n\n  <p><b>Review the report:</b></p>\n  <ul>\n    <li>\n      <b>If a PEAK device is found:</b><br>\n      Move the device back to the site where it belongs (site information can be found in the offline &gt; 30 days report received on the 15th of the month).\n    </li>\n    <li>\n      <b>If no PEAK device is found:</b><br>\n      Click on the \"<span style=\"color: red; font-weight: bold;\">Approve</span>\" button in the Teams notification once the data has been reviewed successfully.\n    </li>\n  </ul>\n\n  <p style=\"font-style: italic;\">\n  </p>\n  <p>\n    Kindly create a Salesforce case and share it in the email to \n    <a href=\"mailto:strategicinnovationandautomation@zebra.com\">strategicinnovationandautomation@zebra.com</a>\n    If there are any concerns or questions about the reported data.\n  </p>\n\n  <p>\n    To delete the devices:\n    <a href=\"Approve\" style=\"color: red; font-weight: bold; text-decoration: underline;\"></a>\n  </p>\n\n</body>\n</html>\n"
+                      },
+                      "Start_and_wait_for_an_approval": {
+                        "type": "OpenApiConnectionWebhook",
+                        "inputs": {
+                          "parameters": {
+                            "approvalType": "Basic",
+                            "WebhookApprovalCreationInput/title": "Approval Required - Delete Lost Devices Offline > 60 Days [EVRI Premium]",
+                            "WebhookApprovalCreationInput/assignedTo": "martin.zidek@zebra.com;michaela.pastourmatzi@zebra.com;PQMN34@zebra.com",
+                            "WebhookApprovalCreationInput/details": "Please review the list of Lost Devices that have been offline for more than 60 days.\n\nTotal devices identified: @{outputs('CountOfflineGT60Days')?['body']?['firstTableRows'][0]?['[CountLostSNGT60Days]']}\n\nIf approved, the listed devices will be deleted from SOTI MobiControl.\nIf rejected, no deletion will happen.",
+                            "WebhookApprovalCreationInput/enableNotifications": true,
+                            "WebhookApprovalCreationInput/enableReassignment": true
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_approvals",
+                            "operationId": "StartAndWaitForAnApproval",
+                            "connectionName": "shared_approvals"
+                          }
+                        },
+                        "runAfter": {
+                          "Send_an_email_(V2)": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Condition_ChildFlow": {
+                        "type": "If",
+                        "expression": {
+                          "and": [
+                            {
+                              "equals": [
+                                "@outputs('Start_and_wait_for_an_approval')?['body/outcome']",
+                                "Approve"
+                              ]
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "For_each": {
+                            "type": "foreach",
+                            "foreach": "@outputs('Start_and_wait_for_an_approval')?['body/responses']",
+                            "actions": {
+                              "Run_a_Child_Flow": {
+                                "type": "Workflow",
+                                "inputs": {
+                                  "host": {
+                                    "workflowReferenceName": "de022694-002e-f111-88b3-7ced8dd7139c"
+                                  },
+                                  "body": {
+                                    "text": "@items('For_each')?['responder/email']"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "else": {
+                          "actions": {}
+                        },
+                        "runAfter": {
+                          "Start_and_wait_for_an_approval": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "17ba7cd5-11ce-4546-8f6a-14785cedaad7"
+                  }
+                },
+                "Create_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/EVRI PREMIUM/LOST AND STOLEN/LOST OFFLINE MORE THAN 60 DAYS TO DELETE/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MM')}/",
+                      "name": "evri_premium_lostofflineGT60days_@{formatDateTime(utcNow(),'yyyy-MM-dd')}.csv",
+                      "body": "@body('Create_CSV_tableGT60Days')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline-1"
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Terminate_1": {
+                    "type": "Terminate",
+                    "inputs": {
+                      "runStatus": "Succeeded"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "379f5002-e3ce-4a39-a16b-23439d641c38"
+              }
+            },
+            "Compose_-_Devices_JSON": {
+              "type": "Compose",
+              "inputs": "@body('SelectGT60Days')",
+              "runAfter": {
+                "Create_CSV_tableGT60Days": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_-_Devices_JSON_String": {
+              "type": "Compose",
+              "inputs": "@string(body('SelectGT60Days'))",
+              "runAfter": {
+                "Compose_-_Devices_JSON": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Offlinemorethan60days": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CountOfflineGT60Days": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+              "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"CountLostSNGT60Days\", 'LostDevicesGT60DaysDeletion'[CountLostSNGT60Days]\n\t)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-2"
+            }
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Offlinemorethan60days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Offline60days",
+                "type": "float",
+                "value": "@outputs('CountOfflineGT60Days')?['body']?['firstTableRows'][0]?['[CountLostSNGT60Days]']"
+              }
+            ]
+          },
+          "runAfter": {
+            "CountOfflineGT60Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            },
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('Error_Message')}</u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams-1"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

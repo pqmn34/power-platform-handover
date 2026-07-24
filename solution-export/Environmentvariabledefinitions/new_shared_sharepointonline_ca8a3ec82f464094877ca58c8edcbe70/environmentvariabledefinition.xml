@@ -1,0 +1,12 @@
+<environmentvariabledefinition schemaname="new_shared_sharepointonline_ca8a3ec82f464094877ca58c8edcbe70">
+  <apiid>/providers/microsoft.powerapps/apis/shared_sharepointonline</apiid>
+  <displayname default="Global Device Managed Services Level II - https://zebra.sharepoint.com/sites/MS&amp;SS">
+    <label description="Global Device Managed Services Level II - https://zebra.sharepoint.com/sites/MS&amp;SS" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <parameterkey>dataset</parameterkey>
+  <secretstore>0</secretstore>
+  <type>100000004</type>
+</environmentvariabledefinition>

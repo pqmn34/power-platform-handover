@@ -1,0 +1,306 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "schedule": {
+              "hours": [
+                "8"
+              ]
+            },
+            "timeZone": "UTC"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Create_file": {
+          "runAfter": {
+            "convert2csv": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/RMG-Operationscollaborationsite",
+              "folderPath": "/Shared Documents/Projects &  WPR/2025/RMG Exoskeleton Replacement 001/OUTBOUND",
+              "name": "Outbound_Exoskeleton.csv",
+              "body": "@outputs('convert2csv')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "MinRows": {
+          "runAfter": {},
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "MinRows",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "IncrRows": {
+          "runAfter": {
+            "MinRows": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "IncrRows",
+                "type": "integer",
+                "value": 5000
+              }
+            ]
+          }
+        },
+        "appendCSV": {
+          "runAfter": {
+            "IncrRows": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "appendCSV",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "LoopsVar": {
+          "runAfter": {
+            "appendCSV": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LoopsVar",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "Calculate_Loops": {
+          "runAfter": {
+            "LoopsVar": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "EVALUATE\nROW(\n    \"loopsNeeded\", ROUNDUP(\n        CALCULATE(DISTINCTCOUNT('ExoskeletonsProject'[RowIndex]))/@{variables('incrRows')}, 1) + 1\n    )",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          }
+        },
+        "Loops2run": {
+          "runAfter": {
+            "Calculate_Loops": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@outputs('Calculate_Loops')?['body/firstTableRows']?[0]?['[loopsNeeded]']"
+        },
+        "Do_until": {
+          "actions": {
+            "Append_to_string_variable": {
+              "runAfter": {
+                "IncrLoops": [
+                  "Succeeded"
+                ]
+              },
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "appendCSV",
+                "value": "@if(equals(variables('LoopsVar'), 2), body('Create_CSV_Table'), join(skip(split(body('Create_CSV_Table'), decodeUriComponent('%0A')),1), decodeUriComponent('%0A')))"
+              }
+            },
+            "IncrLoops": {
+              "runAfter": {
+                "IncrRows2": [
+                  "Succeeded"
+                ]
+              },
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "LoopsVar",
+                "value": 1
+              }
+            },
+            "IncrRows2": {
+              "runAfter": {
+                "IncrMinRows": [
+                  "Succeeded"
+                ]
+              },
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "incrRows",
+                "value": 5000
+              }
+            },
+            "IncrMinRows": {
+              "runAfter": {
+                "Create_CSV_table": [
+                  "Succeeded"
+                ]
+              },
+              "type": "IncrementVariable",
+              "inputs": {
+                "name": "MinRows",
+                "value": 5000
+              }
+            },
+            "Create_CSV_table": {
+              "runAfter": {
+                "Select": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select')",
+                "format": "CSV"
+              }
+            },
+            "Select": {
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                "select": {
+                  "Action to take": "@item()?['[Action to take]']",
+                  "Asset": "@item()?['[Asset]']",
+                  "Company": "@item()?['[Company]']",
+                  "Customer Location Identifier": "@item()?['[Customer Location Identifier]']",
+                  "Created Date": "@if(empty(item()?['[Created]']),null,formatDateTime(item()?['[Created]'], 'yyyy-MM-dd'))",
+                  "Customer Reference": "@item()?['[Customer Reference]']",
+                  "Display name": "@item()?['[Display name]']",
+                  "Name": "@item()?['[Name]']",
+                  "Number": "@item()?['[Number]']",
+                  "Outbound Parcel ID": "@item()?['[Outbound Parcel ID]']",
+                  "Outbound task": "@item()?['[Outbound task]']",
+                  "Outgoing asset": "@item()?['[Outgoing asset]']",
+                  "Serial number": "@item()?['[Serial number]']",
+                  "Serial number out": "@item()?['[Serial number out]']",
+                  "SIM number": "@item()?['[SIM number]']",
+                  "Shipped Date": "@if(empty(item()?['[Shipped Date]']), null,formatDateTime(item()?['[Shipped Date]'], 'yyyy-MM-dd'))",
+                  "Updated Date": "@if(empty(item()?['[Updated]']), null,formatDateTime(item()?['[Updated]'], 'yyyy-MM-dd'))"
+                }
+              }
+            },
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+                  "specification/query": "DEFINE\n    VAR __DS0FilterTable = \n        FILTER(\n            KEEPFILTERS(VALUES('ExoskeletonsProject'[RowIndex])), \n            AND(\n                'ExoskeletonsProject'[RowIndex] >= @{variables('MinRows')}, \n                'ExoskeletonsProject'[RowIndex] <= @{variables('incrRows')}\n            )\n        )\n\n    VAR __DS0Core = \n        CALCULATETABLE(\n            SELECTCOLUMNS(\n                'ExoskeletonsProject',\n                \"Action to take\", 'ExoskeletonsProject'[Action to take],\n                \"Asset\", 'ExoskeletonsProject'[Asset],\n                \"Company\", 'ExoskeletonsProject'[Company],\n                \"Customer Location Identifier\", 'ExoskeletonsProject'[Customer Location Identifier],\n                \"Created\", 'ExoskeletonsProject'[Created],\n                \"Customer Reference\", 'ExoskeletonsProject'[Customer Reference],\n                \"Display name\", 'ExoskeletonsProject'[Display name],\n                \"Inbound parcel ID\", 'ExoskeletonsProject'[Inbound parcel ID],\n                \"Name\", 'ExoskeletonsProject'[Name],\n                \"Number\", 'ExoskeletonsProject'[Number],\n                \"Outbound Parcel ID\", 'ExoskeletonsProject'[Outbound Parcel ID],\n                \"Outbound task\", 'ExoskeletonsProject'[Outbound task],\n                \"Outgoing asset\", 'ExoskeletonsProject'[Outgoing asset],\n                \"Serial number\", 'ExoskeletonsProject'[Serial number],\n                \"Serial number out\", 'ExoskeletonsProject'[Serial number out],\n                \"Shipped Date\", 'ExoskeletonsProject'[Shipped Date],\n                \"Short description\", 'ExoskeletonsProject'[Short description],\n                \"SIM number\", 'ExoskeletonsProject'[SIM number],\n                \"Updated\", 'ExoskeletonsProject'[Updated]\n            ),\n            __DS0FilterTable\n        )\n\nEVALUATE\n    __DS0Core",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Loops2run": [
+              "Succeeded"
+            ]
+          },
+          "expression": "@greaterOrEquals(variables('LoopsVar'),outputs('Loops2run'))",
+          "limit": {
+            "count": 60,
+            "timeout": "PT1H"
+          },
+          "type": "Until"
+        },
+        "convert2csv": {
+          "runAfter": {
+            "Do_until": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@variables('appendCSV')"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

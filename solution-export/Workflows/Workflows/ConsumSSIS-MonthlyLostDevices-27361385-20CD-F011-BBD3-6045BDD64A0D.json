@@ -1,0 +1,385 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "UTC",
+            "startTime": "2025-12-01T03:00Z"
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_datasetMonthly": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+              "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'New_Lost_Devices_This_Month',\n\t\t\t'New_Lost_Devices_This_Month'[DevName],\n\t\t\t'New_Lost_Devices_This_Month'[Hardware Serial Number],\n\t\t\t'New_Lost_Devices_This_Month'[Model],\n\t\t\t'New_Lost_Devices_This_Month'[Online],\n\t\t\t'New_Lost_Devices_This_Month'[IP],\n\t\t\t'New_Lost_Devices_This_Month'[ReportingStatus],\n\t\t\t'New_Lost_Devices_This_Month'[Days Offline],\n\t\t\t'New_Lost_Devices_This_Month'[EnrollmentTime],\n\t\t\t'New_Lost_Devices_This_Month'[LastConnTime],\n\t\t\t'New_Lost_Devices_This_Month'[LastDisConnTime],\n\t\t\t'New_Lost_Devices_This_Month'[Build],\n\t\t\t'New_Lost_Devices_This_Month'[Path],\n\t\t\t'New_Lost_Devices_This_Month'[DeviceID]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'New_Lost_Devices_This_Month'[DevName],\n\t'New_Lost_Devices_This_Month'[Hardware Serial Number],\n\t'New_Lost_Devices_This_Month'[Model],\n\t'New_Lost_Devices_This_Month'[Online],\n\t'New_Lost_Devices_This_Month'[IP],\n\t'New_Lost_Devices_This_Month'[ReportingStatus],\n\t'New_Lost_Devices_This_Month'[Days Offline],\n\t'New_Lost_Devices_This_Month'[EnrollmentTime],\n\t'New_Lost_Devices_This_Month'[LastConnTime],\n\t'New_Lost_Devices_This_Month'[LastDisConnTime],\n\t'New_Lost_Devices_This_Month'[Build],\n\t'New_Lost_Devices_This_Month'[Path],\n\t'New_Lost_Devices_This_Month'[DeviceID]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "varCSVContentLatest": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentMonthly": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentMonthly",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "SelectMonthly": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_datasetMonthly')?['body/firstTableRows']",
+            "select": {
+              "DeviceID": "@item()?['Asset Lost and Stolen[DevID]']",
+              "Hardware Serial Number": "@string(item()?['Asset Lost and Stolen[Hardware Serial Number]'])",
+              "DevName": "@item()?['Asset Lost and Stolen[DevName]']",
+              "Online": "@item()?['Asset Lost and Stolen[Online]']",
+              "IP": "@item()?['Asset Lost and Stolen[IP]']",
+              "Model": "@item()?['Asset Lost and Stolen[Model]']",
+              "ReportingStatus": "@item()?['Asset Lost and Stolen[ReportingStatus]']",
+              "Days Offline": "@item()?['Asset Lost and Stolen[Days Offline]']",
+              "Build": "@item()?['Asset Lost and Stolen[Build]']",
+              "EnrollmentTime": "@if(empty(item()?['Asset Lost and Stolen[EnrollmentTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "LastConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "LastDisConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastDisConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "Path": "@item()?['Asset Lost and Stolen[Path]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_datasetLatest": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ConditionMonthly": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('SelectMonthly'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Create_CSV_tableMonthly": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectMonthly')",
+                "format": "CSV"
+              }
+            },
+            "Set_variableMonthly": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varCSVContentMonthly",
+                "value": "@body('Create_CSV_tableMonthly')"
+              },
+              "runAfter": {
+                "Create_CSV_tableMonthly": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_tableMonthly": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectMonthly')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Set_variableMonthly": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeMonthly": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_tableMonthly')}",
+              "runAfter": {
+                "Create_HTML_tableMonthly": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_variable_1": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varCSVContentMonthly",
+                  "value": "DeviceID,\tHardware Serial Number,\tDevName,\tOnline,\tIP, Model,\tReportingStatus,\tDays, Offline,\tBuild,\tEnrollmentTime,\tLastConnTime,\tLastDisConnTime,\tPath"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "SelectLatest": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_file": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "folderPath": "/Shared Documents/CONSUM/SSIS_LOSTANDSTOLENDEVICE/MONTHLYLOSTANDSTOLENDEVICES/@{formatDateTime(utcNow(), 'yyyy')}/@{formatDateTime(utcNow(), 'MM-MMMM')}",
+              "name": "dhl_lost_stolen_previous_month_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+              "body": "@variables('varCSVContentMonthly')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {
+            "Send_an_email_(V2)": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "Run_a_query_against_a_datasetLatest": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+              "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Lost and Stolen',\n\t\t\t'Asset Lost and Stolen'[DevID],\n\t\t\t'Asset Lost and Stolen'[DevName],\n\t\t\t'Asset Lost and Stolen'[HardwareSerialNumber],\n\t\t\t'Asset Lost and Stolen'[Model],\n\t\t\t'Asset Lost and Stolen'[Online],\n\t\t\t'Asset Lost and Stolen'[ReportingStatus],\n\t\t\t'Asset Lost and Stolen'[Days Offline],\n\t\t\t'Asset Lost and Stolen'[Build],\n\t\t\t'Asset Lost and Stolen'[EnrollmentTime],\n\t\t\t'Asset Lost and Stolen'[LastConnTime],\n\t\t\t'Asset Lost and Stolen'[LastDisConnTime],\n\t\t\t'Asset Lost and Stolen'[Path],\n\t\t\t'Asset Lost and Stolen'[IP]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Lost and Stolen'[DevID],\n\t'Asset Lost and Stolen'[DevName],\n\t'Asset Lost and Stolen'[HardwareSerialNumber],\n\t'Asset Lost and Stolen'[Model],\n\t'Asset Lost and Stolen'[Online],\n\t'Asset Lost and Stolen'[ReportingStatus],\n\t'Asset Lost and Stolen'[Days Offline],\n\t'Asset Lost and Stolen'[Build],\n\t'Asset Lost and Stolen'[EnrollmentTime],\n\t'Asset Lost and Stolen'[LastConnTime],\n\t'Asset Lost and Stolen'[LastDisConnTime],\n\t'Asset Lost and Stolen'[Path],\n\t'Asset Lost and Stolen'[IP]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_datasetMonthly": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SelectLatest": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_datasetLatest')?['body/firstTableRows']",
+            "select": {
+              "DeviceID": "@item()?['Asset Lost and Stolen[DevID]']",
+              "Hardware Serial Number": "@string(item()?['Asset Lost and Stolen[HardwareSerialNumber]'])",
+              "DevName": "@item()?['Asset Lost and Stolen[DevName]']",
+              "Online": "@item()?['Asset Lost and Stolen[Online]']",
+              "IP": "@item()?['Asset Lost and Stolen[IP]']",
+              "Model": "@item()?['Asset Lost and Stolen[Model]']",
+              "ReportingStatus": "@item()?['Asset Lost and Stolen[ReportingStatus]']",
+              "Days Offline": "@item()?['Asset Lost and Stolen[Days Offline]']",
+              "Build": "@item()?['Asset Lost and Stolen[Build]']",
+              "EnrollmentTime": "@if(empty(item()?['Asset Lost and Stolen[EnrollmentTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "LastConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "LastDisConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastDisConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "Path": "@item()?['Asset Lost and Stolen[Path]']"
+            }
+          },
+          "runAfter": {
+            "SelectMonthly": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ConditionLatest": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('SelectLatest'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Create_CSV_tableLatest": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectLatest')",
+                "format": "CSV"
+              }
+            },
+            "Create_HTML_tableLatest": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectLatest')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Set_variableLatest": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeLatest": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #E66C37;\n        color: #FFFFFF;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_tableLatest')}",
+              "runAfter": {
+                "Create_HTML_tableLatest": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Set_variableLatest": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varCSVContentLatest",
+                "value": "@body('Create_CSV_tableLatest')"
+              },
+              "runAfter": {
+                "Create_CSV_tableLatest": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_variable_3": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varCSVContentLatest",
+                  "value": "DeviceID,\tHardware Serial Number,\tDevName,\tOnline,\tIP, Model,\tReportingStatus,\tDays, Offline,\tBuild,\tEnrollmentTime,\tLastConnTime,\tLastDisConnTime,\tPath"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "ConditionMonthly": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "adela.bodor@zebra.com",
+              "emailMessage/Subject": "Consum: Previous Month and Total Lost & Stolen Device Reports",
+              "emailMessage/Body": "<p class=\"editor-paragraph\">Dear team,<br><br>Please find attached the previous month and total \"Lost &amp; Stolen\" reports.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Total Lost Devices</strong></b></p><p class=\"editor-paragraph\">@{outputs('ComposeLatest')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+              "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+              "emailMessage/Cc": "gmssba@zebra.com",
+              "emailMessage/Attachments": [
+                {
+                  "Name": "Consum_PreviousMonthLostStolenDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                  "ContentBytes": "@variables('varCSVContentMonthly')"
+                },
+                {
+                  "Name": "Consum_TotalLostStolenDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                  "ContentBytes": "@variables('varCSVContentLatest')"
+                }
+              ],
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365"
+            }
+          },
+          "runAfter": {
+            "ConditionLatest": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentLatest": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentLatest",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentMonthly": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,256 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "8",
+                "12",
+                "16"
+              ],
+              "minutes": [
+                0
+              ]
+            },
+            "startTime": "2025-11-27T00:00Z"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "runAfter": {
+            "varCSVContent": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+              "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Lost and Stolen',\n\t\t\t'Asset Lost and Stolen'[DevID],\n\t\t\t'Asset Lost and Stolen'[DevName],\n\t\t\t'Asset Lost and Stolen'[HardwareSerialNumber],\n\t\t\t'Asset Lost and Stolen'[Model],\n\t\t\t'Asset Lost and Stolen'[Online],\n\t\t\t'Asset Lost and Stolen'[ReportingStatus],\n\t\t\t'Asset Lost and Stolen'[Days Offline],\n\t\t\t'Asset Lost and Stolen'[Build],\n\t\t\t'Asset Lost and Stolen'[EnrollmentTime],\n\t\t\t'Asset Lost and Stolen'[LastConnTime],\n\t\t\t'Asset Lost and Stolen'[LastDisConnTime],\n\t\t\t'Asset Lost and Stolen'[Path],\n\t\t\t'Asset Lost and Stolen'[IP]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Lost and Stolen'[DevID],\n\t'Asset Lost and Stolen'[DevName],\n\t'Asset Lost and Stolen'[HardwareSerialNumber],\n\t'Asset Lost and Stolen'[Model],\n\t'Asset Lost and Stolen'[Online],\n\t'Asset Lost and Stolen'[ReportingStatus],\n\t'Asset Lost and Stolen'[Days Offline],\n\t'Asset Lost and Stolen'[Build],\n\t'Asset Lost and Stolen'[EnrollmentTime],\n\t'Asset Lost and Stolen'[LastConnTime],\n\t'Asset Lost and Stolen'[LastDisConnTime],\n\t'Asset Lost and Stolen'[Path],\n\t'Asset Lost and Stolen'[IP]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          }
+        },
+        "varCSVContent": {
+          "runAfter": {},
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "Select": {
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "DeviceID": "@item()?['Asset Lost and Stolen[DevID]']",
+              "Hardware Serial Number": "@string(item()?['Asset Lost and Stolen[HardwareSerialNumber]'])",
+              "DevName": "@item()?['Asset Lost and Stolen[DevName]']",
+              "Online": "@item()?['Asset Lost and Stolen[Online]']",
+              "IP": "@item()?['Asset Lost and Stolen[IP]']",
+              "Model": "@item()?['Asset Lost and Stolen[Model]']",
+              "ReportingStatus": "@item()?['Asset Lost and Stolen[ReportingStatus]']",
+              "Days Offline": "@item()?['Asset Lost and Stolen[Days Offline]']",
+              "Build": "@item()?['Asset Lost and Stolen[Build]']",
+              "EnrollmentTime": "@if(empty(item()?['Asset Lost and Stolen[EnrollmentTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "LastConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "LastDisConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastDisConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "Path": "@item()?['Asset Lost and Stolen[Path]']"
+            }
+          }
+        },
+        "Condition": {
+          "actions": {
+            "Create_CSV_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select')",
+                "format": "CSV"
+              }
+            },
+            "Set_variable": {
+              "runAfter": {
+                "Create_CSV_table": [
+                  "Succeeded"
+                ]
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varCSVContent",
+                "value": "@body('Create_CSV_table')"
+              }
+            },
+            "Send_an_email_(V2)": {
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "StrategicInnovationandAutomation@Zebra.com",
+                  "emailMessage/Subject": "Consum: Lost & Stolen Devices Daily Report",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Customer,<br><br>Please find attached the daily \"Lost &amp; Stolen\" report.</p><p class=\"editor-paragraph\"><br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "Consum_DailyLostStolenDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@variables('varCSVContent')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              }
+            },
+            "Create_HTML_table": {
+              "runAfter": {
+                "Set_variable": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select')",
+                "format": "HTML"
+              }
+            },
+            "Compose": {
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}"
+            }
+          },
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Set_variable_1": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varCSVContent",
+                  "value": "DeviceID,\tHardware Serial Number,\tDevName,\tOnline,\tIP, Model,\tReportingStatus,\tDays, Offline,\tBuild,\tEnrollmentTime,\tLastConnTime,\tLastDisConnTime,\tPath"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('Select'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "type": "If"
+        },
+        "Create_file": {
+          "runAfter": {
+            "Condition": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "folderPath": "/Shared Documents/CONSUM/SSIS_LOSTANDSTOLENDEVICE/DAILYLOSTDEVICES/@{formatDateTime(utcNow(), 'yyyy')}/@{formatDateTime(utcNow(), 'MM-MMMM')}",
+              "name": "consum_lost_stolen_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+              "body": "@variables('varCSVContent')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

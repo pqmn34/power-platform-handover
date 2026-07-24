@@ -1,0 +1,761 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams-1": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "Singapore Standard Time",
+            "schedule": {
+              "weekDays": [
+                "Friday"
+              ],
+              "hours": [
+                "8"
+              ],
+              "minutes": [
+                5
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Run_a_query_against_a_LostBERdataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+                  "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"Ship On Receipt\"}, 'Repair Order Lines'[Express Type])\n\n\tVAR __DS0FilterTable2 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('MLM contracts'[Contract #])),\n\t\t\tOR('MLM contracts'[Contract #] = 38236918, 'MLM contracts'[Contract #] = 38300657)\n\t\t)\n\n\tVAR __DS0FilterTable3 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Repair Order Lines'[Reason Instruction])),\n\t\t\tNOT(SEARCH(\"Loan\", 'Repair Order Lines'[Reason Instruction], 1, 0) >= 1)\n\t\t)\n\n\tVAR __DS0FilterTable4 = \n\t\tTREATAS({\"IN03\"}, 'Repair Order Lines'[Service Center Code])\n\n\tVAR __DS0FilterTable5 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Repair Order Lines'[Repair Created Date])),\n\t\t\tAND(\n\t\t\t\t'Repair Order Lines'[Repair Created Date] >= TODAY() - 30,\n\t\t\t\t'Repair Order Lines'[Repair Created Date] <= TODAY()\n\t\t\t)\n\t\t)\n\n\tVAR __DS0FilterTable6 = \n\t\tTREATAS({\"N/A\",\n\t\t\t\"Ship Only\"}, 'Repair Order Lines'[Instruction Type])\n\n\tVAR __DS0Core = \n\t\tSELECTCOLUMNS(\n\t\t\tKEEPFILTERS(\n\t\t\t\tFILTER(\n\t\t\t\t\tKEEPFILTERS(\n\t\t\t\t\t\tSUMMARIZECOLUMNS(\n\t\t\t\t\t\t\t'Repair Order Lines'[Region],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repair Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repair ID],\n\t\t\t\t\t\t\t'Repair Order Lines'[Job Type],\n\t\t\t\t\t\t\t'Repair Order Lines'[Express Type],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repair Created Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Received Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repaired Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Ship Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Serial Number In],\n\t\t\t\t\t\t\t'Repair Order Lines'[Serial Number Out],\n\t\t\t\t\t\t\t'Repair Order Lines'[Reason Instruction],\n\t\t\t\t\t\t\t'Repair Order Lines Reporting Fields'[End Customer Name],\n\t\t\t\t\t\t\t'Repair Order Lines'[Enduser Account  ID],\n\t\t\t\t\t\t\t'Repair Order Lines'[Billto Account Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[SFDC Case Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[SFDC Account Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[Instruction Type],\n\t\t\t\t\t\t\t'Repair Order Lines'[Product Family],\n\t\t\t\t\t\t\t__DS0FilterTable,\n\t\t\t\t\t\t\t__DS0FilterTable2,\n\t\t\t\t\t\t\t__DS0FilterTable3,\n\t\t\t\t\t\t\t__DS0FilterTable4,\n\t\t\t\t\t\t\t__DS0FilterTable5,\n\t\t\t\t\t\t\t__DS0FilterTable6,\n\t\t\t\t\t\t\t\"CountRowsRepair_Order_Lines\", COUNTROWS('Repair Order Lines'),\n\t\t\t\t\t\t\t\"CountRowsRepair_Order_Lines_Reporting_Fields\", COUNTROWS('Repair Order Lines Reporting Fields')\n\t\t\t\t\t\t)\n\t\t\t\t\t),\n\t\t\t\t\tOR(\n\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Region])),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repair Number]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repair ID]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Job Type]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Express Type]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repair Created Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Received Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repaired Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Ship Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Serial Number In]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Serial Number Out]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Reason Instruction]))\n\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines Reporting Fields'[End Customer Name]))\n\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Enduser Account  ID]))\n\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Billto Account Number]))\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[SFDC Case Number]))\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[SFDC Account Number]))\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Instruction Type]))\n\t\t\t\t\t\t),\n\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Product Family]))\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t\"'Repair Order Lines'[Region]\", 'Repair Order Lines'[Region],\n\t\t\t\"'Repair Order Lines'[Repair Number]\", 'Repair Order Lines'[Repair Number],\n\t\t\t\"'Repair Order Lines'[Repair ID]\", 'Repair Order Lines'[Repair ID],\n\t\t\t\"'Repair Order Lines'[Job Type]\", 'Repair Order Lines'[Job Type],\n\t\t\t\"'Repair Order Lines'[Express Type]\", 'Repair Order Lines'[Express Type],\n\t\t\t\"'Repair Order Lines'[Repair Created Date]\", 'Repair Order Lines'[Repair Created Date],\n\t\t\t\"'Repair Order Lines'[Received Date]\", 'Repair Order Lines'[Received Date],\n\t\t\t\"'Repair Order Lines'[Repaired Date]\", 'Repair Order Lines'[Repaired Date],\n\t\t\t\"'Repair Order Lines'[Ship Date]\", 'Repair Order Lines'[Ship Date],\n\t\t\t\"'Repair Order Lines'[Serial Number In]\", 'Repair Order Lines'[Serial Number In],\n\t\t\t\"'Repair Order Lines'[Serial Number Out]\", 'Repair Order Lines'[Serial Number Out],\n\t\t\t\"'Repair Order Lines'[Reason Instruction]\", 'Repair Order Lines'[Reason Instruction],\n\t\t\t\"'Repair Order Lines Reporting Fields'[End Customer Name]\", 'Repair Order Lines Reporting Fields'[End Customer Name],\n\t\t\t\"'Repair Order Lines'[Enduser Account  ID]\", 'Repair Order Lines'[Enduser Account  ID],\n\t\t\t\"'Repair Order Lines'[Billto Account Number]\", 'Repair Order Lines'[Billto Account Number],\n\t\t\t\"'Repair Order Lines'[SFDC Case Number]\", 'Repair Order Lines'[SFDC Case Number],\n\t\t\t\"'Repair Order Lines'[SFDC Account Number]\", 'Repair Order Lines'[SFDC Account Number],\n\t\t\t\"'Repair Order Lines'[Instruction Type]\", 'Repair Order Lines'[Instruction Type],\n\t\t\t\"'Repair Order Lines'[Product Family]\", 'Repair Order Lines'[Product Family]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Repair Order Lines'[Region],\n\t'Repair Order Lines'[Repair Number],\n\t'Repair Order Lines'[Repair ID],\n\t'Repair Order Lines'[Job Type],\n\t'Repair Order Lines'[Express Type],\n\t'Repair Order Lines'[Repair Created Date],\n\t'Repair Order Lines'[Received Date],\n\t'Repair Order Lines'[Repaired Date],\n\t'Repair Order Lines'[Ship Date],\n\t'Repair Order Lines'[Serial Number In],\n\t'Repair Order Lines'[Serial Number Out],\n\t'Repair Order Lines'[Reason Instruction],\n\t'Repair Order Lines Reporting Fields'[End Customer Name],\n\t'Repair Order Lines'[Enduser Account  ID],\n\t'Repair Order Lines'[Billto Account Number],\n\t'Repair Order Lines'[SFDC Case Number],\n\t'Repair Order Lines'[SFDC Account Number],\n\t'Repair Order Lines'[Instruction Type],\n\t'Repair Order Lines'[Product Family]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            },
+            "LostBERSelect": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_LostBERdataset')?['body/firstTableRows']",
+                "select": {
+                  "Region": "@{item()?['Repair Order Lines[Region]']}",
+                  "Repair Number": "@{item()?['Repair Order Lines[Repair Number]']}",
+                  "Repair ID": "@{item()?['Repair Order Lines[Repair ID]']}",
+                  "Job Type": "@{item()?['Repair Order Lines[Job Type]']}",
+                  "Express Type": "@{item()?['Repair Order Lines[Express Type]']}",
+                  "Repair Created Date": "@{if(empty(item()?['Repair Order Lines[Repair Created Date]']), '', formatDateTime(item()?['Repair Order Lines[Repair Created Date]'], 'dd/MM/yyyy'))}",
+                  "Received Date": "@{if(empty(item()?['Repair Order Lines[Received Date]']), '', formatDateTime(item()?['Repair Order Lines[Received Date]'], 'dd/MM/yyyy'))}",
+                  "Repaired Date": "@{if(empty(item()?['Repair Order Lines[Repaired Date]']), '', formatDateTime(item()?['Repair Order Lines[Repaired Date]'], 'dd/MM/yyyy'))}",
+                  "Ship Date": "@{if(empty(item()?['Repair Order Lines[Ship Date]']), '', formatDateTime(item()?['Repair Order Lines[Ship Date]'], 'dd/MM/yyyy'))}",
+                  "Serial Number In": "@{item()?['Repair Order Lines[Serial Number In]']}",
+                  "Serial Number Out": "@{item()?['Repair Order Lines[Serial Number Out]']}",
+                  "Reason Instruction": "@{item()?['Repair Order Lines[Reason Instruction]']}",
+                  "End Customer Name": "@{item()?['Repair Order Lines Reporting Fields[End Customer Name]']}",
+                  "Enduser Account ID": "@{item()?['Repair Order Lines[Enduser Account  ID]']}",
+                  "Billto Account Number": "@{item()?['Repair Order Lines[Billto Account Number]']}",
+                  "SFDC Case Number": "@{item()?['Repair Order Lines[SFDC Case Number]']}",
+                  "SFDC Account Number": "@{item()?['Repair Order Lines[SFDC Account Number]']}",
+                  "Instruction Type": "@{item()?['Repair Order Lines[Instruction Type]']}",
+                  "Product Family": "@{item()?['Repair Order Lines[Product Family]']}"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_LostBERdataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "RepairCondition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@empty(outputs('Run_a_query_against_a_LostBERdataset')?['body/firstTableRows'])",
+                      true
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Set_variableLostBERBlank": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContentLostBER",
+                    "value": "Region,Repair Number,Repair ID,Job Type,Express Type,Repair Created Date,Received Date,Repaired Date,Ship Date,Serial Number In,Serial Number Out,Reason Instruction,End Customer Name,Enduser Account ID,Billto Account Number,SFDC Case Number,SFDC Account Number,Instruction Type,Product Family"
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Create_HTML_LostBERtable": {
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('LostBERSelect')",
+                      "format": "HTML"
+                    },
+                    "runAfter": {
+                      "Set_variableLostBER": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "LostBERCompose": {
+                    "type": "Compose",
+                    "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>@{body('Create_HTML_LostBERtable')}",
+                    "runAfter": {
+                      "Create_HTML_LostBERtable": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Create_CSV_LostBERtable": {
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('LostBERSelect')",
+                      "format": "CSV"
+                    }
+                  },
+                  "Set_variableLostBER": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContentLostBER",
+                      "value": "@body('Create_CSV_LostBERtable')"
+                    },
+                    "runAfter": {
+                      "Create_CSV_LostBERtable": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "LostBERSelect": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Run_a_query_against_a_Damageddataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+                  "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Repair Order Lines'[Express Type])),\n\t\t\tSEARCH(\"N/A\", 'Repair Order Lines'[Express Type], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('MLM contracts'[Contract #])),\n\t\t\tOR('MLM contracts'[Contract #] = 38236918, 'MLM contracts'[Contract #] = 38300657)\n\t\t)\n\n\tVAR __DS0FilterTable3 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Repair Order Lines'[Repair Created Date])),\n\t\t\tAND(\n\t\t\t\t'Repair Order Lines'[Repair Created Date] >= TODAY() - 30,\n\t\t\t\t'Repair Order Lines'[Repair Created Date] <= TODAY()\n\t\t\t)\n\t\t)\n\n\tVAR __DS0FilterTable4 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Repair Order Lines'[Instruction Type])),\n\t\t\tAND(\n\t\t\t\t'Repair Order Lines'[Instruction Type] <> \"Cancelled\",\n\t\t\t\t'Repair Order Lines'[Instruction Type] <> \"Ship Only\"\n\t\t\t)\n\t\t)\n\n\tVAR __DS0FilterTable5 = \n\t\tTREATAS({\"TC57XX\"}, 'Repair Order Lines'[Product Family])\n\n\tVAR __DS0FilterTable6 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Repair Order Lines Reporting Fields'[Fault Type])),\n\t\t\tSEARCH(\"Damage\", 'Repair Order Lines Reporting Fields'[Fault Type], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0FilterTable7 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Repair Order Lines'[Service Center Code])),\n\t\t\t'Repair Order Lines'[Service Center Code] = \"IN03\"\n\t\t)\n\n\tVAR __DS0Core = \n\t\tSELECTCOLUMNS(\n\t\t\tKEEPFILTERS(\n\t\t\t\tFILTER(\n\t\t\t\t\tKEEPFILTERS(\n\t\t\t\t\t\tSUMMARIZECOLUMNS(\n\t\t\t\t\t\t\t'Repair Order Lines'[Region],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repair Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repair ID],\n\t\t\t\t\t\t\t'Repair Order Lines'[Job Type],\n\t\t\t\t\t\t\t'Repair Order Lines'[Express Type],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repair Created Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Received Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Repaired Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Ship Date],\n\t\t\t\t\t\t\t'Repair Order Lines'[Serial Number In],\n\t\t\t\t\t\t\t'Repair Order Lines'[Serial Number Out],\n\t\t\t\t\t\t\t'Repair Order Lines'[Reason Instruction],\n\t\t\t\t\t\t\t'Repair Order Lines Reporting Fields'[End Customer Name],\n\t\t\t\t\t\t\t'Repair Order Lines'[Enduser Account  ID],\n\t\t\t\t\t\t\t'Repair Order Lines'[Billto Account Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[SFDC Case Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[SFDC Account Number],\n\t\t\t\t\t\t\t'Repair Order Lines'[Instruction Type],\n\t\t\t\t\t\t\t'Repair Order Lines'[Product Family],\n\t\t\t\t\t\t\t'Repair Order Lines Reporting Fields'[Fault Type],\n\t\t\t\t\t\t\t__DS0FilterTable,\n\t\t\t\t\t\t\t__DS0FilterTable2,\n\t\t\t\t\t\t\t__DS0FilterTable3,\n\t\t\t\t\t\t\t__DS0FilterTable4,\n\t\t\t\t\t\t\t__DS0FilterTable5,\n\t\t\t\t\t\t\t__DS0FilterTable6,\n\t\t\t\t\t\t\t__DS0FilterTable7,\n\t\t\t\t\t\t\t\"CountRowsRepair_Order_Lines\", COUNTROWS('Repair Order Lines'),\n\t\t\t\t\t\t\t\"CountRowsRepair_Order_Lines_Reporting_Fields\", COUNTROWS('Repair Order Lines Reporting Fields')\n\t\t\t\t\t\t)\n\t\t\t\t\t),\n\t\t\t\t\tOR(\n\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Region])),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repair Number]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repair ID]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Job Type]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Express Type]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repair Created Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Received Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Repaired Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Ship Date]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Serial Number In]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Serial Number Out]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Reason Instruction]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines Reporting Fields'[End Customer Name]))\n\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Enduser Account  ID]))\n\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Billto Account Number]))\n\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[SFDC Case Number]))\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[SFDC Account Number]))\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Instruction Type]))\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines'[Product Family]))\n\t\t\t\t\t\t),\n\t\t\t\t\t\tNOT(ISBLANK('Repair Order Lines Reporting Fields'[Fault Type]))\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t\"'Repair Order Lines'[Region]\", 'Repair Order Lines'[Region],\n\t\t\t\"'Repair Order Lines'[Repair Number]\", 'Repair Order Lines'[Repair Number],\n\t\t\t\"'Repair Order Lines'[Repair ID]\", 'Repair Order Lines'[Repair ID],\n\t\t\t\"'Repair Order Lines'[Job Type]\", 'Repair Order Lines'[Job Type],\n\t\t\t\"'Repair Order Lines'[Express Type]\", 'Repair Order Lines'[Express Type],\n\t\t\t\"'Repair Order Lines'[Repair Created Date]\", 'Repair Order Lines'[Repair Created Date],\n\t\t\t\"'Repair Order Lines'[Received Date]\", 'Repair Order Lines'[Received Date],\n\t\t\t\"'Repair Order Lines'[Repaired Date]\", 'Repair Order Lines'[Repaired Date],\n\t\t\t\"'Repair Order Lines'[Ship Date]\", 'Repair Order Lines'[Ship Date],\n\t\t\t\"'Repair Order Lines'[Serial Number In]\", 'Repair Order Lines'[Serial Number In],\n\t\t\t\"'Repair Order Lines'[Serial Number Out]\", 'Repair Order Lines'[Serial Number Out],\n\t\t\t\"'Repair Order Lines'[Reason Instruction]\", 'Repair Order Lines'[Reason Instruction],\n\t\t\t\"'Repair Order Lines Reporting Fields'[End Customer Name]\", 'Repair Order Lines Reporting Fields'[End Customer Name],\n\t\t\t\"'Repair Order Lines'[Enduser Account  ID]\", 'Repair Order Lines'[Enduser Account  ID],\n\t\t\t\"'Repair Order Lines'[Billto Account Number]\", 'Repair Order Lines'[Billto Account Number],\n\t\t\t\"'Repair Order Lines'[SFDC Case Number]\", 'Repair Order Lines'[SFDC Case Number],\n\t\t\t\"'Repair Order Lines'[SFDC Account Number]\", 'Repair Order Lines'[SFDC Account Number],\n\t\t\t\"'Repair Order Lines'[Instruction Type]\", 'Repair Order Lines'[Instruction Type],\n\t\t\t\"'Repair Order Lines'[Product Family]\", 'Repair Order Lines'[Product Family],\n\t\t\t\"'Repair Order Lines Reporting Fields'[Fault Type]\", 'Repair Order Lines Reporting Fields'[Fault Type]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Repair Order Lines'[Repair Created Date],\n\t'Repair Order Lines'[Region],\n\t'Repair Order Lines'[Repair Number],\n\t'Repair Order Lines'[Repair ID],\n\t'Repair Order Lines'[Job Type],\n\t'Repair Order Lines'[Express Type],\n\t'Repair Order Lines'[Received Date],\n\t'Repair Order Lines'[Repaired Date],\n\t'Repair Order Lines'[Ship Date],\n\t'Repair Order Lines'[Serial Number In],\n\t'Repair Order Lines'[Serial Number Out],\n\t'Repair Order Lines'[Reason Instruction],\n\t'Repair Order Lines Reporting Fields'[End Customer Name],\n\t'Repair Order Lines'[Enduser Account  ID],\n\t'Repair Order Lines'[Billto Account Number],\n\t'Repair Order Lines'[SFDC Case Number],\n\t'Repair Order Lines'[SFDC Account Number],\n\t'Repair Order Lines'[Instruction Type],\n\t'Repair Order Lines'[Product Family],\n\t'Repair Order Lines Reporting Fields'[Fault Type]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              },
+              "runAfter": {
+                "RepairCondition": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "DamageSelect": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_Damageddataset')?['body/firstTableRows']",
+                "select": {
+                  "Region": "@{item()?['Repair Order Lines[Region]']}",
+                  "Repair Number": "@{item()?['Repair Order Lines[Repair Number]']}",
+                  "Repair ID": "@{item()?['Repair Order Lines[Repair ID]']}",
+                  "Job Type": "@{item()?['Repair Order Lines[Job Type]']}",
+                  "Express Type": "@{item()?['Repair Order Lines[Express Type]']}",
+                  "Repair Created Date": "@{if(empty(item()?['Repair Order Lines[Repair Created Date]']), '', formatDateTime(item()?['Repair Order Lines[Repair Created Date]'], 'dd/MM/yyyy'))}",
+                  "Received Date": "@{if(empty(item()?['Repair Order Lines[Received Date]']), '', formatDateTime(item()?['Repair Order Lines[Received Date]'], 'dd/MM/yyyy'))}",
+                  "Repaired Date": "@{if(empty(item()?['Repair Order Lines[Repaired Date]']), '', formatDateTime(item()?['Repair Order Lines[Repaired Date]'], 'dd/MM/yyyy'))}",
+                  "Ship Date": "@{if(empty(item()?['Repair Order Lines[Ship Date]']), '', formatDateTime(item()?['Repair Order Lines[Ship Date]'], 'dd/MM/yyyy'))}",
+                  "Serial Number In": "@{item()?['Repair Order Lines[Serial Number In]']}",
+                  "Serial Number Out": "@{item()?['Repair Order Lines[Serial Number Out]']}",
+                  "Reason Instruction": "@{item()?['Repair Order Lines[Reason Instruction]']}",
+                  "End Customer Name": "@{item()?['Repair Order Lines Reporting Fields[End Customer Name]']}",
+                  "Enduser Account ID": "@{item()?['Repair Order Lines[Enduser Account  ID]']}",
+                  "Billto Account Number": "@{item()?['Repair Order Lines[Billto Account Number]']}",
+                  "SFDC Case Number": "@{item()?['Repair Order Lines[SFDC Case Number]']}",
+                  "SFDC Account Number": "@{item()?['Repair Order Lines[SFDC Account Number]']}",
+                  "Instruction Type": "@{item()?['Repair Order Lines[Instruction Type]']}",
+                  "Product Family": "@{item()?['Repair Order Lines[Product Family]']}"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_Damageddataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "DamageCondition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@empty(outputs('Run_a_query_against_a_Damageddataset')?['body/firstTableRows'])",
+                      "@'true'"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Set_variableDamagedBlank": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContentDamaged",
+                    "value": "Region,Repair Number,Repair ID,Job Type,Express Type,Repair Created Date,Received Date,Repaired Date,Ship Date,Serial Number In,Serial Number Out,Reason Instruction,End Customer Name,Enduser Account ID,Billto Account Number,SFDC Case Number,SFDC Account Number,Instruction Type,Product Family"
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Create_HTML_Damagedtable": {
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('DamageSelect')",
+                      "format": "HTML"
+                    },
+                    "runAfter": {
+                      "Set_variableDamaged": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "DamagedCompose": {
+                    "type": "Compose",
+                    "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>@{body('Create_HTML_Damagedtable')}",
+                    "runAfter": {
+                      "Create_HTML_Damagedtable": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Create_CSV_Damagedtable": {
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('DamageSelect')",
+                      "format": "CSV"
+                    }
+                  },
+                  "Set_variableDamaged": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContentDamaged",
+                      "value": "@body('Create_CSV_Damagedtable')"
+                    },
+                    "runAfter": {
+                      "Create_CSV_Damagedtable": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "DamageSelect": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@outputs('EmailTO')",
+                  "emailMessage/Subject": "BlueDart: LostBER and Damaged Repair Weekly Data",
+                  "emailMessage/Body": "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n    <tbody><tr>\n      <td>\n\n        <table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"width:1200px; max-width:1200px;\">\n          <tbody><tr>\n            <td style=\"padding-bottom:20px; font-size:16px;\">\n              Greetings!,<br><br>\n              Please find below the latest repair data summary.<br>\nFor detailed information, find the attached raw data for the last 30 days.\n            </td>\n          </tr>\n\n          <tr>\n            <td style=\"padding:10px;\">\n              <table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background:#ffffff; border:1px solid #e1dfdd;\">\n                <tbody><tr>\n                  <td style=\"padding:12px 16px; background:#78c164; color:#ffffff; font-weight:600; font-size:15px;\">\n                    @{outputs('Compose_Title_38300657_Lost')}\n                  </td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px 16px;\">\n                    @{outputs('Compose38300657LostStyled')}\n                  </td>\n                </tr>\n              </tbody></table>\n            </td>\n\n            <td style=\"padding:10px;\">\n              <table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background:#ffffff; border:1px solid #e1dfdd;\">\n                <tbody><tr>\n                  <td style=\"padding:12px 16px; background:#78c164; color:#ffffff; font-weight:600; font-size:15px;\">\n                    @{outputs('Compose_Title_38236918_Lost')}\n                  </td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px 16px;\">\n                    @{outputs('Compose38236918LostStyled')}\n                  </td>\n                </tr>\n              </tbody></table>\n            </td>\n          </tr>\n\n          <tr>\n            <td style=\"padding:10px;\">\n              <table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background:#ffffff; border:1px solid #e1dfdd;\">\n                <tbody><tr>\n                  <td style=\"padding:12px 16px; background:#78c164; color:#ffffff; font-weight:600; font-size:15px;\">\n                    @{outputs('Compose_Title_38300657_Damage')}\n                  </td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px 16px;\">\n                    @{outputs('Compose38300657DamageStyled')}\n                  </td>\n                </tr>\n              </tbody></table>\n            </td>\n\n            <td style=\"padding:10px;\">\n              <table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background:#ffffff; border:1px solid #e1dfdd;\">\n                <tbody><tr>\n                  <td style=\"padding:12px 16px; background:#78c164; color:#ffffff; font-weight:600; font-size:15px;\">\n                    @{outputs('Compose_Title_38236918_Damage')}\n                  </td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px 16px;\">\n                    @{outputs('Compose38236918DamageStyled')}\n                  </td>\n                </tr>\n              </tbody></table>\n            </td>\n          </tr>\n        </tbody></table>\n\n      </td>\n    </tr>\n  </tbody></table>\n@{outputs('EmailFooter-Internal')}",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('EmailCC')",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "Lost_BER_Repair_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@variables('varCSVContentLostBER')"
+                    },
+                    {
+                      "Name": "Damaged_Repair_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@variables('varCSVContentDamaged')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "38300657DamageData": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+                  "specification/query": "DEFINE\n    VAR __DS0FilterTable =\n        TREATAS({\"N/A\"}, 'Repair Order Lines'[Express Type])\n\n    VAR __DS0FilterTable2 =\n        FILTER(\n            KEEPFILTERS(VALUES('MLM contracts'[Contract #])),\n            'MLM contracts'[Contract #] = 38300657\n        )\n\n    VAR __DS0FilterTable3 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Reason Instruction])),\n            NOT(SEARCH(\"Loan\", 'Repair Order Lines'[Reason Instruction], 1, 0) >= 1)\n        )\n\n    VAR __DS0FilterTable4 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Instruction Type])),\n            AND(\n                'Repair Order Lines'[Instruction Type] <> \"Ship Only\",\n                'Repair Order Lines'[Instruction Type] <> \"Cancelled\"\n            )\n        )\n\n    VAR __Today =\n        TODAY()\n\n    VAR __StartDate =\n        DATE(\n            YEAR(__Today) - IF(MONTH(__Today) < 11, 1, 0),\n            11,\n            1\n        )\n\n    VAR __EndDate =\n        EDATE(__StartDate, 12)\n\n    VAR __DS0FilterTable5 =\n        FILTER(\n            KEEPFILTERS(\n                VALUES('Date - Repair Created Date'[Repair Created Date Calendar Month Start Date])\n            ),\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] >= __StartDate\n                && 'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] < __EndDate\n        )\n\n    VAR __DS0FilterTable6 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines Reporting Fields'[Fault Type])),\n            SEARCH(\"Damage\", 'Repair Order Lines Reporting Fields'[Fault Type], 1, 0) >= 1\n        )\n\n    VAR __DS0FilterTable7 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Product Family])),\n            'Repair Order Lines'[Product Family] = \"TC57XX\"\n        )\n\n    VAR __DS0Core =\n        SUMMARIZECOLUMNS(\n            ROLLUPADDISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                \"IsGrandTotalRowTotal\"\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5,\n            __DS0FilterTable6,\n            __DS0FilterTable7,\n            \"Damage\", '_RepairDataMeasures'[1_Monthly_Count 38300657],\n            \"Damage Allowance\", '_RepairDataMeasures'[3_Max_Damage_Allowance38300657]\n        )\n\n    VAR __DS0PrimaryShowAll =\n        ADDMISSINGITEMS(\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n            __DS0Core,\n            ROLLUPISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                [IsGrandTotalRowTotal]\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5,\n            __DS0FilterTable6,\n            __DS0FilterTable7\n        )\n\nEVALUATE\n    __DS0PrimaryShowAll\n\nORDER BY\n    [IsGrandTotalRowTotal] ASC,\n    'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] ASC\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              },
+              "runAfter": {
+                "Compose_Title_38300657_Lost": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "38236918LostData": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+                  "specification/query": "DEFINE\n    VAR __DS0FilterTable =\n        TREATAS({\"Ship On Receipt\"}, 'Repair Order Lines'[Express Type])\n\n    VAR __DS0FilterTable2 =\n        FILTER(\n            KEEPFILTERS(VALUES('MLM contracts'[Contract #])),\n            'MLM contracts'[Contract #] = 38236918\n        )\n\n    VAR __DS0FilterTable3 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Reason Instruction])),\n            NOT(SEARCH(\"Loan\", 'Repair Order Lines'[Reason Instruction], 1, 0) >= 1)\n        )\n\n    VAR __DS0FilterTable4 =\n        TREATAS({\"N/A\", \"Ship Only\"}, 'Repair Order Lines'[Instruction Type])\n\n    VAR __Today =\n        TODAY()\n\n    VAR __StartDate =\n        DATE(\n            YEAR(__Today) - IF(MONTH(__Today) < 8, 1, 0),\n            8,\n            1\n        )\n\n    VAR __EndDate =\n        EDATE(__StartDate, 12)\n\n    VAR __DS0FilterTable5 =\n        FILTER(\n            KEEPFILTERS(\n                VALUES('Date - Repair Created Date'[Repair Created Date Calendar Month Start Date])\n            ),\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] >= __StartDate\n                && 'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] < __EndDate\n        )\n\n    VAR __DS0Core =\n        SUMMARIZECOLUMNS(\n            ROLLUPADDISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                \"IsGrandTotalRowTotal\"\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5,\n            \"v1_Monthly_Count_38236918\", '_RepairDataMeasures'[1_Monthly_Count 38236918],\n            \"v3_Max_Lost_Allowance38236918\", '_RepairDataMeasures'[3_Max_Lost_Allowance38236918]\n        )\n\n    VAR __DS0PrimaryShowAll =\n        ADDMISSINGITEMS(\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n            __DS0Core,\n            ROLLUPISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                [IsGrandTotalRowTotal]\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5\n        )\n\nEVALUATE\n    __DS0PrimaryShowAll\n\nORDER BY\n    [IsGrandTotalRowTotal] ASC,\n    'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date]\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              },
+              "runAfter": {
+                "Compose_Title_38300657_Damage": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "38300657Lost_Data": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+                  "specification/query": "DEFINE\n    VAR __DS0FilterTable =\n        TREATAS({\"Ship On Receipt\"}, 'Repair Order Lines'[Express Type])\n\n    VAR __DS0FilterTable2 =\n        FILTER(\n            KEEPFILTERS(VALUES('MLM contracts'[Contract #])),\n            'MLM contracts'[Contract #] = 38300657\n        )\n\n    VAR __DS0FilterTable3 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Reason Instruction])),\n            NOT(SEARCH(\"Loan\", 'Repair Order Lines'[Reason Instruction], 1, 0) >= 1)\n        )\n\n    VAR __DS0FilterTable4 =\n        TREATAS({\"N/A\", \"Ship Only\"}, 'Repair Order Lines'[Instruction Type])\n\n    VAR __Today =\n        TODAY()\n\n    VAR __StartDate =\n        DATE(\n            YEAR(__Today) - IF(MONTH(__Today) < 11, 1, 0),\n            11,\n            1\n        )\n\n    VAR __EndDate =\n        EDATE(__StartDate, 12)\n\n    VAR __DS0FilterTable5 =\n        FILTER(\n            KEEPFILTERS(\n                VALUES('Date - Repair Created Date'[Repair Created Date Calendar Month Start Date])\n            ),\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] >= __StartDate\n                && 'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] < __EndDate\n        )\n\n    VAR __DS0Core =\n        SUMMARIZECOLUMNS(\n            ROLLUPADDISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                \"IsGrandTotalRowTotal\"\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5,\n            \"v1_Monthly_Count_38300657\", '_RepairDataMeasures'[1_Monthly_Count 38300657],\n            \"v3_Max_Lost_Allowance38300657\", '_RepairDataMeasures'[3_Max_Lost_Allowance38300657]\n        )\n\n    VAR __DS0PrimaryShowAll =\n        ADDMISSINGITEMS(\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n            __DS0Core,\n            ROLLUPISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                [IsGrandTotalRowTotal]\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5\n        )\n\nEVALUATE\n    __DS0PrimaryShowAll\n\nORDER BY\n    [IsGrandTotalRowTotal] ASC,\n    'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date]\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              },
+              "runAfter": {
+                "DamageCondition": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "38236918DamageData": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+                  "specification/query": "DEFINE\n    VAR __DS0FilterTable =\n        TREATAS({\"N/A\"}, 'Repair Order Lines'[Express Type])\n\n    VAR __DS0FilterTable2 =\n        FILTER(\n            KEEPFILTERS(VALUES('MLM contracts'[Contract #])),\n            'MLM contracts'[Contract #] = 38236918\n        )\n\n    VAR __DS0FilterTable3 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Reason Instruction])),\n            NOT(SEARCH(\"Loan\", 'Repair Order Lines'[Reason Instruction], 1, 0) >= 1)\n        )\n\n    VAR __DS0FilterTable4 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Instruction Type])),\n            AND(\n                'Repair Order Lines'[Instruction Type] <> \"Ship Only\",\n                'Repair Order Lines'[Instruction Type] <> \"Cancelled\"\n            )\n        )\n\n    VAR __Today =\n        TODAY()\n\n    VAR __StartDate =\n        DATE(\n            YEAR(__Today) - IF(MONTH(__Today) < 8, 1, 0),\n            8,\n            1\n        )\n\n    VAR __EndDate =\n        EDATE(__StartDate, 12)\n\n    VAR __DS0FilterTable5 =\n        FILTER(\n            KEEPFILTERS(\n                VALUES('Date - Repair Created Date'[Repair Created Date Calendar Month Start Date])\n            ),\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] >= __StartDate\n                && 'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] < __EndDate\n        )\n\n    VAR __DS0FilterTable6 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines Reporting Fields'[Fault Type])),\n            SEARCH(\"Damage\", 'Repair Order Lines Reporting Fields'[Fault Type], 1, 0) >= 1\n        )\n\n    VAR __DS0FilterTable7 =\n        FILTER(\n            KEEPFILTERS(VALUES('Repair Order Lines'[Product Family])),\n            'Repair Order Lines'[Product Family] = \"TC57XX\"\n        )\n\n    VAR __DS0Core =\n        SUMMARIZECOLUMNS(\n            ROLLUPADDISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                \"IsGrandTotalRowTotal\"\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5,\n            __DS0FilterTable6,\n            __DS0FilterTable7,\n            \"v1_Monthly_Count_38236918\", '_RepairDataMeasures'[1_Monthly_Count 38236918],\n            \"v3_Max_Damage_Allowance38236918\", '_RepairDataMeasures'[3_Max_Damage_Allowance38236918]\n        )\n\n    VAR __DS0PrimaryShowAll =\n        ADDMISSINGITEMS(\n            'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n            __DS0Core,\n            ROLLUPISSUBTOTAL(\n                'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date],\n                [IsGrandTotalRowTotal]\n            ),\n            __DS0FilterTable,\n            __DS0FilterTable2,\n            __DS0FilterTable3,\n            __DS0FilterTable4,\n            __DS0FilterTable5,\n            __DS0FilterTable6,\n            __DS0FilterTable7\n        )\n\nEVALUATE\n    __DS0PrimaryShowAll\n\nORDER BY\n    [IsGrandTotalRowTotal] ASC,\n    'Date - Repair Created Date'[Repair Created Date Calendar Month Start Date] ASC\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              },
+              "runAfter": {
+                "Compose_Title_38236918_Lost": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select-38300657Lost_Data": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('38300657Lost_Data')?['body/firstTableRows']",
+                "select": {
+                  "Month": "@{if(item()?['[IsGrandTotalRowTotal]'], 'Total', formatDateTime(item()?['Date - Repair Created Date[Repair Created Date Calendar Month Start Date]'], 'MMM yyyy'))}",
+                  "Lost Count": "@{coalesce(item()?['[v1_Monthly_Count_38300657]'], 0)}",
+                  "Lost Allowance": "@{coalesce(item()?['[v3_Max_Lost_Allowance38300657]'], 0)}"
+                }
+              },
+              "runAfter": {
+                "38300657Lost_Data": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select-38300657DamageData": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('38300657DamageData')?['body/firstTableRows']",
+                "select": {
+                  "Month": "@{if(item()?['[IsGrandTotalRowTotal]'], 'Total', formatDateTime(item()?['Date - Repair Created Date[Repair Created Date Calendar Month Start Date]'], 'MMM yyyy'))}",
+                  "Damage Count": "@{coalesce(item()?['[Damage]'], 0)}",
+                  "Damage Allowance": "@{coalesce(item()?['[Damage Allowance]'], 0)}"
+                }
+              },
+              "runAfter": {
+                "38300657DamageData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select-38236918LostData": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('38236918LostData')?['body/firstTableRows']",
+                "select": {
+                  "Month": "@{if(item()?['[IsGrandTotalRowTotal]'], 'Total', formatDateTime(item()?['Date - Repair Created Date[Repair Created Date Calendar Month Start Date]'], 'MMM yyyy'))}",
+                  "Lost Count": "@{coalesce(item()?['[v1_Monthly_Count_38236918]'], 0)}",
+                  "Lost Allowance": "@{coalesce(item()?['[v3_Max_Lost_Allowance38236918]'], 0)}"
+                }
+              },
+              "runAfter": {
+                "38236918LostData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select-38236918DamageData": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('38236918DamageData')?['body/firstTableRows']",
+                "select": {
+                  "Month": "@{if(item()?['[IsGrandTotalRowTotal]'], 'Total', formatDateTime(item()?['Date - Repair Created Date[Repair Created Date Calendar Month Start Date]'], 'MMM yyyy'))}",
+                  "Damage Count": "@{coalesce(item()?['[v1_Monthly_Count_38236918]'], 0)}",
+                  "Damage Allowance": "@{coalesce(item()?['[v3_Max_Damage_Allowance38236918]'], 0)}"
+                }
+              },
+              "runAfter": {
+                "38236918DamageData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "CreateHTMLtable38300657LostData": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select-38300657Lost_Data')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Select-38300657Lost_Data": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "CreateHTMLtable38300657DamageData": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select-38300657DamageData')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Select-38300657DamageData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "CreateHTMLtable38236918LostData": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select-38236918LostData')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Select-38236918LostData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "CreateHTMLtable38236918DamageData": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select-38236918DamageData')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Select-38236918DamageData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose38300657LostStyled": {
+              "type": "Compose",
+              "inputs": "@replace(\n  replace(\n    replace(\n      replace(\n        body('CreateHTMLtable38300657LostData'),\n        '<tr><td>Total</td>',\n\t\t'<tr style=\"font-weight:700;background:#f3f2f1;border-top:2px solid #c8c8c8;\"><td>Total</td>'\n      ),\n      '<table>',\n      '<table style=\"width:100%;border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;font-size:12px;background:#ffffff;color:#323130;table-layout:fixed;\">'\n    ),\n    '<th>',\n    '<th style=\"border-bottom:2px solid #c8c8c8;background:#f3f2f1;color:#323130;font-weight:600;padding:8px 10px;text-align:left;white-space:nowrap;\">'\n  ),\n  '<td>',\n  '<td style=\"border-bottom:1px solid #e1dfdd;padding:7px 10px;background:#ffffff;color:#323130;text-align:left;word-wrap:break-word;\">'\n)",
+              "runAfter": {
+                "CreateHTMLtable38300657LostData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose38300657DamageStyled": {
+              "type": "Compose",
+              "inputs": "@replace(\n  replace(\n    replace(\n      replace(\n        body('CreateHTMLtable38300657DamageData'),\n        '<tr><td>Total</td>',\n\t\t'<tr style=\"font-weight:700;background:#f3f2f1;border-top:2px solid #c8c8c8;\"><td>Total</td>'\n      ),\n      '<table>',\n      '<table style=\"width:100%;border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;font-size:12px;background:#ffffff;color:#323130;table-layout:fixed;\">'\n    ),\n    '<th>',\n    '<th style=\"border-bottom:2px solid #c8c8c8;background:#f3f2f1;color:#323130;font-weight:600;padding:8px 10px;text-align:left;white-space:nowrap;\">'\n  ),\n  '<td>',\n  '<td style=\"border-bottom:1px solid #e1dfdd;padding:7px 10px;background:#ffffff;color:#323130;text-align:left;word-wrap:break-word;\">'\n)",
+              "runAfter": {
+                "CreateHTMLtable38300657DamageData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose38236918LostStyled": {
+              "type": "Compose",
+              "inputs": "@replace(\n  replace(\n    replace(\n      replace(\n        body('CreateHTMLtable38236918LostData'),\n        '<tr><td>Total</td>',\n\t\t'<tr style=\"font-weight:700;background:#f3f2f1;border-top:2px solid #c8c8c8;\"><td>Total</td>'\n      ),\n      '<table>',\n      '<table style=\"width:100%;border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;font-size:12px;background:#ffffff;color:#323130;table-layout:fixed;\">'\n    ),\n    '<th>',\n    '<th style=\"border-bottom:2px solid #c8c8c8;background:#f3f2f1;color:#323130;font-weight:600;padding:8px 10px;text-align:left;white-space:nowrap;\">'\n  ),\n  '<td>',\n  '<td style=\"border-bottom:1px solid #e1dfdd;padding:7px 10px;background:#ffffff;color:#323130;text-align:left;word-wrap:break-word;\">'\n)",
+              "runAfter": {
+                "CreateHTMLtable38236918LostData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose38236918DamageStyled": {
+              "type": "Compose",
+              "inputs": "@replace(\n  replace(\n    replace(\n      replace(\n        body('CreateHTMLtable38236918DamageData'),\n        '<tr><td>Total</td>',\n\t\t'<tr style=\"font-weight:700;background:#f3f2f1;border-top:2px solid #c8c8c8;\"><td>Total</td>'\n      ),\n      '<table>',\n      '<table style=\"width:100%;border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;font-size:12px;background:#ffffff;color:#323130;table-layout:fixed;\">'\n    ),\n    '<th>',\n    '<th style=\"border-bottom:2px solid #c8c8c8;background:#f3f2f1;color:#323130;font-weight:600;padding:8px 10px;text-align:left;white-space:nowrap;\">'\n  ),\n  '<td>',\n  '<td style=\"border-bottom:1px solid #e1dfdd;padding:7px 10px;background:#ffffff;color:#323130;text-align:left;word-wrap:break-word;\">'\n)",
+              "runAfter": {
+                "CreateHTMLtable38236918DamageData": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "<html>\n<body style=\"margin:0; padding:20px; background-color:#f5f5f5; font-family:Segoe UI, Arial, sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n  <tr>\n    <td style=\"padding-bottom:16px; font-size:16px; color:#323130;\">\n      Greetings!<br><br>\n      Please find below the repair data information.\n    </td>\n  </tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"border-collapse:separate; border-spacing:16px 16px;\">\n  \n  <tr>\n    <td width=\"50%\" valign=\"top\" style=\"background:#ffffff; border:1px solid #e1e1e1; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); overflow:hidden;\">\n      <div style=\"background:#78c164; color:#1f4e79; font-size:16px; font-weight:600; padding:12px 16px;\">\n        38300657 Lost Data (Max 7 units - Refreshed every November)\n      </div>\n      <div style=\"padding:10px 14px 14px 14px;\">\n        @{outputs('Compose38300657LostStyled')}\n      </div>\n    </td>\n\n    <td width=\"50%\" valign=\"top\" style=\"background:#ffffff; border:1px solid #e1e1e1; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); overflow:hidden;\">\n      <div style=\"background:#78c164; color:#1f4e79; font-size:16px; font-weight:600; padding:12px 16px;\">\n        38236918 Lost Data (Max 29 units - Refreshed every August)\n      </div>\n      <div style=\"padding:10px 14px 14px 14px;\">\n        @{outputs('Compose38236918LostStyled')}\n      </div>\n    </td>\n  </tr>\n\n  <tr>\n    <td width=\"50%\" valign=\"top\" style=\"background:#ffffff; border:1px solid #e1e1e1; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); overflow:hidden;\">\n      <div style=\"background:#78c164; color:#1f4e79; font-size:16px; font-weight:600; padding:12px 16px;\">\n        38300657 Damage Data (Max 68 units - Refreshed every November)\n      </div>\n      <div style=\"padding:10px 14px 14px 14px;\">\n        @{outputs('Compose38300657DamageStyled')}\n      </div>\n    </td>\n\n    <td width=\"50%\" valign=\"top\" style=\"background:#ffffff; border:1px solid #e1e1e1; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); overflow:hidden;\">\n      <div style=\"background:#78c164; color:#1f4e79; font-size:16px; font-weight:600; padding:12px 16px;\">\n        38236918 Damage Data (Max 290 units - Refreshed every August)\n      </div>\n      <div style=\"padding:10px 14px 14px 14px;\">\n        @{outputs('Compose38236918DamageStyled')}\n      </div>\n    </td>\n  </tr>\n\n</table>\n\n</body>\n</html>\n",
+              "runAfter": {
+                "Compose_Title_38236918_Damage": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_Title_38300657_Lost": {
+              "type": "Compose",
+              "inputs": "@concat('38300657 Lost Data (Max 7 units - Refreshed every November)')",
+              "runAfter": {
+                "Compose38300657LostStyled": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_Title_38300657_Damage": {
+              "type": "Compose",
+              "inputs": "@concat('38300657 Damage Data (Max 68 units - Refreshed every November)')",
+              "runAfter": {
+                "Compose38300657DamageStyled": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_Title_38236918_Lost": {
+              "type": "Compose",
+              "inputs": "@concat('38236918 Lost Data (Max 29 units - Refreshed every August)')",
+              "runAfter": {
+                "Compose38236918LostStyled": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_Title_38236918_Damage": {
+              "type": "Compose",
+              "inputs": "@concat('38236918 Damage Data (Max 290 units - Refreshed every August)')",
+              "runAfter": {
+                "Compose38236918DamageStyled": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "varCSVContentDamaged": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "eheng.tan@zebra.com",
+          "runAfter": {}
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 DATASET QUERY FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0; font-weight: bold;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b>@{outputs('Error_Message')}</b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams-1"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@or(equals(item()?['status'], 'Failed'), equals(item()?['status'], 'TimedOut'))"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\r\n    first(body('Filter_array'))?['error']?['message'],\r\n    first(body('Filter_array'))?['outputs']?['body']?['error']?['message'],\r\n    first(body('Filter_array'))?['body']?['error']?['message'],\r\n    'Unknown Error. Check the flow run history for details.'\r\n)",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69d47855-5ed9-43dc-a4af-b9ea6ec2ff02"
+          }
+        },
+        "varCSVContentLostBER": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentLostBER",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailFooter-Internal": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentDamaged": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentDamaged",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentLostBER": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "gmssba@zebra.com;tbijujohn@zebra.com;DMSDeliveryLeads@zebra.com;benny.poh@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailFooter-Internal": {
+          "type": "Compose",
+          "inputs": "<hr>\n<div style=\"font-family: Calibri, sans-serif; font-size: 11pt; color: #595959;\">\n    <p>\n        <i><b>Important:</b> This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</i>\n    </p>\n    <ul>\n        <li>Send an email to <a href=\"mailto:strategicinnovationandautomation@zebra.com\">strategicinnovationandautomation@zebra.com</a> if there is any error in the data or email.</li>\n        <li><a href=\"https://apps.powerapps.com/play/e/79b05c38-71f1-4aab-b05e-a84fc8639bc8/a/4b38b2ea-8805-4f86-8dfc-782be0184e3d?tenantId=4d3d260a-9c40-4306-8dac-0d64717039ec&hint=b66d7893-cd22-40bd-8c2e-b0380e970971&source=sharebutton&sourcetime=1776331989538#\">Raise the CSI</a> if there is any change or improvement required.</li>\n    </ul>\n    <p>\n        Regards,<br>\n        Strategic Innovation and Automation\n    </p>\n    <p style=\"font-size: 10pt; color: #7F7F7F;\">\n        <b>- CONFIDENTIAL -</b><br>\n        This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.\n    </p>\n</div>\n",
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

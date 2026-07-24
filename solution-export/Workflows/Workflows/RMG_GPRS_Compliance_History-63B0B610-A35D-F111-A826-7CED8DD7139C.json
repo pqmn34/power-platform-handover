@@ -1,0 +1,154 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC-02",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+              ],
+              "hours": [
+                "5"
+              ],
+              "minutes": [
+                10
+              ]
+            }
+          },
+          "evaluatedRecurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC-02",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+              ],
+              "hours": [
+                "5"
+              ],
+              "minutes": [
+                10
+              ]
+            }
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Scope": {
+          "actions": {
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                  "specification/query": "EVALUATE\nCALCULATETABLE(\n    SELECTCOLUMNS(\n        'Last Mobile Data Use RML',\n        \"SerialNumber\", 'Last Mobile Data Use RML'[Serial Number],\n        \"SiteCode\", 'Last Mobile Data Use RML'[Site Code],\n        \"ICCID\", 'Last Mobile Data Use RML'[ICCID],\n        \"OfflineDays\", 'Last Mobile Data Use RML'[Offline Days]\n    ),\n    'Last Mobile Data Use RML'[Days Since Mobile Data] >= 30,\n    'Last Mobile Data Use RML'[Offline Days] <= 30 \n)",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Apply_to_each": {
+              "foreach": "@outputs('Run_a_query_against_a_dataset')?['body']?['results']?[0]?['tables']?[0]?['rows']",
+              "actions": {
+                "Create_item": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "28af15c3-fb1e-4942-b958-53e3ed654213",
+                      "item/Title": "@item()?['[SerialNumber]']",
+                      "item/SiteCode": "@item()?['[SiteCode]']",
+                      "item/OfflineDays": "@item()?['[OfflineDays]']",
+                      "item/CaptureDate": "@utcNow()",
+                      "item/ICCID": "@item()?['[ICCID]']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PostItem"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Foreach"
+            }
+          },
+          "runAfter": {},
+          "type": "Scope"
+        },
+        "Scope_1": {
+          "actions": {},
+          "runAfter": {
+            "Scope": [
+              "Succeeded"
+            ]
+          },
+          "type": "Scope"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,178 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_excelonlinebusiness": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedexcelonlinebusiness_018ca"
+        },
+        "api": {
+          "name": "shared_excelonlinebusiness"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "25d27acf-5caa-41ff-9e7a-596553768669"
+          },
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_items": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "fe5e14a0-9349-4620-940b-ebbbd4f24a3d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "8f709111-c83b-473c-9aa9-d534c4dfbc13"
+            },
+            "authentication": {
+              "type": "Raw",
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+            }
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "List_rows_present_in_a_table": {
+              "runAfter": {},
+              "metadata": {
+                "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ": "/Exoskeleton Replacement Project - 2025/RMG Exoskeleton Refresh_Tracker.xlsx",
+                "operationMetadataId": "ccc1e7c1-4c44-4f4f-ab43-506cf9a2562c"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_excelonlinebusiness",
+                  "operationId": "GetItems",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
+                },
+                "parameters": {
+                  "source": "groups/d2042984-1b23-4e4d-87c6-fc7947aae44a",
+                  "drive": "b!wqvpS4o_IEKEQjpzvyYQTlYHOahB3exAoyd3Tqkonst8L26-Msh_TYuNfd1yiv0m",
+                  "file": "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ",
+                  "table": "{02E3B98E-C9FE-45B6-9062-642F9919593E}",
+                  "$filter": "Site eq '@{items('Apply_to_each')?['Title']}'"
+                },
+                "authentication": {
+                  "type": "Raw",
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+                }
+              }
+            },
+            "Condition": {
+              "actions": {
+                "Apply_to_each_2": {
+                  "foreach": "@outputs('List_rows_present_in_a_table')?['body/value']",
+                  "actions": {
+                    "Update_a_row": {
+                      "runAfter": {},
+                      "metadata": {
+                        "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ": "/Exoskeleton Replacement Project - 2025/RMG Exoskeleton Refresh_Tracker.xlsx",
+                        "operationMetadataId": "9f5d4f33-c128-4bb8-9a1c-d8f7539f883e"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_excelonlinebusiness",
+                          "operationId": "PatchItem",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
+                        },
+                        "parameters": {
+                          "source": "groups/d2042984-1b23-4e4d-87c6-fc7947aae44a",
+                          "drive": "b!wqvpS4o_IEKEQjpzvyYQTlYHOahB3exAoyd3Tqkonst8L26-Msh_TYuNfd1yiv0m",
+                          "file": "01DK35SY66UKIKJ3Q3JRBZXLUPRHWRWEVQ",
+                          "table": "{02E3B98E-C9FE-45B6-9062-642F9919593E}",
+                          "idColumn": "Site",
+                          "id": "@items('Apply_to_each_2')?['Site']",
+                          "item/RMG - Receipt Confirmed": "@'true'",
+                          "item/Receipt Confirmed Date": "@formatDateTime(items('Apply_to_each')?['DateofFitting'], 'yyyy-MM-dd')"
+                        },
+                        "authentication": {
+                          "type": "Raw",
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "4de847d7-171b-459d-9f6e-8c2e3b45c4c4"
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "List_rows_present_in_a_table": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "greater": [
+                  "@length(outputs('List_rows_present_in_a_table')?['body/value'])",
+                  0
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b7e773d1-a55a-4a3f-8f39-5af899c33d46"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "40d7f4be-3006-4f24-8422-453187175685"
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

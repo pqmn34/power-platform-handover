@@ -1,0 +1,131 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_c2142"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Global Device Managed Services Level II - https://zebra.sharepoint.com/sites/MS&SS (new_shared_sharepointonline_ca8a3ec82f464094877ca58c8edcbe70)": {
+          "defaultValue": "https://zebra.sharepoint.com/sites/MS&SS",
+          "type": "String",
+          "metadata": {
+            "schemaName": "new_shared_sharepointonline_ca8a3ec82f464094877ca58c8edcbe70"
+          }
+        },
+        "RMG RML Master Site List (new_shared_sharepointonline_11e51b03001f4fbca1fdf5e3e20dda52)": {
+          "defaultValue": "c6161e3d-bc9c-4583-bdd4-85dcb2428c2d",
+          "type": "String",
+          "metadata": {
+            "schemaName": "new_shared_sharepointonline_11e51b03001f4fbca1fdf5e3e20dda52"
+          }
+        },
+        "RMG PFW Master Site List (new_shared_sharepointonline_ec44cfb20b2b4961ad8021a648d41dab)": {
+          "defaultValue": "f23b1341-e93e-415a-9b2e-1d187952f921",
+          "type": "String",
+          "metadata": {
+            "schemaName": "new_shared_sharepointonline_ec44cfb20b2b4961ad8021a648d41dab"
+          }
+        },
+        "Should the Peek Button Be Showed (msdyn_ShouldShowPeekButton)": {
+          "defaultValue": "no",
+          "type": "String",
+          "metadata": {
+            "schemaName": "msdyn_ShouldShowPeekButton",
+            "description": "Should the Peek Button Be Showed"
+          }
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "b58f0381-1bd6-4133-89c9-b88846a9b5b6"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Refresh_a_dataset": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "3263e3c5-2991-4977-8cec-1d819e505c59"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_powerbi",
+              "operationId": "RefreshDataset",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi"
+            },
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Send_an_email_(V2)": {
+          "runAfter": {
+            "Refresh_a_dataset": [
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "19d7d219-a655-4cc9-b1d8-39afb360033a"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_office365",
+              "operationId": "SendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+            },
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "RMG PBI refreshed via Asset Management",
+              "emailMessage/Body": "<p>@{parameters('Global Device Managed Services Level II - https://zebra.sharepoint.com/sites/MS&SS (new_shared_sharepointonline_ca8a3ec82f464094877ca58c8edcbe70)')}@{parameters('RMG PFW Master Site List (new_shared_sharepointonline_ec44cfb20b2b4961ad8021a648d41dab)')}@{parameters('RMG RML Master Site List (new_shared_sharepointonline_11e51b03001f4fbca1fdf5e3e20dda52)')}@{parameters('Should the Peek Button Be Showed (msdyn_ShouldShowPeekButton)')}</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

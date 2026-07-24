@@ -1,0 +1,276 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "UTC",
+            "startTime": "2026-03-01T08:00:00Z"
+          }
+        }
+      },
+      "actions": {
+        "Initialize_variable_varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": " stephanie.keats@dhlevripremium.com;sam.turki@evri.com;Paul.Tate@Evri.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "DMSDeliveryLeads@zebra.com;Jakub.Polak@zebra.com;GMSSBA@zebra.com;ManagedAndIntegrationServices@zebra.com;GLOBALDMSLEVEL2@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: DHL SSIS - ALK Report 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: DHL SSIS - ALK Report 🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: DHL SSIS - ALK Report 🚨<br><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+                  "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"TC57\",\n\t\t\t\"TC77\",\n\t\t\t\"TC26\", \"TC58E\"}, 'SSIS_ALKReport'[Model])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE('SSIS_ALKReport', 'SSIS_ALKReport'[Count], 'SSIS_ALKReport'[BuildName]),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\n\tVAR __DS0PrimaryWindowed = \n\t\tTOPN(501, __DS0Core, 'SSIS_ALKReport'[Count], 1, 'SSIS_ALKReport'[BuildName], 1)\n\nEVALUATE\n\t__DS0PrimaryWindowed\n\nORDER BY\n\t'SSIS_ALKReport'[Count], 'SSIS_ALKReport'[BuildName]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            },
+            "Select": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                "select": {
+                  "Build Name": "@item()?['SSIS_ALKReport[BuildName]']",
+                  "Count": "@item()?['SSIS_ALKReport[Count]']"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Select'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  }
+                },
+                "Set_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContent",
+                    "value": "@body('Create_CSV_table')"
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Set_variable": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>@{body('Create_HTML_table')}",
+                  "runAfter": {
+                    "Create_HTML_table": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {
+                "Select": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@trim(outputs('EmailTO'))",
+                  "emailMessage/Subject": "EVRI Premium: ALK Report @{formatDateTime(utcNow(),'ddMMyyyy')}",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Team,<br><br>Please find attached the daily report.</p><p class=\"editor-paragraph\">@{outputs('Compose')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com.</strong></b><br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential, and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@trim(outputs('EmailCC'))",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "EVRIPremium_ALK_Report_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@variables('varCSVContent')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Condition": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Initialize_variable_varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,155 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_an_item_is_created": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "table": "1626171b-64b6-453b-a235-248867face3d",
+              "view": "d88e2dd1-dd28-4a5f-98f6-a929ab2808fd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnNewItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "splitOn": "@triggerOutputs()?['body/value']"
+        }
+      },
+      "actions": {
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "contains": [
+                      "@coalesce(triggerBody()?['TransferredTo']?['Value'], triggerBody()?['TransferredTo/Value'], '')",
+                      "DMS L2"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Post_message_in_a_chat_or_channel_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "poster": "Flow bot",
+                      "location": "Group chat",
+                      "body/recipient": "19:5879038cdc1f4b55bcec6b823c97d059@thread.v2",
+                      "body/messageBody": "<div style=\"font-family: Arial, sans-serif;\">\n    \n    <p><span style=\"color: #464EB8; font-weight: bold;\">@GLOBALDMSLEVEL2</span></p>\n    <p style=\"color: #D50000; font-size: 16px; font-weight: bold;\">🚨 Royal Mail Incident Escalation</p>\n    \n    <table style=\"border-collapse: collapse; width: 100%; background-color: #ffffff; max-width: 500px; border: 1px solid #ddd; font-size: 14px;\">\n        <tbody>\n            <tr>\n                <td style=\"padding: 8px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold; width: 30%;\">INC Number</td>\n                <td style=\"padding: 8px; border: 1px solid #ddd;\">\n<a href=\"https://zebra.lightning.force.com/_ui/search/ui/UnifiedSearchResults?str=@{triggerBody()?['Title']}\" style=\"color: #0078D4; font-weight: bold;\">\n    @{triggerBody()?['Title']}\n</a>\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 8px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold;\">Agent</td>\n                <td style=\"padding: 8px; border: 1px solid #ddd;\">@{triggerBody()?['AgentName/DisplayName']}</td>\n            </tr>\n            <tr>\n                <td style=\"padding: 8px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold;\">Issue Type</td>\n                <td style=\"padding: 8px; border: 1px solid #ddd;\">@{triggerBody()?['Types/Value']} </td>\n            </tr>\n\t\t\t<tr>\n                <td style=\"padding: 8px; border: 1px solid #ddd; background-color: #f3f4f6; font-weight: bold;\">Sub Type</td>\n                <td style=\"padding: 8px; border: 1px solid #ddd;\"> @{triggerBody()?['IssueType/Value']}</td>\n            </tr>\n        </tbody>\n    </table>\n    <br>\n</div>"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                      "operationId": "PostMessageToConversation",
+                      "connectionName": "shared_teams"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            }
+          },
+          "runAfter": {}
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "COMPOSE-ERROR_MESSAGE": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Post_message_in_a_chat_or_channel_2": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('COMPOSE-ERROR_MESSAGE')}</u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "COMPOSE-ERROR_MESSAGE": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

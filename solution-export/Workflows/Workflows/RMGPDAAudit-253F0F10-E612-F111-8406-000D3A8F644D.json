@@ -1,0 +1,479 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "UTC",
+            "startTime": "2026-03-01T08:00:00Z"
+          }
+        }
+      },
+      "actions": {
+        "MinRows": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "MinRows",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "IncrRows": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "incrRows",
+                "type": "integer",
+                "value": 5000
+              }
+            ]
+          },
+          "runAfter": {
+            "MinRows": [
+              "Succeeded"
+            ]
+          }
+        },
+        "appendCSV": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "appendCSV",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "IncrRows": [
+              "Succeeded"
+            ]
+          }
+        },
+        "LoopsVar": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LoopsVar",
+                "type": "integer",
+                "value": 1
+              }
+            ]
+          },
+          "runAfter": {
+            "appendCSV": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Calculate_Loops": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                  "specification/query": "EVALUATE\nROW(\n    \"loopsNeeded\", ROUNDUP(\n        CALCULATE(DISTINCTCOUNT('PDAAuditReport'[Index]))/@{variables('incrRows')}, 1) + 1\n    )",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              },
+              "runAfter": {
+                "ComposeMetrics": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Loops2run": {
+              "type": "Compose",
+              "inputs": "@outputs('Calculate_Loops')?['body/firstTableRows']?[0]?['[loopsNeeded]']",
+              "runAfter": {
+                "Calculate_Loops": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Do_until": {
+              "type": "Until",
+              "expression": "@greaterOrEquals(variables('LoopsVar'),outputs('Loops2run'))",
+              "limit": {
+                "count": 60,
+                "timeout": "PT1H"
+              },
+              "actions": {
+                "Run_a_query_against_a_dataset": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                      "specification/query": "DEFINE\n    VAR __DS0FilterTable = \n        FILTER(\n            KEEPFILTERS(VALUES('PDAAuditReport'[Index])), \n            AND('PDAAuditReport'[Index] >= @{variables('MinRows')}, 'PDAAuditReport'[Index] <= @{variables('incrRows')})\n        )\n\n    VAR __DS0Core = \n        CALCULATETABLE(\n            SELECTCOLUMNS(\n                'PDAAuditReport',\n                \"PDAAuditReport[Asset No.]\", 'PDAAuditReport'[Asset No.],\n                \"PDAAuditReport[DOBI]\", 'PDAAuditReport'[DOBI],\n                \"PDAAuditReport[Stock]\", 'PDAAuditReport'[Stock],\n                \"PDAAuditReport[Serial No.]\", 'PDAAuditReport'[Serial No.],\n                \"PDAAuditReport[Address]\", 'PDAAuditReport'[Address],\n                \"PDAAuditReport[Postcode]\", 'PDAAuditReport'[Postcode],\n                \"PDAAuditReport[OPL Region]\", 'PDAAuditReport'[OPL Region],\n                \"PDAAuditReport[Last Scanned DOBI]\", 'PDAAuditReport'[Last Scanned DOBI],\n                \"PDAAuditReport[DOBI_CHECK]\", 'PDAAuditReport'[DOBI_CHECK],\n                \"PDAAuditReport[Last Scanned Time]\", 'PDAAuditReport'[Last Scanned Time],\n                \"PDAAuditReport[Last Scanned Site]\", 'PDAAuditReport'[Last Scanned Site],\n                \"PDAAuditReport[Last Used OPL Region]\", 'PDAAuditReport'[Last Used OPL Region],\n                \"PDAAuditReport[OPL_CHECK]\", 'PDAAuditReport'[OPL_CHECK],\n                \"PDAAuditReport[Result]\", 'PDAAuditReport'[Result],\n                \"Index\", 'PDAAuditReport'[Index]\n            ),\n            __DS0FilterTable\n        )\n\nEVALUATE\n    __DS0Core\nORDER BY\n    [Index]\n",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  },
+                  "runAfter": {
+                    "Select": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "IncrMinRows": {
+                  "type": "IncrementVariable",
+                  "inputs": {
+                    "name": "MinRows",
+                    "value": 5000
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "IncrRows2": {
+                  "type": "IncrementVariable",
+                  "inputs": {
+                    "name": "incrRows",
+                    "value": 5000
+                  },
+                  "runAfter": {
+                    "IncrMinRows": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "IncrLoops": {
+                  "type": "IncrementVariable",
+                  "inputs": {
+                    "name": "LoopsVar",
+                    "value": 1
+                  },
+                  "runAfter": {
+                    "IncrRows2": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Append_to_string_variable": {
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "appendCSV",
+                    "value": "@if(equals(variables('LoopsVar'), 2), body('Create_CSV_Table'), join(skip(split(body('Create_CSV_Table'), decodeUriComponent('%0A')),1), decodeUriComponent('%0A')))"
+                  },
+                  "runAfter": {
+                    "IncrLoops": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Select": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                    "select": {
+                      "Asset No.": "@item()?['PDAAuditReport[Asset No.]']",
+                      "DOBI": "@item()?['PDAAuditReport[DOBI]']",
+                      "Stock": "@item()?['PDAAuditReport[Stock]']",
+                      "Serial No.": "@item()?['PDAAuditReport[Serial No.]']",
+                      "Address": "@item()?['PDAAuditReport[Address]']",
+                      "Postcode": "@item()?['PDAAuditReport[Postcode]']",
+                      "OPL Region": "@item()?['PDAAuditReport[OPL Region]']",
+                      "Last Scanned DOBI": "@item()?['PDAAuditReport[Last Scanned DOBI]']",
+                      "DOBI_CHECK": "@item()?['PDAAuditReport[DOBI_CHECK]']",
+                      "Last Scanned Time": "@item()?['PDAAuditReport[Last Scanned Time]']",
+                      "Last Scanned Site": "@item()?['PDAAuditReport[Last Scanned Site]']",
+                      "Last Used OPL Region": "@item()?['PDAAuditReport[Last Used OPL Region]']",
+                      "OPL_CHECK": "@item()?['PDAAuditReport[OPL_CHECK]']",
+                      "Result": "@item()?['PDAAuditReport[Result]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Loops2run": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "convert2csv": {
+              "type": "Compose",
+              "inputs": "@variables('appendCSV')",
+              "runAfter": {
+                "Do_until": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/RMG/PDA AUDIT/@{formatDateTime(utcNow(), 'yyyy')}/@{formatDateTime(utcNow(), 'MMMM')}/",
+                  "name": "RMG_PDA_Audit_@{concat(formatDateTime(utcNow(), 'yyyy-MM-ddTHH-mm-ss'), '.csv')}",
+                  "body": "@outputs('convert2csv')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "convert2csv": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Run_a_query_against_a_datasetMetrics": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                  "specification/query": "DEFINE\n    VAR __DS0Core = \n        SUMMARIZECOLUMNS(\n            ROLLUPADDISSUBTOTAL('PDAAuditReport'[Legend], \"IsGrandTotalRowTotal\"),\n            \"Audit_Count\", 'PDAAuditReport'[Audit Count]\n        )\nEVALUATE\n    __DS0Core\nORDER BY\n    [IsGrandTotalRowTotal] ASC, 'PDAAuditReport'[Legend] ASC\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              }
+            },
+            "SelectMetrics": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_datasetMetrics')?['body/firstTableRows']",
+                "select": {
+                  "Legend": "@if(equals(item()?['[IsGrandTotalRowTotal]'], true), 'Total', item()?['PDAAuditReport[Legend]'])",
+                  "Audit Count": "@item()?['[Audit_Count]']"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_datasetMetrics": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectMetrics')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "SelectMetrics": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "Iva.Musialkova@zebra.com",
+                  "emailMessage/Subject": "RMG: PDA Audit Monthly Report",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Good morning,</p><p class=\"editor-paragraph\">Please find attached \"RMG PDA Audit Monthly Report\".</p><p class=\"editor-paragraph\">@{outputs('ComposeMetrics')}</p><p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\" style=\"color: rgb(0, 0, 0);\">Important: This i</em></i><i><em class=\"editor-text-italic\">s an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</em></i><br><br><i><em class=\"editor-text-italic\">For any questions regarding the report data, please reach out to the Premier Analytics team at </em></i><i><em class=\"editor-text-italic\" style=\"color: rgb(74, 144, 226);\">premier.analytics@zebra.com</em></i><i><em class=\"editor-text-italic\">.</em></i><br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br><i><em class=\"editor-text-italic\">This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</em></i></p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "GMSSBA@zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "RMG_PDA_Audit_@{concat(formatDateTime(utcNow(), 'yyyy-MM-ddTHH-mm-ss'), '.csv')}",
+                      "ContentBytes": "@outputs('convert2csv')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeMetrics": {
+              "type": "Compose",
+              "inputs": "<style>\n  .ReportTable { \n    border-collapse: collapse; \n    font-family: 'Segoe UI', Helvetica, Arial, sans-serif; \n    font-size: 14px; \n    min-width: 450px;\n    border: 1px solid #dcdcdc;\n    box-shadow: 0 2px 4px rgba(0,0,0,0.05);\n  }\n  \n  /* Solid Professional Header */\n  .ReportTable tr:first-child th { \n    background-color: #004b87; /* Dark Corporate Blue */\n    color: #ffffff;\n    padding: 12px 15px; \n    font-weight: 600; \n    text-align: left;\n    border-bottom: 2px solid #002a4d;\n  }\n  .ReportTable tr:first-child th:last-child {\n    text-align: right;\n  }\n  \n  /* Standard Data Cells */\n  .ReportTable td { \n    padding: 10px 15px; \n    color: #333333;\n    border-right: 1px solid #eeeeee;\n    border-bottom: 1px solid #eeeeee;\n  }\n  .ReportTable td:last-child { \n    text-align: right; \n    border-right: none;\n  }\n\n  /* Alternating Row Colors (Zebra Striping) */\n  .ReportTable tr:nth-child(odd) td { \n    background-color: #ffffff; /* White background */\n  }\n  .ReportTable tr:nth-child(even) td { \n    background-color: #f4f7f9; /* Subtle light blue-grey background */\n  }\n\n  /* Distinct Total Row at the Bottom */\n  .ReportTable tr:last-child td { \n    background-color: #dce6f2 !important; /* Slightly darker highlighted background */\n    font-weight: bold; \n    color: #000000;\n    border-top: 2px solid #004b87;\n    border-bottom: none;\n    font-size: 15px;\n  }\n</style>\n<div style=\"font-family: 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 600px;\">\n<!-- Clean, Professional Date Header -->\n  <div style=\"text-align: left; font-size: 13px; color: #555555; font-style: italic; margin-bottom: 8px;\">\n    Report generated: @{formatDateTime(utcNow(), 'dddd, MMMM dd, yyyy')}\n  </div>\n</div>  <!-- Formatted Table -->\n  @{replace(body('Create_HTML_table'), '<table>', '<table class=\"ReportTable\">')}\n</div>",
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "LoopsVar": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel_2": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n    <div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n    </div>\n    <div style=\"padding: 15px; background-color: #f9f9f9;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tbody>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n                    <td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n                </tr>\n            </tbody>\n        </table>\n        <br>\n        <a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\n           View Failed Run\n        </a>\n    </div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69d47855-5ed9-43dc-a4af-b9ea6ec2ff02"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

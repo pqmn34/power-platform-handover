@@ -1,0 +1,393 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsharepointonline_cc95c"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_f3d13"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_excelonlinebusiness": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedexcelonlinebusiness_d7bcb"
+        },
+        "api": {
+          "name": "shared_excelonlinebusiness"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "9acdf90f-416b-4c5d-8b93-7601839d1d0e"
+          },
+          "type": "Request",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "HTTP": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "c4a0f7d2-3c92-431c-b147-7397b27532f7"
+          },
+          "type": "Http",
+          "inputs": {
+            "method": "GET",
+            "uri": "https://zebrams001.eu.suremdm.io/api/jobfolder/all",
+            "headers": {
+              "ApiKey": "13967834-72B0-42F0-8F8C-66A69BE028D8",
+              "Content-Type": "application/json"
+            },
+            "authentication": {
+              "type": "Basic",
+              "username": "L2_RM_API_21070007",
+              "password": "Zebr@DMSL@60200!"
+            }
+          }
+        },
+        "Parse_JSON": {
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7049202f-3df8-4f9f-a861-31b84b046554"
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "FolderID": {
+                    "type": "string"
+                  },
+                  "FolderName": {
+                    "type": "string"
+                  },
+                  "ParentFolderID": {},
+                  "LastModified": {
+                    "type": "string"
+                  },
+                  "Type": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "FolderID",
+                  "FolderName",
+                  "ParentFolderID",
+                  "LastModified",
+                  "Type"
+                ]
+              }
+            }
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@body('Parse_JSON')",
+          "actions": {
+            "Get_items_2": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "058a6d69-ed9b-4cbc-a4ad-e2cd370ca068"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "GetItems"
+                },
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "ae138859-1ef4-4377-96b5-3dbe99d3f1ae",
+                  "$filter": "FolderID eq'@{items('Apply_to_each')['FolderID']}'"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            },
+            "Condition": {
+              "actions": {
+                "Create_item_2": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "4cadba0b-9a19-46b5-9192-7f99e98da9a4"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PostItem"
+                    },
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "ae138859-1ef4-4377-96b5-3dbe99d3f1ae",
+                      "item/Title": "RMG",
+                      "item/FolderID": "@items('Apply_to_each')['FolderID']",
+                      "item/FolderName": "@items('Apply_to_each')['FolderName']",
+                      "item/ParentFolderID": "@items('Apply_to_each')['ParentFolderID']",
+                      "item/LastModified": "@items('Apply_to_each')['LastModified']",
+                      "item/Type": "@items('Apply_to_each')['Type']"
+                    },
+                    "authentication": {
+                      "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                      "type": "Raw"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Get_items_2": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "Create_item": {
+                    "runAfter": {},
+                    "metadata": {
+                      "operationMetadataId": "4cadba0b-9a19-46b5-9192-7f99e98da9a4"
+                    },
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                        "connectionName": "shared_sharepointonline",
+                        "operationId": "PostItem"
+                      },
+                      "parameters": {
+                        "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                        "table": "ae138859-1ef4-4377-96b5-3dbe99d3f1ae",
+                        "item/Title": "RMG",
+                        "item/FolderID": "@items('Apply_to_each')['FolderID']",
+                        "item/FolderName": "@items('Apply_to_each')['FolderName']",
+                        "item/ParentFolderID": "@items('Apply_to_each')['ParentFolderID']",
+                        "item/LastModified": "@items('Apply_to_each')['LastModified']",
+                        "item/Type": "@items('Apply_to_each')['Type']"
+                      },
+                      "authentication": {
+                        "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                        "type": "Raw"
+                      }
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "equals": [
+                  "@length(body('Get_items_2')?['value'])",
+                  0
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "97841d28-a8cb-4855-8f53-083632bb23ff"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Parse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "890b69d8-4686-4411-80a7-396142272c25"
+          },
+          "type": "Foreach"
+        },
+        "Send_an_email_(V2)": {
+          "runAfter": {
+            "Apply_toeach": [
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a876b533-104c-4cee-bcb5-de0d4ef8349b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SendEmailV2"
+            },
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "FAILED ERROR: RMG GET ALL JOBS FOLDER",
+              "emailMessage/Body": "<p>There was an error when trying to make the HTTP request.</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "Delay": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "74a6b857-88cb-4a38-b13f-adbe291d387c"
+          },
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 1,
+              "unit": "Minute"
+            }
+          }
+        },
+        "Get_items": {
+          "runAfter": {
+            "Delay": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1de8f361-aaa9-4bbb-9ce3-24ce2bcddf33"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "ae138859-1ef4-4377-96b5-3dbe99d3f1ae",
+              "$filter": "Type eq 'Job'"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          },
+          "runtimeConfiguration": {
+            "paginationPolicy": {
+              "minimumItemCount": 3000
+            }
+          }
+        },
+        "Apply_toeach": {
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "Add_a_row_into_a_table": {
+              "runAfter": {},
+              "metadata": {
+                "01T4LJCQ3S6AGVAAFAB5E2QXE6VQRVUWD4": "/DO NOT DELETE _ DO NOT CHANGE _ CONNECTED TO RMG 42G API/JOB FOLDER IDs/rmg_42g_job_folder_id.xlsx",
+                "operationMetadataId": "6a3c676b-170d-4122-bdaa-420ead2483e2",
+                "tableId": "{75199905-040F-43AA-9DC7-B3CEF033EBCB}",
+                "01U33U3YDNBETYJSQZTZBJZIYM3OBQUM5J": "/DOCUMENTS/1. ACCOUNTS/ROYAL MAIL GROUP/4. 42GEARS API AUTOMATION/DO NOT DELETE _ DO NOT CHANGE _ CONNECTED TO RMG 42G API/JOB FOLDER IDs/rmg_42g_job_folder_id.xlsx"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                  "connectionName": "shared_excelonlinebusiness",
+                  "operationId": "AddRowV2"
+                },
+                "parameters": {
+                  "source": "groups/02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "drive": "b!ZmxYxfZ-Gk2s4Xolw1AuW8XRAawiUotPr-BQvg1pkgqszY_Om9rdQrXmzFK3xiR4",
+                  "file": "01U33U3YDNBETYJSQZTZBJZIYM3OBQUM5J",
+                  "table": "{75199905-040F-43AA-9DC7-B3CEF033EBCB}",
+                  "item/Folder IID": "@items('Apply_toeach')?['FolderID']",
+                  "item/Folder Name": "@items('Apply_toeach')?['ParentFolderID']"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "72398a7a-bc02-47da-8e82-1f192ec5e92a"
+          },
+          "type": "Foreach"
+        },
+        "Send_an_email_(V2)_2": {
+          "runAfter": {
+            "Apply_toeach": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "a876b533-104c-4cee-bcb5-de0d4ef8349b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SendEmailV2"
+            },
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "SUCCESSFULL: RMG GET ALL JOBS FOLDER",
+              "emailMessage/Body": "<p>There was an error when trying to make the HTTP request.</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

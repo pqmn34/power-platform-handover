@@ -1,0 +1,285 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day"
+          }
+        }
+      },
+      "actions": {
+        "Initialize_variable_varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "emea.mlm.support@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "Jakub.Polak@zebra.com;GMSSBA@zebra.com;nh6432@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: AXL TC58 SSIS - Duplicate Devices 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: AXL TC58 SSIS - Duplicate Devices 🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: AXL TC58 SSIS - Duplicate Devices 🚨<br><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                  "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Duplicate_SerialNumber_42g',\n\t\t\t'Duplicate_SerialNumber_42g'[DeviceName],\n\t\t\t'Duplicate_SerialNumber_42g'[SerialNumber],\n\t\t\t'Duplicate_SerialNumber_42g'[Site],\n\t\t\t'Duplicate_SerialNumber_42g'[OS Build],\n\t\t\t'Duplicate_SerialNumber_42g'[OfflineDays],\n\t\t\t'Duplicate_SerialNumber_42g'[Model],\n\t\t\t'Duplicate_SerialNumber_42g'[Path],\n\t\t\t'Duplicate_SerialNumber_42g'[Device Offline>10Days],\n\t\t\t'Duplicate_SerialNumber_42g'[DeviceOffline>30ays],\n\t\t\t'Duplicate_SerialNumber_42g'[DevId],\n\t\t\t'Duplicate_SerialNumber_42g'[Connection Status],\n\t\t\t'Duplicate_SerialNumber_42g'[EnrollmentTime],\n\t\t\t'Duplicate_SerialNumber_42g'[Last Seen],\n\t\t\t'Duplicate_SerialNumber_42g'[Action]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Duplicate_SerialNumber_42g'[Action],\n\t'Duplicate_SerialNumber_42g'[DeviceName],\n\t'Duplicate_SerialNumber_42g'[SerialNumber],\n\t'Duplicate_SerialNumber_42g'[Site],\n\t'Duplicate_SerialNumber_42g'[OS Build],\n\t'Duplicate_SerialNumber_42g'[OfflineDays],\n\t'Duplicate_SerialNumber_42g'[Model],\n\t'Duplicate_SerialNumber_42g'[Path],\n\t'Duplicate_SerialNumber_42g'[Device Offline>10Days],\n\t'Duplicate_SerialNumber_42g'[DeviceOffline>30ays],\n\t'Duplicate_SerialNumber_42g'[DevId],\n\t'Duplicate_SerialNumber_42g'[Connection Status],\n\t'Duplicate_SerialNumber_42g'[EnrollmentTime],\n\t'Duplicate_SerialNumber_42g'[Last Seen]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            },
+            "Select": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                "select": {
+                  "Device Name": "@item()?['Duplicate_SerialNumber_42g[DeviceName]']",
+                  "Device Serial Number": "@string(item()?['Duplicate_SerialNumber_42g[SerialNumber]'])",
+                  "Model": "@item()?['Duplicate_SerialNumber_42g[Model]']",
+                  "Site": "@item()?['Duplicate_SerialNumber_42g[Site]']",
+                  "Connection Status": "@item()?['Duplicate_SerialNumber_42g[Connection Status]']",
+                  "Enrollment Time": "@item()?['Duplicate_SerialNumber_42g[EnrollmentTime]']",
+                  "Last Seen": "@item()?['Duplicate_SerialNumber_42g[Last Seen]']",
+                  "Action": "@item()?['Duplicate_SerialNumber_42g[Action]']",
+                  "Days Offline": "@item()?['Duplicate_SerialNumber_42g[OfflineDays]']",
+                  "OS Build": "@item()?['Duplicate_SerialNumber_42g[OS Build]']",
+                  "Offline > 10 Days": "@item()?['Duplicate_SerialNumber_42g[Device Offline>10Days]']",
+                  "Offline > 30 Days": "@item()?['Duplicate_SerialNumber_42g[DeviceOffline>30ays]']",
+                  "Path": "@item()?['Duplicate_SerialNumber_42g[Path]']"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Select'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  }
+                },
+                "Set_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContent",
+                    "value": "@body('Create_CSV_table')"
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Set_variable": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #8e44ad; /* Changed to red */\n        color: #ffffff;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>@{body('Create_HTML_table')}",
+                  "runAfter": {
+                    "Create_HTML_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Send_an_email_(V2)": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "@outputs('EmailTO')",
+                      "emailMessage/Subject": "AXL TC58: Duplicate Devices @{formatDateTime(utcNow(),'ddMMyyyy')}",
+                      "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Team,<br><br>Please find attached the daily report.</p><p class=\"editor-paragraph\">@{outputs('Compose')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com.</strong></b><br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential, and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                      "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                      "emailMessage/Cc": "@trim(outputs('EmailCC'))",
+                      "emailMessage/Attachments": [
+                        {
+                          "Name": "AXL_TC58_DuplicateSN_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                          "ContentBytes": "@variables('varCSVContent')"
+                        }
+                      ],
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {
+                "Select": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Initialize_variable_varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

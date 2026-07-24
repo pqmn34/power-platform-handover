@@ -1,0 +1,246 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedonedriveforbusiness_1d84f"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_new_email_arrives_in_a_shared_mailbox_(V2)": {
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "evaluatedRecurrence": {
+            "frequency": "Minute",
+            "interval": 1
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "mailboxAddress": "StrategicInnovationandAutomation@Zebra.com",
+              "importance": "Any",
+              "hasAttachments": false,
+              "includeAttachments": true,
+              "subjectFilter": "Fw: RMTR ETL PDA Utilisation Export",
+              "folderId": "Inbox"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SharedMailboxOnNewEmailV2"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "For_each": {
+          "foreach": "@triggerOutputs()?['body/attachments']",
+          "actions": {
+            "Condition": {
+              "actions": {
+                "Create_ZIP_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "folderPath": "/DOCUMENTS/_DOCUMENTS/Accounts/MDM/RM/1. REDLANDS",
+                      "name": "@item()?['name']",
+                      "body": "@base64ToBinary(item()?['contentBytes'])"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+                      "connectionName": "shared_onedriveforbusiness",
+                      "operationId": "CreateFile"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Extract_archive_to_folder": {
+                  "runAfter": {
+                    "SourcePath": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "source": "@outputs('SourcePath')",
+                      "destination": "/DOCUMENTS/_DOCUMENTS/Accounts/MDM/RM/1. REDLANDS",
+                      "overwrite": true
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+                      "connectionName": "shared_onedriveforbusiness",
+                      "operationId": "ExtractFolderV2"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "For_each_GetFileContent": {
+                  "foreach": "@outputs('Extract_archive_to_folder')?['body']",
+                  "actions": {
+                    "Get_file_content": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "id": "@items('For_each_GetFileContent')?['Id']",
+                          "inferContentType": true
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+                          "connectionName": "shared_onedriveforbusiness",
+                          "operationId": "GetFileContent"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Create_file": {
+                      "runAfter": {
+                        "Move_file": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                          "folderPath": "/Shared Documents/RMG/REDLANDS",
+                          "name": "PDAUtilisation.csv",
+                          "body": "@body('Get_file_content')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "CreateFile"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "Move_file": {
+                      "runAfter": {
+                        "Get_file_content": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "%252fShared%2bDocuments%252fRMG%252fREDLANDS%252frpt_pfw_device_report.xlsx": "/Shared Documents/RMG/REDLANDS/rpt_pfw_device_report.xlsx",
+                        "%252fShared%2bDocuments%252fRMG%252fREDLANDS%252fPDAUtilisation.csv": "/Shared Documents/RMG/REDLANDS/PDAUtilisation.csv"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                          "parameters/sourceFileId": "%252fShared%2bDocuments%252fRMG%252fREDLANDS%252fPDAUtilisation.csv",
+                          "parameters/destinationDataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                          "parameters/destinationFolderPath": "/Shared Documents/RMG/REDLANDS/ARCHIVE/RML",
+                          "parameters/nameConflictBehavior": 2
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "MoveFileAsync"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Extract_archive_to_folder": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Foreach"
+                },
+                "SourcePath": {
+                  "runAfter": {
+                    "Create_ZIP_file": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@outputs('Create_ZIP_file')?['body/Path']"
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "endsWith": [
+                      "@outputs('Compose')",
+                      "p"
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "@item()?['name']"
+            }
+          },
+          "runAfter": {},
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

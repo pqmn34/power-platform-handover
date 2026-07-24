@@ -1,0 +1,471 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "frequency": "Week",
+            "interval": 1,
+            "timeZone": "UTC",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "hours": [
+                "15",
+                "6"
+              ],
+              "minutes": [
+                30
+              ]
+            },
+            "startTime": "2025-11-05T08:44:09Z"
+          },
+          "evaluatedRecurrence": {
+            "frequency": "Week",
+            "interval": 1,
+            "timeZone": "UTC",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "hours": [
+                "15",
+                "6"
+              ],
+              "minutes": [
+                30
+              ]
+            },
+            "startTime": "2025-11-05T08:44:09Z"
+          },
+          "metadata": {
+            "operationMetadataId": "d9eb16dc-3d6e-4001-a559-84deb1837f77"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Total_Open_Cases": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "eb34c715-1602-40f5-a658-f500ec6846aa"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "14ed6bae-5b7e-4800-a104-d5800ec346f4",
+              "datasetid": "3ddd3dfc-e974-487d-ac64-6d964fc0c642",
+              "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    FILTER(\n      KEEPFILTERS(VALUES('MSSL2_Cases'[Agents])),\n      NOT('MSSL2_Cases'[Agents] IN {\"Prabhat\",\n        BLANK()})\n    )\n\n  VAR __DS0FilterTable2 = \n    TREATAS({\"Open\"}, 'MSSL2_Cases'[Status])\n\nEVALUATE\n  SUMMARIZECOLUMNS(\n    __DS0FilterTable,\n    __DS0FilterTable2,\n    \"DistinctCountCase_Number\", IGNORE(CALCULATE(DISTINCTCOUNT('MSSL2_Cases'[Case Number])))\n  )\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Initialize_variable": {
+          "runAfter": {
+            "Total_Open_Cases": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2cb01f40-9999-49a1-a481-bc68d4bb4a7f"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "TargetOpenCase",
+                "type": "float",
+                "value": "@outputs('Total_Open_Cases')?['body/firstTableRows'][0]?['[DistinctCountCase_Number]']"
+              }
+            ]
+          }
+        },
+        "Condition": {
+          "actions": {
+            "Send_an_email_(V2)": {
+              "metadata": {
+                "operationMetadataId": "2c2edda8-5799-4011-be47-5cbd3e07311a"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "GLOBALDMSLEVEL2@zebra.com",
+                  "emailMessage/Subject": "REMINDER DMSL2: Open Cases -->@{variables('TargetOpenCase')} | Open Tasks-->@{variables('TargetOpenTasks')}",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear All,<br><br>As discussed, please verify each of the following cases and take the necessary actions to reduce the queue.<br><br><b><strong class=\"editor-text-bold\">Attention:</strong></b><br>• Ensure that all outstanding tasks are completed by EOD<br>• Enhance your efforts to close out all open Cases/INCs before leaving today.<br>• Evaluate the #PROBLEMS and take the required steps to bring them up to date with the most recent investigation findings.<br><br>@{outputs('Compose_Case_Count')}<br>• Ensure that the subject line of your email aligns with the case's topic line.<br>• <b><strong class=\"editor-text-bold\">End User / Partner</strong></b> name should be filled correctly and avoid using <b><strong class=\"editor-text-bold\">Zebra Internal</strong></b> and “<b><strong class=\"editor-text-bold\">-</strong></b>“.<br>• Case <b><strong class=\"editor-text-bold\">Subject </strong></b>should be as per the SFDC Case Management Handbook e.g., Consum: , C&amp;A: , FxG: etc.<br>• Case <b><strong class=\"editor-text-bold\">Task</strong></b>’s subject must follow the SFDC Case Management Handbook e.g., Consum: , C&amp;A: , FxG: etc.<br>• Only <b><strong class=\"editor-text-bold\">#PROBLEM </strong></b>/ <b><strong class=\"editor-text-bold\">Parent Case</strong></b> can be <b><strong class=\"editor-text-bold\">&gt;4WEEKs</strong></b> old.<br>• Include email correspondence, the most recent investigation comments, and follow-up in the \"<b><strong class=\"editor-text-bold\">Case Comment</strong></b>\" section.<br>• There should be daily follow-up with the customer or the relevant team to provide case updates(s).<br>• Each <b><strong class=\"editor-text-bold\">#PROBLEM </strong></b>case must have an investigation timestamp, which must be updated on a daily basis with our investigation for the <b><strong class=\"editor-text-bold\">RCA</strong></b>.<br>• Internal cases should be generated or modified in line with the SFDC Case Management Handbook, considering factors such as Type, Case Subject, and among other factors.<br>• Ensure that all open <b><strong class=\"editor-text-bold\">#Cases</strong></b> are closed within five working days, unless a <b><strong class=\"editor-text-bold\">#PROBLEM </strong></b>with the deadline has been discussed and agreed upon with the Manager.<br>• All the child case(s) should link to the <b><strong class=\"editor-text-bold\">#PROBLEM</strong></b> / <b><strong class=\"editor-text-bold\">Parent Case</strong></b> along with the details before closing it.<br><b><strong class=\"editor-text-bold\">Open Cases:</strong></b><br>@{outputs('Compose')}<br><br><b><strong class=\"editor-text-bold\">Open Tasks</strong></b><br>@{outputs('Compose_2')}<br><br><br>Regards<br><br>Global DMS Level 2</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "danielcristian.iana@zebra.com;W.S.Mak@zebra.com",
+                  "emailMessage/Bcc": "PQMN34@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Compose_2": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "TO_PK": {
+                "metadata": {
+                  "operationMetadataId": "2c2edda8-5799-4011-be47-5cbd3e07311a"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "emailMessage/To": "PQMN34@zebra.com",
+                    "emailMessage/Subject": "REMINDER GMSSL2: Open Cases -->@{variables('TargetOpenCase')}",
+                    "emailMessage/Body": "<p>Hello Lohith,<br>\n<br>\nAs discussed, please verify each of the following cases and take the necessary actions to reduce the queue.<br>\n@{outputs('Compose_Case_Count')}<br>\n• Ensure that the subject line of your email aligns with the case's topic line.<br>\n• <strong>End User / Partner</strong> name should be filled correctly and avoiding as <strong>Zebra Internal</strong> and “<strong>-</strong>“.<br>\n• Case <strong>Subject </strong>should be as per the SFDC Case Management Handbook e.g., Consum: , C&amp;A: , FxG: etc.<br>\n• Case <strong>Task</strong>’s subject must follow the SFDC Case Management Handbook e.g., Consum: , C&amp;A: , FxG: etc.<br>\n• Only <strong>#PROBLEM </strong>/ <strong>Parent Case</strong> can be <strong>&gt;4WEEKs</strong> old.<br>\n• Include email correspondence, the most recent investigation comments, and follow-up in the \"<strong>Case Comment</strong>\" section.<br>\n• There should be daily follow-up with the customer or the relevant team to provide case updates(s).<br>\n• Each <strong>#PROBLEM </strong>case must have an investigation timestamp, which must be updated on a daily basis with our investigation for the <strong>RCA</strong>.<br>\n• Internal cases should be generated or modified in line with the SFDC Case Management Handbook, considering factors such as Type, Case Subject, and among other factors.<br>\n• Ensure that all open <strong>#Cases</strong> are closed within five working days, unless a <strong>#PROBLEM </strong>with the deadline has been discussed and agreed upon with the Manager.<br>\n• All the child case(s) should link to the <strong>#PROBLEM</strong> / <strong>Parent Case</strong> along with the details before closing it.<em><br>\n</em><br>\n<br>\n@{outputs('Compose')}<br>\n<br>\n<br>\nRegards<br>\n<br>\n<strong>PK</strong></p>",
+                    "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                    "emailMessage/Importance": "High"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                    "connectionName": "shared_office365",
+                    "operationId": "SendEmailV2"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "greaterOrEquals": [
+                  "@variables('TargetOpenCase')",
+                  2
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "542f19a8-c42c-440e-a689-b1302f644ab2"
+          },
+          "type": "If"
+        },
+        "Run_a_query_against_a_dataset": {
+          "runAfter": {
+            "Initialize_variable_2": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7b3df33a-8656-460b-b9ff-2fcd4fff994c"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "14ed6bae-5b7e-4800-a104-d5800ec346f4",
+              "datasetid": "3ddd3dfc-e974-487d-ac64-6d964fc0c642",
+              "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    FILTER(\n      KEEPFILTERS(VALUES('MSSL2_Cases'[Agents])),\n      NOT('MSSL2_Cases'[Agents] IN {\"Prabhat\",\n        BLANK()})\n    )\n\n  VAR __DS0FilterTable2 = \n    TREATAS({\"Open\"}, 'MSSL2_Cases'[Status])\n\n  VAR __DS0Core = \n    CALCULATETABLE(\n      SUMMARIZE(\n        'MSSL2_Cases',\n        'MSSL2_Cases'[Agents],\n        'MSSL2_Cases'[Case Number],\n        'MSSL2_Cases'[Account],\n        'MSSL2_Cases'[End User],\n        'MSSL2_Cases'[Subject],\n        'MSSL2_Cases'[Status],\n        'MSSL2_Cases'[Age in Weeks],\n        'MSSL2_Cases'[Case Date/Time Last Modified]\n      ),\n      KEEPFILTERS(__DS0FilterTable),\n      KEEPFILTERS(__DS0FilterTable2)\n    )\n\nEVALUATE\n  __DS0Core \n\nORDER BY\n  'MSSL2_Cases'[Agents],\n  'MSSL2_Cases'[Case Number],\n  'MSSL2_Cases'[Account],\n  'MSSL2_Cases'[End User],\n  'MSSL2_Cases'[Subject],\n  'MSSL2_Cases'[Status],\n  'MSSL2_Cases'[Age in Weeks],\n  'MSSL2_Cases'[Case Date/Time Last Modified]\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Select": {
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d59e1d91-a747-4587-9adc-1351499843ba"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Case Owner": "@item()?['MSSL2_Cases[Agents]']",
+              "Case Number": "@item()?['MSSL2_Cases[Case Number]']",
+              "End User / Partner": "@item()?['MSSL2_Cases[End User]']",
+              "Subject": "@item()?['MSSL2_Cases[Subject]']",
+              "Status": "@item()?['MSSL2_Cases[Status]']",
+              "Age in Weeks": "@item()?['MSSL2_Cases[Age in Weeks]']",
+              "Last Updated": "@formatDateTime(Item()?['MSSL2_Cases[Case Date/Time Last Modified]'],'dd/MM/yyyy')"
+            }
+          }
+        },
+        "Create_HTML_table": {
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5be4e7f4-a045-4d27-bc22-9321e0bc81b7"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "HTML"
+          }
+        },
+        "Compose": {
+          "runAfter": {
+            "Create_HTML_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "4fa789e7-cf35-4923-83a3-bf25d1365b7b"
+          },
+          "type": "Compose",
+          "inputs": "\t\n@{body('Create_HTML_table')}"
+        },
+        "Open_Cases_Table": {
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "eb34c715-1602-40f5-a658-f500ec6846aa"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "14ed6bae-5b7e-4800-a104-d5800ec346f4",
+              "datasetid": "3ddd3dfc-e974-487d-ac64-6d964fc0c642",
+              "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    FILTER(\n      KEEPFILTERS(VALUES('MSSL2_Cases'[Agents])),\n      NOT('MSSL2_Cases'[Agents] IN {\"Prabhat\",\n        BLANK()})\n    )\n\n  VAR __DS0FilterTable2 = \n    TREATAS({\"Open\"}, 'MSSL2_Cases'[Status])\n\n  VAR __DS0Core = \n    SUMMARIZECOLUMNS(\n      'MSSL2_Cases'[Agents],\n      'MSSL2_Cases'[Age in Weeks],\n      __DS0FilterTable,\n      __DS0FilterTable2,\n      \"DistinctCountCase_Number\", CALCULATE(DISTINCTCOUNT('MSSL2_Cases'[Case Number]))\n    )\n\nEVALUATE\n  __DS0Core \n\nORDER BY\n  'MSSL2_Cases'[Age in Weeks], 'MSSL2_Cases'[Agents]\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Select_Case_Count_Table": {
+          "runAfter": {
+            "Open_Cases_Table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c2d07ee9-6b14-446b-9bf3-9aa95ddbe586"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Open_Cases_Table')?['body/firstTableRows']",
+            "select": {
+              "Case Owner": "@item()?['MSSL2_Cases[Agents]']",
+              "Age in Week": "@item()?['MSSL2_Cases[Age in Weeks]']",
+              "Case Count": "@item()?['[DistinctCountCase_Number]']"
+            }
+          }
+        },
+        "Create_HTML_table_Case_Count_Table": {
+          "runAfter": {
+            "Select_Case_Count_Table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5be4e7f4-a045-4d27-bc22-9321e0bc81b7"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select_Case_Count_Table')",
+            "format": "HTML"
+          }
+        },
+        "Compose_Case_Count": {
+          "runAfter": {
+            "Create_HTML_table_Case_Count_Table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "88ba8db7-f9ad-462b-a489-25faef3676de"
+          },
+          "type": "Compose",
+          "inputs": "<style>\n\t\ttable {\n\t\t\twidth:100%;\n\t\t\theight:100%;\n\t\t\tborder:1px solid #008000;\n\t\t\tborder-collapse:collapse;\n\t\t\tborder-spacing:1px;\n\t\t\tpadding:0.5px;\n\t\t}\n\t\ttable th {\n\t\t\tborder:1px solid #008000;\n\t\t\tpadding:0.5px;\n                        text-align:center;\n\t\t\tbackground: #008000;\n\t\t\tcolor: #f4f4f1;\n\t\t}\n\t\ttable td {\n\t\t\tborder:1px solid #008000;\n\t\t\ttext-align:center;\n\t\t\tpadding:0.5px;\n\t\t\tbackground: #dcdcdc;\n\t\t\tcolor: #313030;\n\t\t}\n\t</style>\n@{body('Create_HTML_table_Case_Count_Table')}"
+        },
+        "Open_Tasks_Table": {
+          "runAfter": {
+            "Compose_Case_Count": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "eb34c715-1602-40f5-a658-f500ec6846aa"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "14ed6bae-5b7e-4800-a104-d5800ec346f4",
+              "datasetid": "3ddd3dfc-e974-487d-ac64-6d964fc0c642",
+              "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    TREATAS(\n      {\"In Progress\",\n        \"Not Started\",\n        \"Open\"},\n      'MSSL2_Total_Activities'[Task Status]\n    )\n  VAR __DS0FilterTable2 = \n    FILTER(\n      KEEPFILTERS(VALUES('MSSL2_Total_Activities'[Agent])),\n      NOT(SEARCH(\"Prabhat\", 'MSSL2_Total_Activities'[Agent], 1, 0) >= 1)\n    )\n  VAR __DS0Core = \n    CALCULATETABLE(\n      SUMMARIZE(\n        'MSSL2_Total_Activities',\n        'MSSL2_Total_Activities'[Agent],\n        'MSSL2_Total_Activities'[All Tasks],\n        'MSSL2_Total_Activities'[End User],\n        'MSSL2_Total_Activities'[Task Status],\n        'MSSL2_Total_Activities'[Subject],\n        'MSSL2_Total_Activities'[Account]\n      ),\n      KEEPFILTERS(__DS0FilterTable),\n      KEEPFILTERS(__DS0FilterTable2)\n    )\n\nEVALUATE\n  __DS0Core \n\nORDER BY\n  'MSSL2_Total_Activities'[Agent],\n  'MSSL2_Total_Activities'[All Tasks],\n  'MSSL2_Total_Activities'[End User],\n  'MSSL2_Total_Activities'[Task Status],\n  'MSSL2_Total_Activities'[Subject],\n  'MSSL2_Total_Activities'[Account]\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Tasks_Select": {
+          "runAfter": {
+            "Open_Tasks_Table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d59e1d91-a747-4587-9adc-1351499843ba"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Open_Tasks_Table')?['body/firstTableRows']",
+            "select": {
+              "Task Owner": "@item()?['MSSL2_Total_Activities[Agent]']",
+              "CR/Case Number": "@item()?['MSSL2_Total_Activities[All Tasks]']",
+              "Account ": "@item()?['MSSL2_Total_Activities[Account]']",
+              "End User": "@item()?['MSSL2_Total_Activities[End User]']",
+              "Status": "@item()?['MSSL2_Total_Activities[Task Status]']",
+              "Subject": "@item()?['MSSL2_Total_Activities[Task Status]']"
+            }
+          }
+        },
+        "Create_HTML_table_2": {
+          "runAfter": {
+            "Tasks_Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "539028fa-a5ef-4f20-a419-04162c15d609"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Tasks_Select')",
+            "format": "HTML"
+          }
+        },
+        "Compose_2": {
+          "runAfter": {
+            "Create_HTML_table_2": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "67acadba-4334-4d79-8a21-87be91369d5e"
+          },
+          "type": "Compose",
+          "inputs": "@body('Create_HTML_table_2')"
+        },
+        "Total_Open_Tasks": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "90c4c6cc-dc29-4eba-8de9-3bfec7697c0e"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "14ed6bae-5b7e-4800-a104-d5800ec346f4",
+              "datasetid": "3ddd3dfc-e974-487d-ac64-6d964fc0c642",
+              "specification/query": "// DAX Query\nDEFINE\n  VAR __DS0FilterTable = \n    TREATAS(\n      {\"In Progress\",\n        \"Not Started\",\n        \"Open\"},\n      'MSSL2_Total_Activities'[Task Status]\n    )\n\n  VAR __DS0FilterTable2 = \n    FILTER(\n      KEEPFILTERS(VALUES('MSSL2_Total_Activities'[Agent])),\n      NOT(SEARCH(\"Prabhat\", 'MSSL2_Total_Activities'[Agent], 1, 0) >= 1)\n    )\n\nEVALUATE\n  SUMMARIZECOLUMNS(\n    __DS0FilterTable,\n    __DS0FilterTable2,\n    \"CountAll_Tasks\", IGNORE(CALCULATE(COUNTA('MSSL2_Total_Activities'[All Tasks])))\n  )\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Initialize_variable_2": {
+          "runAfter": {
+            "Total_Open_Tasks": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2cb01f40-9999-49a1-a481-bc68d4bb4a7f"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "TargetOpenTasks",
+                "type": "float",
+                "value": "@outputs('Total_Open_Tasks')?['body/firstTableRows'][0]?['[CountAll_Tasks]']"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

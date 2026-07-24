@@ -1,0 +1,392 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "api": {
+          "name": "shared_keyvault"
+        }
+      },
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "Central Europe Standard Time",
+            "schedule": {
+              "hours": [
+                "18",
+                "11"
+              ],
+              "minutes": [
+                10
+              ],
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday"
+              ]
+            }
+          },
+          "evaluatedRecurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "Central Europe Standard Time",
+            "schedule": {
+              "hours": [
+                "18",
+                "11"
+              ],
+              "minutes": [
+                10
+              ],
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday"
+              ]
+            }
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Scope": {
+          "actions": {
+            "Get_secret_UID": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "secretName": "rmg-LnS-42g-uid"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+                  "connectionName": "shared_keyvault",
+                  "operationId": "GetSecret"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "secureData": {
+                  "properties": [
+                    "inputs",
+                    "outputs"
+                  ]
+                }
+              }
+            },
+            "Get_secret_PSWD": {
+              "runAfter": {
+                "Get_secret_UID": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "secretName": "rmg-LnS-42g-pswd"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+                  "connectionName": "shared_keyvault",
+                  "operationId": "GetSecret"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "secureData": {
+                  "properties": [
+                    "inputs",
+                    "outputs"
+                  ]
+                }
+              }
+            },
+            "Run_a_query_against_a_dataset": {
+              "runAfter": {
+                "Get_secret_PSWD": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                  "specification/query": "DEFINE VAR __DS0FilterTable = \n\tFILTER(\n\t\tKEEPFILTERS(VALUES('PFW Daisy Release Table TC57X'[Device Name])),\n\t\tNOT(SEARCH(\"-\", 'PFW Daisy Release Table TC57X'[Device Name], 1, 0) >= 1)\n\t)\n\nEVALUATE\n\tSUMMARIZECOLUMNS(\n\t\t__DS0FilterTable,\n\t\t\"Total_PFW_Daisy_Serial_Number\", IGNORE('PFW Daisy Release Table TC57X'[Total PFW Daisy Serial Number])\n\t)",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Compose": {
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@body('Run_a_query_against_a_dataset')"
+            },
+            "Condition": {
+              "actions": {
+                "SN_Needs_to_be_Tagged_Daisy": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                      "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('PFW Daisy Release Table TC57X'[Device Name])),\n\t\t\tNOT(SEARCH(\"-\", 'PFW Daisy Release Table TC57X'[Device Name], 1, 0) >= 1)\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'PFW Daisy Release Table TC57X',\n\t\t\t\t'PFW Daisy Release Table TC57X'[Device Name],\n\t\t\t\t'PFW Daisy Release Table TC57X'[IMEI],\n\t\t\t\t'PFW Daisy Release Table TC57X'[Serial Number],\n\t\t\t\t'PFW Daisy Release Table TC57X'[Group Path],\n\t\t\t\t'PFW Daisy Release Table TC57X'[Device ID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'PFW Daisy Release Table TC57X'[Device Name],\n\t'PFW Daisy Release Table TC57X'[IMEI],\n\t'PFW Daisy Release Table TC57X'[Serial Number],\n\t'PFW Daisy Release Table TC57X'[Group Path],\n\t'PFW Daisy Release Table TC57X'[Device ID]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "connectionName": "shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Select": {
+                  "runAfter": {
+                    "SN_Needs_to_be_Tagged_Daisy": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('SN_Needs_to_be_Tagged_Daisy')?['body/firstTableRows']",
+                    "select": {
+                      "Device Name": "@item()?['PFW Daisy Release Table TC57X[Device Name]']",
+                      "Serial Number": "@item()?['PFW Daisy Release Table TC57X[Serial Number]']",
+                      "IMEI": "@item()?['PFW Daisy Release Table TC57X[IMEI]']",
+                      "Device Group Path": "@item()?['PFW Daisy Release Table TC57X[Group Path]']",
+                      "Device ID": "@item()?['PFW Daisy Release Table TC57X[Device ID]']"
+                    }
+                  }
+                },
+                "Create_CSV_table": {
+                  "runAfter": {
+                    "Select": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  }
+                },
+                "Create_file": {
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "folderPath": "/Shared Documents/DOCUMENTS/1. ACCOUNTS/ROYAL MAIL GROUP/3. PROJECT/DAISY PROJECT/1. TAG FROM SN TO DAISY",
+                      "name": "SN_TO_DAISY_@{concat(formatDateTime(utcNow(), 'dd.MM.yyyy HH:mm'), '.csv')}",
+                      "body": "@body('Create_CSV_table')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "CreateFile"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Delay": {
+                  "runAfter": {
+                    "Create_file": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Wait",
+                  "inputs": {
+                    "interval": {
+                      "count": 1,
+                      "unit": "Minute"
+                    }
+                  }
+                },
+                "Apply_to_each": {
+                  "foreach": "@body('Select')",
+                  "actions": {
+                    "ComposeDeviceID": {
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Device ID']"
+                    },
+                    "ComposeDeviceName": {
+                      "runAfter": {
+                        "ComposeDeviceID": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Device Name']"
+                    },
+                    "ComposeSerialNumber": {
+                      "runAfter": {
+                        "ComposeDeviceName": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Serial Number']"
+                    },
+                    "HTTP": {
+                      "runAfter": {
+                        "ComposeSerialNumber": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "c4a0f7d2-3c92-431c-b147-7397b27532f7"
+                      },
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "https://zebrams001.eu.suremdm.io/api/dynamicjob",
+                        "method": "POST",
+                        "headers": {
+                          "ApiKey": "13967834-72B0-42F0-8F8C-66A69BE028D8",
+                          "Content-Type": "application/json"
+                        },
+                        "body": {
+                          "DeviceID": "@{outputs('ComposeDeviceID')}",
+                          "JobType": "Set_Devicename",
+                          "PayLoad": "@{outputs('ComposeSerialNumber')}-D"
+                        },
+                        "authentication": {
+                          "type": "Basic",
+                          "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                          "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Delay": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Foreach"
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@outputs('Compose')?['firstTableRows']?[0]?['[Total_PFW_Daisy_Serial_Number]']",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {},
+          "type": "Scope"
+        },
+        "Send_an_email_(V2)": {
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "StrategicInnovationandAutomation@Zebra.com;prabhat.kumar@zebra.com",
+              "emailMessage/Subject": "<b>🚨 FAILED ALERT: RMG PDA Rename from SN to Daisy Flow FAILED</b>",
+              "emailMessage/Body": "<b>🚨 ALERT: RMG PDA Rename from SN to Daisy Flow FAILED</b>\n\n\n<b>Flow Name:</b> <code>@{workflow().name}</code>\n\n\n<b>Run ID:</b> <code>@{workflow().run.name}</code>\n\n\n<b>Time:</b> <code>@{utcNow()}</code>\n\n\n<b>Status:</b> One or more device processing scopes (RMG Devices Tag to DAISY) have <span style=\"color:red\"><b>FAILED</b></span> or timed out.\n\n\n<b>Action Needed:</b> Please check the Power Automate run log for more details.\n\n\n<i>This is an automated alert from Power Automate.</i>\n",
+              "emailMessage/Importance": "High"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SendEmailV2"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

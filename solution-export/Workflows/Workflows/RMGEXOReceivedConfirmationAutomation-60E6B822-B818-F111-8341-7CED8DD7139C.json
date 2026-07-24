@@ -1,0 +1,382 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_excelonlinebusiness": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedexcelonlinebusiness_d7bcb"
+        },
+        "api": {
+          "name": "shared_excelonlinebusiness"
+        }
+      },
+      "shared_sendmail": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsendmail_4191a"
+        },
+        "api": {
+          "name": "shared_sendmail"
+        }
+      },
+      "shared_teams-1": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Scope": {
+          "actions": {
+            "FormOutputFilePath_Input": {
+              "type": "Compose",
+              "inputs": "@'/DOCUMENTS/2. SIA/1. PROJECTS/RMG EXO Refresh/'"
+            },
+            "List_rows_present_in_a_table": {
+              "runAfter": {
+                "FormOutputTableName": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "01U33U3YAH5TLLGTYQOFALGUGQCJBYWHPZ": "/DOCUMENTS/2. SIA/1. PROJECTS/RMG EXO Refresh/Exo Skeleton Fitting & Disposal Confirmation Survey Example - 22.01.2026.xlsx",
+                "tableId": "@outputs('FormOutputTableName')"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "source": "sites/zebra.sharepoint.com,c5586c66-7ef6-4d1a-ace1-7a25c3502e5b,ac01d1c5-5222-4f8b-afe0-50be0d69920a",
+                  "drive": "b!ZmxYxfZ-Gk2s4Xolw1AuW8XRAawiUotPr-BQvg1pkgqszY_Om9rdQrXmzFK3xiR4",
+                  "file": "@{outputs('FormOutputFilePath_Input')}Exo Skeleton Fitting & Disposal Confirmation Survey Example - 22.01.2026.xlsx",
+                  "table": "@outputs('FormOutputTableName')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                  "connectionName": "shared_excelonlinebusiness",
+                  "operationId": "GetItems"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            },
+            "FormOutputTableName": {
+              "runAfter": {
+                "FormOutputFilePath_Input": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "OfficeForms.Table"
+            },
+            "DestinationFilePath": {
+              "runAfter": {
+                "List_rows_present_in_a_table": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "/DOCUMENTS/2. SIA/1. PROJECTS/RMG EXO Refresh/"
+            },
+            "DestinationTable": {
+              "runAfter": {
+                "DestinationFilePath": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@'TrackerData'"
+            },
+            "For_each": {
+              "foreach": "@outputs('List_rows_present_in_a_table')?['body/value']",
+              "actions": {
+                "Condition": {
+                  "actions": {
+                    "Update_a_row": {
+                      "metadata": {
+                        "01U33U3YGVMPCL62AO75C3HU43NU6A264L": "/DOCUMENTS/2. SIA/1. PROJECTS/RMG EXO Refresh/Exo Refresh - Tracker_v1.xlsx",
+                        "tableId": "{FD99DE4D-0096-44A9-8F97-8DBB798FB5A2}"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "source": "sites/zebra.sharepoint.com,c5586c66-7ef6-4d1a-ace1-7a25c3502e5b,ac01d1c5-5222-4f8b-afe0-50be0d69920a",
+                          "drive": "b!ZmxYxfZ-Gk2s4Xolw1AuW8XRAawiUotPr-BQvg1pkgqszY_Om9rdQrXmzFK3xiR4",
+                          "file": "01U33U3YGVMPCL62AO75C3HU43NU6A264L",
+                          "table": "{FD99DE4D-0096-44A9-8F97-8DBB798FB5A2}",
+                          "idColumn": "Site",
+                          "id": "@items('For_each')?['Site Name']",
+                          "item/RMG - Receipt Confirmed": "@'true'"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                          "connectionName": "shared_excelonlinebusiness",
+                          "operationId": "PatchItem"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      }
+                    },
+                    "OutputMatchedSites": {
+                      "runAfter": {
+                        "Update_a_row": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@items('For_each')?['Site Name']"
+                    },
+                    "MatchedSitesAppend_to_array_variable": {
+                      "runAfter": {
+                        "OutputMatchedSites": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "matchedSites",
+                        "value": "@outputs('OutputMatchedSites')"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "List_rows_present_in_a_table_2": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Append_to_array_variable": {
+                        "type": "AppendToArrayVariable",
+                        "inputs": {
+                          "name": "mismatchedSites",
+                          "value": "@items('For_each')?['Site Name']"
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(outputs('List_rows_present_in_a_table_2')?['body/value'])",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "type": "If"
+                },
+                "List_rows_present_in_a_table_2": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "source": "sites/zebra.sharepoint.com,c5586c66-7ef6-4d1a-ace1-7a25c3502e5b,ac01d1c5-5222-4f8b-afe0-50be0d69920a",
+                      "drive": "b!ZmxYxfZ-Gk2s4Xolw1AuW8XRAawiUotPr-BQvg1pkgqszY_Om9rdQrXmzFK3xiR4",
+                      "file": "/DOCUMENTS/2. SIA/1. PROJECTS/RMG EXO Refresh/Exo Refresh - Tracker_v1.xlsx",
+                      "table": "{FD99DE4D-0096-44A9-8F97-8DBB798FB5A2}",
+                      "$filter": "Site eq '@{items('For_each')?['Site Name']}'",
+                      "$top": 1
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                      "connectionName": "shared_excelonlinebusiness",
+                      "operationId": "GetItems"
+                    },
+                    "authentication": {
+                      "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                      "type": "Raw"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "DestinationTable": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Foreach"
+            },
+            "Condition_1": {
+              "actions": {
+                "Send_an_email_notification_(V3)": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "request/to": "PQMN34@zebra.com",
+                      "request/subject": "Data Mismatch in Exo Tracker Flow",
+                      "request/text": "<p class=\"editor-paragraph\">Hello,<br></p><br><p class=\"editor-paragraph\">Automation was unable to find a match for the following site name:<br>@{join(variables('mismatchedSites'),'<br>')}</p><p class=\"editor-paragraph\">Automation has matched and updated the following sites:</p><p class=\"editor-paragraph\">@{join(variables('matchedSites'),'<br>')\r\n}<br>Please check the \"Exo Refresh - Tracker_v1.xlsx\" file to ensure this site name exists and does not contain typos or extra spaces.</p>"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sendmail",
+                      "connectionName": "shared_sendmail",
+                      "operationId": "SendEmailV3"
+                    },
+                    "authentication": {
+                      "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                      "type": "Raw"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "For_each": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {}
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(variables('mismatchedSites'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "matchedSites": [
+              "Succeeded"
+            ]
+          },
+          "type": "Scope"
+        },
+        "mismatchedSites": {
+          "runAfter": {},
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "mismatchedSites",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "matchedSites": {
+          "runAfter": {
+            "mismatchedSites": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "matchedSites",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "CatchError": {
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">&lt;div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\"&gt;<br>    &lt;div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\"&gt;<br>        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}<br>    &lt;/div&gt;<br>    &lt;div style=\"padding: 15px; background-color: #f9f9f9;\"&gt;<br>        &lt;table style=\"width: 100%; border-collapse: collapse;\"&gt;<br>            &lt;tbody&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #666; width: 30%;\"&gt;&lt;strong&gt;Flow Name:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0;\"&gt;@{workflow()?['tags']['flowDisplayName']}&lt;/td&gt;<br>                &lt;/tr&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #666;\"&gt;&lt;strong&gt;Failed Action:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0;\"&gt;@{body('Filter_array')?[0]?['name']}&lt;/td&gt;<br>                &lt;/tr&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #d83b01;\"&gt;&lt;strong&gt;Error Message:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #d83b01;\"&gt;&lt;b&gt;&lt;u&gt;&lt;/u&gt;&lt;/b&gt;&lt;/td&gt;<br>                &lt;/tr&gt;<br>                &lt;tr&gt;<br>                    &lt;td style=\"padding: 5px 0; color: #666;\"&gt;&lt;strong&gt;Run ID:&lt;/strong&gt;&lt;/td&gt;<br>                    &lt;td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\"&gt;@{workflow()?['run']?['name']}&lt;/td&gt;<br>                &lt;/tr&gt;<br>            &lt;/tbody&gt;<br>        &lt;/table&gt;<br>        &lt;br&gt;<br>        &lt;a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\"&gt;<br>           View Failed Run<br>        &lt;/a&gt;<br>    &lt;/div&gt;<br>&lt;/div&gt;</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "connectionName": "shared_teams-1",
+                  "operationId": "PostMessageToConversation"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            },
+            "Filter_array": {
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              },
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "Error_Message": {
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              },
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')"
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69d47855-5ed9-43dc-a4af-b9ea6ec2ff02"
+          },
+          "type": "Scope"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

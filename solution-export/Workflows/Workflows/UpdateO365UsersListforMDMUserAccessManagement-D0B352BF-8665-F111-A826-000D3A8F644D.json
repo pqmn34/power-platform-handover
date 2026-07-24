@@ -1,0 +1,455 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365users": {
+        "api": {
+          "name": "shared_office365users"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365users_1deaa"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "schedule": {
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday"
+              ],
+              "hours": [
+                "4"
+              ],
+              "minutes": [
+                30
+              ]
+            },
+            "timeZone": "UTC"
+          }
+        }
+      },
+      "actions": {
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Do_until": {
+              "type": "Until",
+              "expression": "@equals(empty(variables('UsersToProcess')),'true')",
+              "limit": {
+                "count": 60,
+                "timeout": "PT1H"
+              },
+              "actions": {
+                "Loop_Each_Direct_Report": {
+                  "type": "Foreach",
+                  "foreach": "@body('Get_Direct_Reports')?['value']",
+                  "actions": {
+                    "Append_to_FinalTeamArray": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "FinalTeamArray",
+                        "value": {
+                          "FullName": "@{coalesce(body('Get_Report_Profile')?['displayName'],'')}",
+                          "Email": "@{coalesce(body('Get_Report_Profile')?['mail'],'')}",
+                          "UserPrincipalName": "@{coalesce(body('Get_Report_Profile')?['userPrincipalName'],'')}",
+                          "JobTitle": "@{coalesce(body('Get_Report_Profile')?['jobTitle'],'')}",
+                          "Department": "@{coalesce(body('Get_Report_Profile')?['department'],'')}",
+                          "OfficePhone": "@{if(empty(coalesce(body('Get_Report_Profile')?['businessPhones'],json('[]'))),'',first(body('Get_Report_Profile')?['businessPhones']))}",
+                          "MobilePhone": "@{coalesce(body('Get_Report_Profile')?['mobilePhone'],'')}",
+                          "OfficeLocation": "@{coalesce(body('Get_Report_Profile')?['officeLocation'],'')}",
+                          "City": "@{coalesce(body('Get_Report_Profile')?['city'],'')}",
+                          "State": "@{coalesce(body('Get_Report_Profile')?['state'],'')}",
+                          "CompanyName": "@{coalesce(body('Get_Report_Profile')?['companyName'],'')}",
+                          "Manager": "@{coalesce(body('Get_Manager_Profile')?['displayName'],'')}",
+                          "ManagerEmail": "@{coalesce(body('Get_Manager_Profile')?['mail'],'')}",
+                          "ManagerJobTitle": "@{coalesce(body('Get_Manager_Profile')?['jobTitle'],'')}",
+                          "ManagerDepartment": "@{coalesce(body('Get_Manager_Profile')?['department'],'')}",
+                          "AccountEnabled": "@body('Get_Report_Profile')?['accountEnabled']",
+                          "UserType": "@{coalesce(body('Get_Report_Profile')?['userType'],'')}",
+                          "HireDate": "@{if(equals(body('Get_Report_Profile')?['hireDate'],'0001-01-01T08:00:00Z'),null,body('Get_Report_Profile')?['hireDate'])}",
+                          "RefreshedOn": "@{utcNow()}"
+                        }
+                      },
+                      "runAfter": {
+                        "Get_Report_Profile": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Add_this_person_to_the_Queue": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "UsersToProcess",
+                        "value": "@body('Get_Report_Profile')?['userPrincipalName']"
+                      },
+                      "runAfter": {
+                        "Append_to_FinalTeamArray": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Get_Report_Profile": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "id": "@items('Loop_Each_Direct_Report')?['userPrincipalName']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365users",
+                          "operationId": "UserProfile_V2",
+                          "connectionName": "shared_office365users"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_Direct_Reports": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "CurrentUserUPN": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "CurrentUserUPN",
+                    "value": "@first(variables('UsersToProcess'))"
+                  }
+                },
+                "Get_Manager_Profile": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "id": "@variables('CurrentUserUPN')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365users",
+                      "operationId": "UserProfile_V2",
+                      "connectionName": "shared_office365users"
+                    }
+                  },
+                  "runAfter": {
+                    "CurrentUserUPN": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_Direct_Reports": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "id": "@variables('CurrentUserUPN')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365users",
+                      "operationId": "DirectReports_V2",
+                      "connectionName": "shared_office365users"
+                    }
+                  },
+                  "runAfter": {
+                    "Get_Manager_Profile": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "UsersToProcess": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "UsersToProcess",
+                    "value": "@variables('TempQueue')"
+                  },
+                  "runAfter": {
+                    "TempQueue": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "TempQueue": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "TempQueue",
+                    "value": "@skip(variables('UsersToProcess'), 1)"
+                  },
+                  "runAfter": {
+                    "Loop_Each_Direct_Report": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            },
+            "Get_Existing_SP_Items": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "f7cf3857-4ac4-4301-9393-e1673f3cfe24"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Do_until": [
+                  "SUCCEEDED"
+                ]
+              },
+              "runtimeConfiguration": {
+                "paginationPolicy": {
+                  "minimumItemCount": 1000
+                }
+              }
+            },
+            "Apply_to_each_-_ToDelete": {
+              "type": "Foreach",
+              "foreach": "@outputs('Get_Existing_SP_Items')?['body/value']",
+              "actions": {
+                "Delete_item": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "f7cf3857-4ac4-4301-9393-e1673f3cfe24",
+                      "id": "@items('Apply_to_each_-_ToDelete')?['ID']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "DeleteItem",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Get_Existing_SP_Items": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "Loop_Create_SP_Items": {
+              "type": "Foreach",
+              "foreach": "@variables('FinalTeamArray')",
+              "actions": {
+                "Create_item": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "f7cf3857-4ac4-4301-9393-e1673f3cfe24",
+                      "item/Title": "@item()?['FullName']",
+                      "item/UserPrincipalName": "@item()?['UserPrincipalName']",
+                      "item/JobTitle": "@item()?['JobTitle']",
+                      "item/Department": "@item()?['Department']",
+                      "item/OfficePhone": "@item()?['OfficePhone']",
+                      "item/MobilePhone": "@item()?['MobilePhone']",
+                      "item/OfficeLocation": "@item()?['OfficeLocation']",
+                      "item/City": "@item()?['City']",
+                      "item/State": "@item()?['State']",
+                      "item/CompanyName": "@item()?['CompanyName']",
+                      "item/Manager": "@item()?['Manager']",
+                      "item/ManagerEmail": "@item()?['ManagerEmail']",
+                      "item/ManagerDepartment": "@item()?['ManagerDepartment']",
+                      "item/AccountEnabled": "@item()?['AccountEnabled']",
+                      "item/UserType": "@item()?['UserType']",
+                      "item/HireDate": "@if(equals(item()?['HireDate'],'0001-01-01T08:00:00Z'),null,item()?['HireDate'])",
+                      "item/RefreshedOn": "@item()?['RefreshedOn']",
+                      "item/Email": "@item()?['Email']",
+                      "item/{ContentType}/Id": "0x01009F6D1CF9B8003347A4CD3609BA90DCCD000AB31408B3678646AD714553ED851051"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "PostItem",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Apply_to_each_-_ToDelete": [
+                  "SUCCEEDED"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Initialize-TempQueue": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "COMPOSE-ERROR_MESSAGE": {
+              "type": "Compose",
+              "inputs": "@coalesce(\r\n    first(body('Filter_Array'))?['body']?['error']?['message'],\r\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\r\n    first(body('Filter_Array'))?['error']?['message'],\r\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "SUCCEEDED"
+                ]
+              }
+            },
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('COMPOSE-ERROR_MESSAGE')}</u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "COMPOSE-ERROR_MESSAGE": [
+                  "SUCCEEDED"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "FAILED",
+              "SKIPPED",
+              "TIMEDOUT"
+            ]
+          }
+        },
+        "Get_user_profile_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "@'jason.shiew@zebra.com'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365users",
+              "operationId": "UserProfile_V2",
+              "connectionName": "shared_office365users"
+            }
+          },
+          "runAfter": {}
+        },
+        "Initialize-UsersToProcess": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "UsersToProcess",
+                "type": "array",
+                "value": "@createArray('JS2798@zebra.com')"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_user_profile_(V2)": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "Initialize-FinalTeamArray": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "FinalTeamArray",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize-UsersToProcess": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "Initialize-CurrentUserUPN": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "CurrentUserUPN",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize-FinalTeamArray": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "Initialize-TempQueue": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "TempQueue",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "Initialize-CurrentUserUPN": [
+              "SUCCEEDED"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

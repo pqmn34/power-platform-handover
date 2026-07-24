@@ -1,0 +1,253 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "schedule": {
+              "weekDays": [
+                "Monday"
+              ],
+              "hours": [
+                "7"
+              ],
+              "minutes": [
+                15
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Wrong Costa IP'[CostaIPStatus])),\n\t\t\tOR(\n\t\t\t\tSEARCH(\"IP Mismatch\", 'Wrong Costa IP'[CostaIPStatus], 1, 0) >= 1,\n\t\t\t\tSEARCH(\"No Costa IP\", 'Wrong Costa IP'[CostaIPStatus], 1, 0) >= 1\n\t\t\t)\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Wrong Costa IP',\n\t\t\t\t'Wrong Costa IP'[HardwareSerialNumber],\n\t\t\t\t'Wrong Costa IP'[DevName],\n\t\t\t\t'Wrong Costa IP'[Model],\n\t\t\t\t'Wrong Costa IP'[Site],\n\t\t\t\t'Wrong Costa IP'[LastConnTime],\n\t\t\t\t'Wrong Costa IP'[SSID],\n\t\t\t\t'Wrong Costa IP'[CostaIPStatus],\n\t\t\t\t'Wrong Costa IP'[Costa IP],\n\t\t\t\t'Wrong Costa IP'[Device IP]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Wrong Costa IP'[SSID] DESC,\n\t'Wrong Costa IP'[HardwareSerialNumber],\n\t'Wrong Costa IP'[DevName],\n\t'Wrong Costa IP'[Model],\n\t'Wrong Costa IP'[Site],\n\t'Wrong Costa IP'[LastConnTime],\n\t'Wrong Costa IP'[CostaIPStatus],\n\t'Wrong Costa IP'[Costa IP],\n\t'Wrong Costa IP'[Device IP]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "Select": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "HardwareSerialNumber": "@item()?['Wrong Costa IP[HardwareSerialNumber]']",
+              "DeviceName": "@string(item()?['Wrong Costa IP[DevName]'])",
+              "Model": "@item()?['Wrong Costa IP[Model]']",
+              "Site": "@item()?['Wrong Costa IP[Site]']",
+              "LastConnTime": "@if(empty(item()?['Wrong Costa IP[LastConnTime]']), null, formatDateTime(item()?['Wrong Costa IP[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "SSID": "@item()?['Wrong Costa IP[SSID]']",
+              "Device IP": "@item()?['Wrong Costa IP[Device IP]']",
+              "Costa IP": "@item()?['Wrong Costa IP[Costa IP]']",
+              "CostaIPStatus": "@item()?['Wrong Costa IP[CostaIPStatus]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Condition": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('Select'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Create_CSV_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select')",
+                "format": "CSV"
+              }
+            },
+            "Set_variable": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varCSVContent",
+                "value": "@body('Create_CSV_table')"
+              },
+              "runAfter": {
+                "Create_CSV_table": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "adela.bodor@zebra.com",
+                  "emailMessage/Subject": "Consum: Wrong Costa IP @{formatDateTime(addToTime(utcNow(), -1, 'Month'), 'MMMM yyyy')}",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Team,<br><br>Please find attached the wrong Costa IP report.</p><p class=\"editor-paragraph\">@{outputs('Compose')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential, and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "GMSSBA@zebra.com;MS_CRM@zebra.com;GlobalDMSLevel2@zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "WrongCostaIP_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@variables('varCSVContent')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Set_variable": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #E66C37; \n        color: #FFFFFF;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>@{body('Create_HTML_table')}",
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_variable_1": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varCSVContent",
+                  "value": "HardwareSerialNumber,\tDeviceName,\tModel,\tSite,\tLastConnTime,\tSSID,\tDevice IP,\tCosta IP,\tCostaIPStatus"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_file": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "folderPath": "/Shared Documents/CONSUM/SSIS_WRONGCOSTAIP/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}",
+              "name": "WrongCostaIP_@{formatDateTime(utcNow(), 'yyyy-MM-dd HH:mm:ss')}.csv",
+              "body": "@variables('varCSVContent')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {
+            "Condition": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

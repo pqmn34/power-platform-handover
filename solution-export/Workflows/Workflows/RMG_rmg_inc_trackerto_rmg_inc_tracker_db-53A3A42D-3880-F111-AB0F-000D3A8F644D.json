@@ -1,0 +1,237 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "GMT Standard Time",
+            "schedule": {
+              "minutes": [
+                30
+              ],
+              "hours": [
+                "0"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Compose_Today_UK": {
+          "type": "Compose",
+          "inputs": "@formatDateTime(convertTimeZone(utcNow(),'UTC','GMT Standard Time'),'yyyy-MM-dd')",
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "657ec9f1-d847-4c77-87a4-76ca63a04fd7"
+          }
+        },
+        "Get_items": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "table": "1626171b-64b6-453b-a235-248867face3d"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {
+            "Compose_Today_UK": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "paginationPolicy": {
+              "minimumItemCount": 5000
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "abf91c8b-1dc2-4378-8c1b-229789aa8a21"
+          }
+        },
+        "Filter_Old_Items_UK": {
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('Get_items')?['body/value']",
+            "where": "@less(\n   formatDateTime(\n      convertTimeZone(item()?['Created'],'UTC','GMT Standard Time'),\n      'yyyy-MM-dd'\n   ),\n   outputs('Compose_Today_UK')\n)\n"
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cb53b361-f1f7-4749-962d-d5a596576b07"
+          }
+        },
+        "Apply_to_each_Old_Item": {
+          "type": "Foreach",
+          "foreach": "@body('Filter_Old_Items_UK')",
+          "actions": {
+            "Get_items_Archive_Check": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/WeeklyDashboardData",
+                  "table": "249292a2-889f-48ee-ab28-cf8d64ab85e0",
+                  "$filter": "@concat('OriginalItemID eq ', string(items('Apply_to_each_Old_Item')?['ID']))",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "ae74ad3e-5a70-44f4-83c9-dc5101c08e40"
+              }
+            },
+            "Condition_Already_Archived": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Get_items_Archive_Check')?['value'])",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Delete_item_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "table": "1626171b-64b6-453b-a235-248867face3d",
+                      "id": "@items('Apply_to_each_Old_Item')?['ID']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "DeleteItem",
+                      "connectionName": "shared_sharepointonline-1"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Create_item_Archive": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "dataset": "https://zebra.sharepoint.com/sites/WeeklyDashboardData",
+                        "table": "249292a2-889f-48ee-ab28-cf8d64ab85e0",
+                        "item/Title": "@items('Apply_to_each_Old_Item')?['Title']",
+                        "item/AgentName/Claims": "@items('Apply_to_each_Old_Item')?['AgentName']?['Claims']",
+                        "item/Types/Value": "@items('Apply_to_each_Old_Item')?['Types']?['Value']",
+                        "item/IssueType/Value": "@items('Apply_to_each_Old_Item')?['IssueType']?['Value']",
+                        "item/CaseStatus/Value": "@items('Apply_to_each_Old_Item')?['CaseStatus']?['Value']",
+                        "item/TransferredTo/Value": "@items('Apply_to_each_Old_Item')?['TransferredTo']?['Value']",
+                        "item/Resolution/Value": "@items('Apply_to_each_Old_Item')?['Resolution']?['Value']",
+                        "item/Strike/Value": "@items('Apply_to_each_Old_Item')?['Strike']?['Value']",
+                        "item/SyncedToSQL": "@items('Apply_to_each_Old_Item')?['SyncedToSQL']",
+                        "item/SerialNumber": "@items('Apply_to_each_Old_Item')?['SerialNumber']",
+                        "item/DOBI": "@items('Apply_to_each_Old_Item')?['DOBI']",
+                        "item/OS": "@items('Apply_to_each_Old_Item')?['OS']",
+                        "item/Model": "@items('Apply_to_each_Old_Item')?['Model']",
+                        "item/Quantity/Value": "@items('Apply_to_each_Old_Item')?['Quantity']?['Value']",
+                        "item/Application": "@items('Apply_to_each_Old_Item')?['Application']",
+                        "item/DEVICECONDITION": "@items('Apply_to_each_Old_Item')?['DEVICECONDITION']",
+                        "item/APPLICATIONSTATUS": "@items('Apply_to_each_Old_Item')?['APPLICATIONSTATUS']",
+                        "item/MDMENROLLMENTSTATUS": "@items('Apply_to_each_Old_Item')?['MDMENROLLMENTSTATUS']",
+                        "item/TESER_x002f_JANEYAVAILABILITY": "@items('Apply_to_each_Old_Item')?['TESER_x002f_JANEYAVAILABILITY']",
+                        "item/RESTAGEAVAILABILITY": "@items('Apply_to_each_Old_Item')?['RESTAGEAVAILABILITY']",
+                        "item/ENTSNETWORKRECOVERYAVAILABILITY": "@items('Apply_to_each_Old_Item')?['ENTSNETWORKRECOVERYAVAILABILITY']",
+                        "item/FIXITGUIDANCE": "@items('Apply_to_each_Old_Item')?['FIXITGUIDANCE']",
+                        "item/AssetNumber": "@items('Apply_to_each_Old_Item')?['AssetNumber']",
+                        "item/IMEI": "@items('Apply_to_each_Old_Item')?['IMEI']",
+                        "item/ICCID": "@items('Apply_to_each_Old_Item')?['ICCID']",
+                        "item/Email": "@items('Apply_to_each_Old_Item')?['Email']",
+                        "item/SiteName": "@items('Apply_to_each_Old_Item')?['SiteName']",
+                        "item/RESOLUTION_x0020_OUTCOME/Value": "@items('Apply_to_each_Old_Item')?['ResolutionOutcome']?['Value']",
+                        "item/ApplicationName/Value": "@items('Apply_to_each_Old_Item')?['ApplicationName']?['Value']",
+                        "item/OriginalCreated": "@items('Apply_to_each_Old_Item')?['Created']",
+                        "item/OriginalItemID": "@items('Apply_to_each_Old_Item')?['ID']",
+                        "item/ArchivedOn": "@utcNow()",
+                        "item/OriginalModified": "@items('Apply_to_each_Old_Item')?['Modified']",
+                        "item/OriginalCreatedBy": "@items('Apply_to_each_Old_Item')?['Author']?['Email']",
+                        "item/OriginalModifiedBy": "@items('Apply_to_each_Old_Item')?['Editor']?['Email']"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                        "operationId": "PostItem",
+                        "connectionName": "shared_sharepointonline"
+                      }
+                    },
+                    "metadata": {
+                      "operationMetadataId": "2c961939-5617-42b5-96f4-dbcea4d74c6f"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Get_items_Archive_Check": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "070843b7-00c4-40e7-b99b-701fdaa425ef"
+              }
+            }
+          },
+          "runAfter": {
+            "Filter_Old_Items_UK": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "ea015bdc-d100-4f3e-86a7-0395a4c558dc"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

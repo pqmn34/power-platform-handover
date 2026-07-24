@@ -1,0 +1,391 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "11"
+              ],
+              "minutes": [
+                10
+              ],
+              "weekDays": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Email_TO": {
+          "type": "Compose",
+          "inputs": "jakub.polak@zebra.com;paul.tate@evri.com",
+          "runAfter": {}
+        },
+        "Email_Footer": {
+          "type": "Compose",
+          "inputs": "<hr>\n<div style=\"font-family: Calibri, sans-serif; font-size: 11pt; color: #595959;\">\n    <p>\n        <i><b>Important:</b> This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</i>\n    </p>\n    <ul>\n        <li>Send an email to <a href=\"mailto:jakub.polak@zebra.com\">jakub.polak@@zebra.com</a> if there is any error in the data or email.</li>\n    </ul>\n    <p>\n        Regards,<br>\n        Strategic Innovation and Automation\n    </p>\n    <p style=\"font-size: 10pt; color: #7F7F7F;\">\n        <b>- CONFIDENTIAL -</b><br>\n        This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.\n    </p>\n</div>\n",
+          "runAfter": {
+            "Email_CC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "3rdPartyDevices": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "6b8c4896-fc83-4121-afeb-8fb25cae1e64",
+                  "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'EVRi_Asset_Management_Tracker_PS',\n\t\t\t'EVRi_Asset_Management_Tracker_PS'[DeviceType],\n\t\t\t'EVRi_Asset_Management_Tracker_PS'[Quantity],\n\t\t\t'EVRi_Asset_Management_Tracker_PS'[Location],\n\t\t\t'EVRi_Asset_Management_Tracker_PS'[ProjectAssigned],\n\t\t\t'EVRi_Asset_Management_Tracker_PS'[UpdatedDate]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'EVRi_Asset_Management_Tracker_PS'[DeviceType],\n\t'EVRi_Asset_Management_Tracker_PS'[Quantity],\n\t'EVRi_Asset_Management_Tracker_PS'[Location],\n\t'EVRi_Asset_Management_Tracker_PS'[ProjectAssigned],\n\t'EVRi_Asset_Management_Tracker_PS'[UpdatedDate]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              }
+            },
+            "Select_-_Format_3rd_Party": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('3rdPartyDevices')?['body/firstTableRows']",
+                "select": {
+                  "DeviceType": "@item()?['EVRi_Asset_Management_Tracker_PS[DeviceType]']",
+                  "Quantity": "@item()?['EVRi_Asset_Management_Tracker_PS[Quantity]']",
+                  "Location": "@item()?['EVRi_Asset_Management_Tracker_PS[Location]']",
+                  "Assigned To": "@item()?['EVRi_Asset_Management_Tracker_PS[ProjectAssigned]']",
+                  "Date": "@formatDateTime(item()?['EVRi_Asset_Management_Tracker_PS[UpdatedDate]'], 'dd/MM/yyyy')"
+                }
+              },
+              "runAfter": {
+                "3rdPartyDevices": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "HTML_-_3rd_Party": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select_-_Format_3rd_Party')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Select_-_Format_3rd_Party": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "CSV_-_3rd_Party": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select_-_Format_3rd_Party')",
+                "format": "CSV"
+              },
+              "runAfter": {
+                "HTML_-_3rd_Party": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "DailySparepoolInventoryStatus": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "6b8c4896-fc83-4121-afeb-8fb25cae1e64",
+                  "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS(\n\t\t\t{\"ET45\",\n\t\t\t\t\"Panasonic Tab\",\n\t\t\t\t\"Samsung Tab 8\",\n\t\t\t\t\"Samsung Xcovers\",\n\t\t\t\t\"TC26\",\n\t\t\t\t\"TC27\",\n\t\t\t\t\"TC57\",\n\t\t\t\t\"TC58\",\n\t\t\t\t\"TC70\",\n\t\t\t\t\"TC75\",\n\t\t\t\t\"TC77\",\n\t\t\t\t\"ZD4A\",\n\t\t\t\t\"ZD6A\",\n\t\t\t\t\"ZT11\",\n\t\t\t\t\"ZT23\",\n\t\t\t\t\"ZT41\"},\n\t\t\t'btc_extract'[mtrx family]\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Customer\"}, 'btc_extract'[owner])\n\n\tVAR __DS0Core = \n\t\tSUMMARIZECOLUMNS(\n\t\t\tROLLUPADDISSUBTOTAL('btc_extract'[mtrx family], \"IsGrandTotalRowTotal\"),\n\t\t\t__DS0FilterTable,\n\t\t\t__DS0FilterTable2,\n\t\t\t\"Sumww_ready\", CALCULATE(SUM('btc_extract'[ww_ready])),\n\t\t\t\"Sumww_offsite\", CALCULATE(SUM('btc_extract'[ww_offsite])),\n\t\t\t\"Sumww_in_repair\", CALCULATE(SUM('btc_extract'[ww_in_repair])),\n\t\t\t\"Sumirepair_holds\", CALCULATE(SUM('btc_extract'[irepair_holds]))\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'btc_extract'[mtrx family]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi"
+                }
+              },
+              "runAfter": {
+                "CSV_-_3rd_Party": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Filter_-_Normal_Rows": {
+              "type": "Query",
+              "inputs": {
+                "from": "@outputs('DailySparepoolInventoryStatus')?['body/firstTableRows']",
+                "where": "@equals(item()?['[IsGrandTotalRowTotal]'], false)"
+              },
+              "runAfter": {
+                "DailySparepoolInventoryStatus": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Filter_-_Total_Row": {
+              "type": "Query",
+              "inputs": {
+                "from": "@outputs('DailySparepoolInventoryStatus')?['body/firstTableRows']",
+                "where": "@equals(item()?['[IsGrandTotalRowTotal]'], true)"
+              },
+              "runAfter": {
+                "Filter_-_Normal_Rows": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select_-_Normal_Rows": {
+              "type": "Select",
+              "inputs": {
+                "from": "@body('Filter_-_Normal_Rows')",
+                "select": {
+                  "MTRX Family": "@item()?['btc_extract[mtrx family]']",
+                  "Ready": "@item()?['[Sumww_ready]']",
+                  "Offsite": "@item()?['[Sumww_offsite]']",
+                  "In Repair": "@item()?['[Sumww_in_repair]']",
+                  "In Repair Holds": "@item()?['[Sumirepair_holds]']"
+                }
+              },
+              "runAfter": {
+                "Filter_-_Total_Row": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select_-_Total_Row": {
+              "type": "Select",
+              "inputs": {
+                "from": "@body('Filter_-_Total_Row')",
+                "select": {
+                  "MTRX Family": "@'Total'",
+                  "Ready": "@item()?['[Sumww_ready]']",
+                  "Offsite": "@item()?['[Sumww_offsite]']",
+                  "In Repair": "@item()?['[Sumww_in_repair]']",
+                  "In Repair Holds": "@item()?['[Sumirepair_holds]']"
+                }
+              },
+              "runAfter": {
+                "Select_-_Normal_Rows": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_-_Combine_Sparepool_Arrays": {
+              "type": "Compose",
+              "inputs": "@union(body('Select_-_Normal_Rows'), body('Select_-_Total_Row'))",
+              "runAfter": {
+                "Select_-_Total_Row": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "HTML_-_Sparepool": {
+              "type": "Table",
+              "inputs": {
+                "from": "@outputs('Compose_-_Combine_Sparepool_Arrays')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Compose_-_Combine_Sparepool_Arrays": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "CSV_-_Sparepool": {
+              "type": "Table",
+              "inputs": {
+                "from": "@outputs('Compose_-_Combine_Sparepool_Arrays')",
+                "format": "CSV"
+              },
+              "runAfter": {
+                "HTML_-_Sparepool": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Style_3rd_Party": {
+              "type": "Compose",
+              "inputs": "<div style=\"border: 1px solid #ccc; border-radius: 8px; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);\">\n  <div style=\"background-color: #1461AA; color: white; padding: 12px; text-align: center; font-weight: bold; font-size: 16px;\">\n    Devices by 3rd Party Locations\n  </div>\n  @{replace(replace(replace(body('HTML_-_3rd_Party'), '<table>', '<table style=\"border-collapse: collapse; width: 100%; text-align: left;\">'), '<th>', '<th style=\"padding: 10px; border-bottom: 2px solid #1461AA; color: #333;\">'), '<td>', '<td style=\"padding: 8px; border-bottom: 1px solid #eee; color: #555;\">')}\n</div>",
+              "runAfter": {
+                "CSV_-_Sparepool": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Style_Sparepool": {
+              "type": "Compose",
+              "inputs": "<div style=\"border: 1px solid #ccc; border-radius: 8px; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);\">\n  <div style=\"background-color: #1461AA; color: white; padding: 12px; text-align: center; font-weight: bold; font-size: 16px;\">\n    Daily Sparepool Inventory Status\n  </div>\n  @{replace(replace(replace(replace(body('HTML_-_Sparepool'), '<table>', '<table style=\"border-collapse: collapse; width: 100%; text-align: left;\">'), '<th>', '<th style=\"padding: 10px; border-bottom: 2px solid #1461AA; color: #333;\">'), '<td>', '<td style=\"padding: 8px; border-bottom: 1px solid #eee; color: #333;\">'), '<tr><td style=\"padding: 8px; border-bottom: 1px solid #eee; color: #333;\">Total</td>', '<tr style=\"font-weight: bold; font-size: 14.5px; background-color:#fafafa;\"><td style=\"padding: 8px; border-bottom: 1px solid #eee; color: #000;\">Total</td>')}\n</div>",
+              "runAfter": {
+                "Style_3rd_Party": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_-_Side_by_Side_Layout": {
+              "type": "Compose",
+              "inputs": "<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n  <tr>\n    <!-- Left Column: Sparepool -->\n    <td valign=\"top\" width=\"50%\" style=\"padding-right: 10px;\">\n      \n      @{outputs('Style_Sparepool')}\n\n    </td>\n    \n    <!-- Right Column: 3rd Party -->\n    <td valign=\"top\" width=\"50%\" style=\"padding-left: 10px;\">\n      \n      @{outputs('Style_3rd_Party')}\n\n    </td>\n  </tr>\n</table>",
+              "runAfter": {
+                "Style_Sparepool": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@outputs('Email_TO')",
+                  "emailMessage/Subject": "EVRI: Sparepool Inventory and 3rd Party Asset Report",
+                  "emailMessage/Body": "<p style=\"font-family: Arial, sans-serif; font-size: 14px;\">Hi Team,</p>\n<p style=\"font-family: Arial, sans-serif; font-size: 14px;\">Please find the weekly Asset Management Tracker and Daily Sparepool Inventory reports below.</p>\n<br>\n\n@{outputs('Compose_-_Side_by_Side_Layout')}\n\n<br>\n@{outputs('Email_Footer')}\n",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('Email_CC')",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "Daily_Sparepool_Inventory.csv",
+                      "ContentBytes": "@body('CSV_-_Sparepool')"
+                    },
+                    {
+                      "Name": "3rd_Party_Asset_Report.csv",
+                      "ContentBytes": "@body('CSV_-_3rd_Party')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Compose_-_Side_by_Side_Layout": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Email_Footer": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "COMPOSE-ERROR_MESSAGE": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "COMPOSE-ERROR_MESSAGE": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "Email_CC": {
+          "type": "Compose",
+          "inputs": "giovanni.cella@zebra.com;hana.szokeova@zebra.com;jonathan.smith@zebra.com;helena.samkova@zebra.com;gmssba@zebra.com;eheng.tan@zebra.com",
+          "runAfter": {
+            "Email_TO": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

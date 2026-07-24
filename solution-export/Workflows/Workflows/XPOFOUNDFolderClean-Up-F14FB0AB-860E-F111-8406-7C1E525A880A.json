@@ -1,0 +1,692 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_d102c"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "9"
+              ],
+              "minutes": [
+                5
+              ]
+            },
+            "startTime": "2025-12-19T09:00:00Z"
+          }
+        }
+      },
+      "actions": {
+        "HTTP": {
+          "type": "Http",
+          "inputs": {
+            "uri": "https://mlmsti45a.zebra.com/MobiControl/api/token",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Basic @{outputs('EncodeSecret')}",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "body": "grant_type=password&username=@{outputs('Get_secretuid')?['body/value']}&password=@{outputs('Get_secretpswd')?['body/value']}"
+          },
+          "runAfter": {
+            "EncodeSecret": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "f2f80696-269a-4c5b-b307-fb545d2409fa"
+          }
+        },
+        "ClientIDSecret": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ClientIDSecret",
+                "type": "string",
+                "value": "@outputs('Get_secret_ClientID')?['body/value']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_secret_ClientCS": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e787621f-edd0-432a-b05e-592f985be9f9"
+          }
+        },
+        "EncodeSecret": {
+          "type": "Compose",
+          "inputs": "@base64(variables('ClientIDSecret'))",
+          "runAfter": {
+            "Password": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1cdac49a-2b2e-43ee-a1e3-d32e254ad595"
+          }
+        },
+        "UID": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "UID",
+                "type": "string",
+                "value": "prabhat.kumar@zebra.com"
+              }
+            ]
+          },
+          "runAfter": {
+            "ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0e81c84f-b4fc-4e9b-b89f-c3fd2b0de3e8"
+          }
+        },
+        "Password": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Password",
+                "type": "string",
+                "value": "PKumar!010880"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_secretpswd": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9a7c50a6-1992-455a-b509-eada497906df"
+          }
+        },
+        "TokenParse_JSON": {
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "token_type": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "expires_in": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6fea45a2-f4c0-4c52-a80e-6b982d89b85a"
+          }
+        },
+        "Get_secret_ClientID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-xpo-sti-cidcs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "ReplyTo": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secret_ClientCS": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "@'sia-xpo-sti-cs'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_ClientID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTo": {
+          "type": "Compose",
+          "inputs": "GlobalPremierSupport@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "nicole.beckendorf@zebra.com;ACervantes@zebra.com;DMSDeliveryLeads@zebra.com;GMSSBA@zebra.com",
+          "runAfter": {
+            "EmailTo": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "ConditionOfflineGT7Days": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "lessOrEquals": [
+                      "@variables('FoundDevices')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Post_message_in_a_chat_or_channel_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "poster": "Flow bot",
+                      "location": "Channel",
+                      "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                      "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                      "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\">PASSED</strong></b>: XPO Found Folder CleanUp For Offline&gt;7Days</p><br><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">THERE IS NO DEVICE OFFLINE&gt;7DAYS IN THE FOUND FOLDER</strong></b><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                      "operationId": "PostMessageToConversation",
+                      "connectionName": "shared_teams"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "XPOFoundDevices": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                        "datasetid": "1f3a7570-032b-4a95-924f-9dd86f205314",
+                        "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Offiline Found GT7 Devices',\n\t\t\t'Offiline Found GT7 Devices'[DeviceName],\n\t\t\t'Offiline Found GT7 Devices'[DeviceOffline>7Days],\n\t\t\t'Offiline Found GT7 Devices'[DevID],\n\t\t\t'Offiline Found GT7 Devices'[HardwareSerialNumber],\n\t\t\t'Offiline Found GT7 Devices'[ICCID],\n\t\t\t'Offiline Found GT7 Devices'[IMEI],\n\t\t\t'Offiline Found GT7 Devices'[OfflineDays],\n\t\t\t'Offiline Found GT7 Devices'[Path]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Offiline Found GT7 Devices'[DeviceName],\n\t'Offiline Found GT7 Devices'[DeviceOffline>7Days],\n\t'Offiline Found GT7 Devices'[DevID],\n\t'Offiline Found GT7 Devices'[HardwareSerialNumber],\n\t'Offiline Found GT7 Devices'[ICCID],\n\t'Offiline Found GT7 Devices'[IMEI],\n\t'Offiline Found GT7 Devices'[OfflineDays],\n\t'Offiline Found GT7 Devices'[Path]",
+                        "specification/serializerSettings/includeNulls": false
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                        "operationId": "ExecuteDatasetQuery",
+                        "connectionName": "shared_powerbi-1"
+                      }
+                    },
+                    "metadata": {
+                      "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+                    }
+                  },
+                  "SelectXPOOfflineMoreThan40Days": {
+                    "type": "Select",
+                    "inputs": {
+                      "from": "@outputs('XPOFoundDevices')?['body/firstTableRows']",
+                      "select": {
+                        "Device Name": "@item()?['Offiline Found GT7 Devices[DeviceName]']",
+                        "Serial Number": "@item()?['Offiline Found GT7 Devices[HardwareSerialNumber]']",
+                        "IMEI": "@item()?['Offiline Found GT7 Devices[IMEI]']",
+                        "Path": "@item()?['Offiline Found GT7 Devices[Path]']",
+                        "Offline Days": "@item()?['Offiline Found GT7 Devices[OfflineDays]']",
+                        "Device Offline > 7Days": "@item()?['Offiline Found GT7 Devices[DeviceOffline>7Days]']",
+                        "ICCID": "@item()?['Offiline Found GT7 Devices[ICCID]']",
+                        "Device ID": "@item()?['Offiline Found GT7 Devices[DevID]']"
+                      }
+                    },
+                    "runAfter": {
+                      "XPOFoundDevices": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+                    }
+                  },
+                  "Create_HTML_table": {
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('SelectXPOOfflineMoreThan40Days')",
+                      "format": "HTML"
+                    },
+                    "runAfter": {
+                      "SelectXPOOfflineMoreThan40Days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+                    }
+                  },
+                  "Compose": {
+                    "type": "Compose",
+                    "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                    "runAfter": {
+                      "Create_HTML_table": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+                    }
+                  },
+                  "ConditionListOfOfflineGT7Days": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "lessOrEquals": [
+                            "@variables('FoundDevices')",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {},
+                    "else": {
+                      "actions": {
+                        "Create_CSV_table": {
+                          "type": "Table",
+                          "inputs": {
+                            "from": "@body('SelectXPOOfflineMoreThan40Days')",
+                            "format": "CSV"
+                          },
+                          "metadata": {
+                            "operationMetadataId": "5aa50498-ae57-4002-b86c-afc4485cf2d4"
+                          }
+                        },
+                        "Apply_to_each": {
+                          "type": "Foreach",
+                          "foreach": "@body('SelectXPOOfflineMoreThan40Days')",
+                          "actions": {
+                            "HTTP_DeleteDevice": {
+                              "type": "Http",
+                              "inputs": {
+                                "uri": "https://mlmsti45a.zebra.com/MobiControl/api/devices/@{items('Apply_to_each')?['Device ID']}",
+                                "method": "DELETE",
+                                "headers": {
+                                  "Authorization": "Bearer @{variables('AccessToken')}"
+                                }
+                              },
+                              "runtimeConfiguration": {
+                                "contentTransfer": {
+                                  "transferMode": "Chunked"
+                                }
+                              }
+                            }
+                          },
+                          "runAfter": {
+                            "Create_CSV_table": [
+                              "SUCCEEDED"
+                            ]
+                          }
+                        },
+                        "Send_an_email_(V2)": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "emailMessage/To": "@outputs('EmailTo')",
+                              "emailMessage/Subject": "XPO: Found Folder CleanUp for Offline>7Days Devices",
+                              "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Greetings</em></i>,<br><br>Please find the report of \"<b><strong class=\"editor-text-bold\">FOUND Devices Offline &gt; 7 Days</strong></b>\" proceeding for deletion in the EMM Tool.<br><br>The following devices have been deleted from SOTI.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">XPO FOUND Devices Offline&gt;7 Days</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose')}</p><br><p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</em></i><br>For any questions regarding the report data, please reach out to the Premier Analytics team at @{outputs('ReplyTo')}.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                              "emailMessage/Sensitivity": "85dc9e1d-66dc-457c-899d-453f6880d6d6",
+                              "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                              "emailMessage/Cc": "@outputs('EmailCC')",
+                              "emailMessage/Attachments": [
+                                {
+                                  "Name": "xpo_found_offlinegt40days.csv",
+                                  "ContentBytes": "@body('Create_CSV_table')"
+                                }
+                              ],
+                              "emailMessage/Importance": "High"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                              "operationId": "SendEmailV2",
+                              "connectionName": "shared_office365-1"
+                            }
+                          },
+                          "runAfter": {
+                            "Apply_to_each": [
+                              "SUCCEEDED"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Compose": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Offlinemorethan7days": [
+              "Succeeded"
+            ]
+          }
+        },
+        "AccessToken": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AccessToken",
+                "type": "string",
+                "value": "@body('TokenParse_JSON')?['access_token']"
+              }
+            ]
+          },
+          "runAfter": {
+            "TokenParse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5efc3169-4b11-4d88-beb7-8daa016b9e08"
+          }
+        },
+        "XPOCountFoundDevices": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "1f3a7570-032b-4a95-924f-9dd86f205314",
+              "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"OfflineGT7DaysFoundFolder\", 'Offiline Found GT7 Devices'[OfflineGT7DaysFoundFolder]\n\t)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "AccessToken": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          }
+        },
+        "Offlinemorethan7days": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "FoundDevices",
+                "type": "float",
+                "value": "@outputs('XPOCountFoundDevices')?['body/firstTableRows'][0]?['[OfflineGT7DaysFoundFolder]']"
+              }
+            ]
+          },
+          "runAfter": {
+            "XPOCountFoundDevices": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          }
+        },
+        "ReplyTo": {
+          "type": "Compose",
+          "inputs": "premier.analytics@zebra.com",
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel_2": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n    <div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n    </div>\n    <div style=\"padding: 15px; background-color: #f9f9f9;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tbody>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n                    <td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n                </tr>\n            </tbody>\n        </table>\n        <br>\n        <a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\n           View Failed Run\n        </a>\n    </div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69d47855-5ed9-43dc-a4af-b9ea6ec2ff02"
+          }
+        },
+        "Get_secretpswd": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "xpo-sti-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secretuid": [
+              "SUCCEEDED"
+            ]
+          }
+        },
+        "Get_secretuid": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "xpo-sti-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "UID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Post_message_in_a_chat_or_channel_3": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "poster": "Flow bot",
+              "location": "Channel",
+              "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+              "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+              "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n    <div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n    </div>\n    <div style=\"padding: 15px; background-color: #f9f9f9;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tbody>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n                    <td style=\"padding: 5px 0;\"></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n                    <td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n                </tr>\n            </tbody>\n        </table>\n        <br>\n        <a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\n           View Failed Run\n        </a>\n    </div>\n</div>"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+              "operationId": "PostMessageToConversation",
+              "connectionName": "shared_teams"
+            }
+          },
+          "runAfter": {
+            "HTTP": [
+              "TIMEDOUT",
+              "SKIPPED",
+              "FAILED"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,201 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsharepointonline_cc95c"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_f3d13"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "14c349a6-7900-4cc4-9820-ab414e2225d7"
+          },
+          "type": "Request",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Initialize_variable": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "26783f88-b915-4532-97af-c9f6958e7d74"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varLogs",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Get_items": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e208b2e1-7678-4b86-b978-d62ba087117d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "6013d6e7-4756-45da-8b7f-32d194c95e7f"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "HTTP": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "06dc3cd0-194a-4519-bfb1-f947839127f3"
+              },
+              "type": "Http",
+              "inputs": {
+                "method": "GET",
+                "uri": "https://zebramdm.42gears.com/api/devicelog/@{items('Apply_to_each')?['Device_ID']}",
+                "headers": {
+                  "ApiKey": "2271C4DB-6F23-41F6-BD8D-F7D4907E88D8",
+                  "Content-Type": "application/json"
+                },
+                "authentication": {
+                  "type": "Basic",
+                  "username": "L2_PT_API_22030001",
+                  "password": "Zebr@DMSL@60200!"
+                }
+              }
+            },
+            "Send_an_email_(V2)": {
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "01369c81-61d9-4623-a9e3-a9a9c1a461c1"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "parameters": {
+                  "emailMessage/To": " @{items('Apply_to_each')?['Author/Email']}",
+                  "emailMessage/Subject": "@{items('Apply_to_each')?['Device_ID']}_Device_Logs",
+                  "emailMessage/Body": "<p>Greetings!<br>\n<br>\nPlease find attached the device logs, as requested.<br>\n<br>\nRegards<br>\n<br>\nGMSS L2</p>",
+                  "emailMessage/Bcc": "pqmn34@zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "@{items('Apply_To_Each')?['Name']}_@{items('Apply_to_each')?['Device_ID']}.json",
+                      "ContentBytes": "@body('HTTP')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            },
+            "Create_file": {
+              "runAfter": {
+                "HTTP": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "284d4460-628a-4fcf-be73-18a6f5ffd704"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "CreateFile"
+                },
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/MS&SS",
+                  "folderPath": "/Pilot Company/5. DEVICE LOGS",
+                  "name": "@{items('Apply_to_each')?['Device_ID']}_@{utcNow()}.json",
+                  "body": "@body('HTTP')"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "459cec07-ad46-4f41-8537-1eeff9cb9dc3"
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

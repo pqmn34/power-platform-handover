@@ -1,0 +1,489 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "UTC",
+            "startTime": "2025-12-04T03:00Z",
+            "schedule": {
+              "hours": [
+                "1"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_datasetMonthly": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+              "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'New_Lost_Devices_This_Month',\n\t\t\t'New_Lost_Devices_This_Month'[Age_Group],\n\t\t\t'New_Lost_Devices_This_Month'[BSP],\n\t\t\t'New_Lost_Devices_This_Month'[BSSID],\n\t\t\t'New_Lost_Devices_This_Month'[Days_Offline],\n\t\t\t'New_Lost_Devices_This_Month'[DeviceID],\n\t\t\t'New_Lost_Devices_This_Month'[Hardware Serial Number],\n\t\t\t'New_Lost_Devices_This_Month'[Moved_From],\n\t\t\t'New_Lost_Devices_This_Month'[Model],\n\t\t\t'New_Lost_Devices_This_Month'[Moved_To],\n\t\t\t'New_Lost_Devices_This_Month'[OS_Version],\n\t\t\t'New_Lost_Devices_This_Month'[Last_Connected_Date_and_Time],\n\t\t\t'New_Lost_Devices_This_Month'[Source.Name]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'New_Lost_Devices_This_Month'[Days_Offline],\n\t'New_Lost_Devices_This_Month'[Age_Group],\n\t'New_Lost_Devices_This_Month'[BSP],\n\t'New_Lost_Devices_This_Month'[BSSID],\n\t'New_Lost_Devices_This_Month'[DeviceID],\n\t'New_Lost_Devices_This_Month'[Hardware Serial Number],\n\t'New_Lost_Devices_This_Month'[Moved_From],\n\t'New_Lost_Devices_This_Month'[Model],\n\t'New_Lost_Devices_This_Month'[Moved_To],\n\t'New_Lost_Devices_This_Month'[OS_Version],\n\t'New_Lost_Devices_This_Month'[Last_Connected_Date_and_Time],\n\t'New_Lost_Devices_This_Month'[Source.Name]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "varCSVContentLatest": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentMonthly": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentMonthly",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SelectMonthly": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_datasetMonthly')?['body/firstTableRows']",
+            "select": {
+              "DeviceID": "@item()?['New_Lost_Devices_This_Month[DeviceID]']",
+              "Hardware Serial Number": "@string(item()?['New_Lost_Devices_This_Month[HardwareSerialNumber]'])",
+              "Model": "@item()?['New_Lost_Devices_This_Month[Model]']",
+              "OS_Version": "@item()?['New_Lost_Devices_This_Month[OS_Version]']",
+              "BSP": "@item()?['New_Lost_Devices_This_Month[BSP]']",
+              "BSSID": "@item()?['New_Lost_Devices_This_Month[BSSID]']",
+              "Last_Connected_Date_and_Time": "@if(empty(item()?['New_Lost_Devices_This_Month[Last_Connected_Date_and_Time]']), null, formatDateTime(item()?['New_Lost_Devices_This_Month[Last_Connected_Date_and_Time]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "Moved_From": "@item()?['New_Lost_Devices_This_Month[Moved_From]']",
+              "Moved_To": "@item()?['New_Lost_Devices_This_Month[Moved_To]']",
+              "Days_Offline": "@item()?['New_Lost_Devices_This_Month[Days_Offline]']",
+              "Age_Group": "@item()?['New_Lost_Devices_This_Month[Age_Group]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_datasetLatest": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ConditionMonthly": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('SelectMonthly'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Create_CSV_tableMonthly": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectMonthly')",
+                "format": "CSV"
+              }
+            },
+            "Set_variableMonthly": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varCSVContentMonthly",
+                "value": "@body('Create_CSV_tableMonthly')"
+              },
+              "runAfter": {
+                "Create_CSV_tableMonthly": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_tableMonthly": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectMonthly')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Set_variableMonthly": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeMonthly": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_tableMonthly')}",
+              "runAfter": {
+                "Create_HTML_tableMonthly": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_variable_1": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varCSVContentMonthly",
+                  "value": "DeviceID,\tHardware Serial Number,\tModel,\tOS_Version,\tBSP,\tBSSID,\tLast_Connected_Date_and_Time,\tMoved_From,\tMoved_To,\tDays_Offline,\tAge_Group"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "SelectLatest": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Run_a_query_against_a_datasetLatest": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+              "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Lost_Devices',\n\t\t\t'Lost_Devices'[DeviceID],\n\t\t\t'Lost_Devices'[HardwareSerialNumber],\n\t\t\t'Lost_Devices'[Model],\n\t\t\t'Lost_Devices'[OS_Version],\n\t\t\t'Lost_Devices'[BSP],\n\t\t\t'Lost_Devices'[BSSID],\n\t\t\t'Lost_Devices'[Last_Connected_Date_and_Time],\n\t\t\t'Lost_Devices'[Moved_To],\n\t\t\t'Lost_Devices'[Moved_From],\n\t\t\t'Lost_Devices'[Days_Offline],\n\t\t\t'Lost_Devices'[Age_Group]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Lost_Devices'[DeviceID],\n\t'Lost_Devices'[HardwareSerialNumber],\n\t'Lost_Devices'[Model],\n\t'Lost_Devices'[OS_Version],\n\t'Lost_Devices'[BSP],\n\t'Lost_Devices'[BSSID],\n\t'Lost_Devices'[Last_Connected_Date_and_Time],\n\t'Lost_Devices'[Moved_To],\n\t'Lost_Devices'[Moved_From],\n\t'Lost_Devices'[Days_Offline],\n\t'Lost_Devices'[Age_Group]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_datasetMonthly": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SelectLatest": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_datasetLatest')?['body/firstTableRows']",
+            "select": {
+              "DeviceID": "@item()?['Lost_Devices[DeviceID]']",
+              "Hardware Serial Number": "@string(item()?['Lost_Devices[HardwareSerialNumber]'])",
+              "Model": "@item()?['Lost_Devices[Model]']",
+              "OS_Version": "@item()?['Lost_Devices[OS_Version]']",
+              "BSP": "@item()?['Lost_Devices[BSP]']",
+              "BSSID": "@item()?['Lost_Devices[BSSID]']",
+              "Last_Connected_Date_and_Time": "@if(empty(item()?['Lost_Devices[Last_Connected_Date_and_Time]']), null, formatDateTime(item()?['Lost_Devices[Last_Connected_Date_and_Time]'], 'yyyy-MM-dd HH:mm:ss'))",
+              "Moved_From": "@item()?['Lost_Devices[Moved_From]']",
+              "Moved_To": "@item()?['Lost_Devices[Moved_To]']",
+              "Days_Offline": "@item()?['Lost_Devices[Days_Offline]']",
+              "Age_Group": "@item()?['Lost_Devices[Age_Group]']"
+            }
+          },
+          "runAfter": {
+            "SelectMonthly": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ConditionLatest": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('SelectLatest'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Create_CSV_tableLatest": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectLatest')",
+                "format": "CSV"
+              }
+            },
+            "Create_HTML_tableLatest": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectLatest')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Set_variableLatest": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposeLatest": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_tableLatest')}",
+              "runAfter": {
+                "Create_HTML_tableLatest": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Set_variableLatest": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varCSVContentLatest",
+                "value": "@body('Create_CSV_tableLatest')"
+              },
+              "runAfter": {
+                "Create_CSV_tableLatest": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_variable_3": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varCSVContentLatest",
+                  "value": "DeviceID,\tHardware Serial Number,\tModel,\tOS_Version,\tBSP,\tBSSID,\tLast_Connected_Date_and_Time,\tMoved_From,\tMoved_To,\tDays_Offline,\tAge_Group"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "ConditionMonthly": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentLatest": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentLatest",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentMonthly": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: DHL SSIS-Monthly Lost Devices🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: DHL SSIS-Monthly Lost Devices🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: DHL SSIS-Monthly Lost Devices🚨<br><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "1st_of_Month": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": " stephanie.keats@dhlevripremium.com;sam.turki@evri.com;Paul.Tate@Evri.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "Jakub.Polak@zebra.com;GMSSBA@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "1st_of_Month": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@dayOfMonth(utcNow())",
+                  1
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@outputs('EmailTO')",
+                  "emailMessage/Subject": "EVRI Premium: Monthly and Total Lost & Stolen Device Reports",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Customer,<br><br>Please find attached the monthly and total \"Lost &amp; Stolen\" reports.</p><p class=\"editor-paragraph\">@{outputs('ComposeMonthly')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('EmailCC')",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "EVRIPremium_PreviousMonthLostStolenDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@body('Create_CSV_tableMonthly')"
+                    },
+                    {
+                      "Name": "EVRIPremium_TotalLostStolenDevices_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@body('Create_CSV_tableLatest')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/DHLPARCEL/SSIS_LOSTANDSTOLENDEVICE/MONTHLYLOSTANDSTOLENDEVICES/@{formatDateTime(utcNow(), 'yyyy')}/@{formatDateTime(utcNow(), 'MM-MMMM')}",
+                  "name": "dhl_lost_stolen_monthly_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                  "body": "@variables('varCSVContentMonthly')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Send_an_email_(V2)": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Terminate": {
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Succeeded"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "ConditionLatest": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

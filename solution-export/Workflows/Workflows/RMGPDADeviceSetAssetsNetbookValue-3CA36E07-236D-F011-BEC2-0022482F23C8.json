@@ -1,0 +1,67 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Device Set Assets Netbook'[Scheduled Ship Date])),\n\t\t\tAND(\n\t\t\t\tAND(\n\t\t\t\t\t'Device Set Assets Netbook'[Scheduled Ship Date] >= DATE(2025, 6, 1),\n\t\t\t\t\t'Device Set Assets Netbook'[Scheduled Ship Date] < DATE(2025, 7, 1)\n\t\t\t\t),\n\t\t\t\t'Device Set Assets Netbook'[Scheduled Ship Date] >= DATE(2025, 1, 1)\n\t\t\t)\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Device Set Assets Netbook',\n\t\t\t\t'Device Set Assets Netbook'[Order Number],\n\t\t\t\t'Device Set Assets Netbook'[Purchase Order Number],\n\t\t\t\t'Device Set Assets Netbook'[PO Date],\n\t\t\t\t'Device Set Assets Netbook'[First Booked Date],\n\t\t\t\t'Device Set Assets Netbook'[Account Name],\n\t\t\t\t'Device Set Assets Netbook'[Line Item Status],\n\t\t\t\t'Device Set Assets Netbook'[Part Number],\n\t\t\t\t'Device Set Assets Netbook'[Requested Quantity],\n\t\t\t\t'Device Set Assets Netbook'[Line Amount (Gbl Currency - USD)],\n\t\t\t\t'Device Set Assets Netbook'[Currency Code],\n\t\t\t\t'Device Set Assets Netbook'[Scheduled Ship Date],\n\t\t\t\t'Device Set Assets Netbook'[Zebra Customer Request Date]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Device Set Assets Netbook'[Order Number],\n\t'Device Set Assets Netbook'[Purchase Order Number],\n\t'Device Set Assets Netbook'[PO Date],\n\t'Device Set Assets Netbook'[First Booked Date],\n\t'Device Set Assets Netbook'[Account Name],\n\t'Device Set Assets Netbook'[Line Item Status],\n\t'Device Set Assets Netbook'[Part Number],\n\t'Device Set Assets Netbook'[Requested Quantity],\n\t'Device Set Assets Netbook'[Line Amount (Gbl Currency - USD)],\n\t'Device Set Assets Netbook'[Currency Code],\n\t'Device Set Assets Netbook'[Scheduled Ship Date],\n\t'Device Set Assets Netbook'[Zebra Customer Request Date]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

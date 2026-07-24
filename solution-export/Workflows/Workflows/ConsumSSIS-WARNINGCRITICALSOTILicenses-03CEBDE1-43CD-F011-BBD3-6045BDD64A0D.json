@@ -1,0 +1,1284 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 3,
+            "frequency": "Hour",
+            "timeZone": "UTC"
+          }
+        }
+      },
+      "actions": {
+        "varCSVContentStaging": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentStaging",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentZebraTestDevices": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentZebraTestDevices",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentLostAndStolen": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentDuplicateDevices": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentDuplicateDevices",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentZebraTestDevices": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentExtendedOffline": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentExtendedOffline",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentDuplicateDevices": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentAssetReport": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentAssetReport",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentExtendedOffline": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentLostAndStolen": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentLostAndStolen",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentStaging": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Master": {
+          "type": "Scope",
+          "actions": {
+            "Scope": {
+              "type": "Scope",
+              "actions": {
+                "Run_a_query_against_a_datasetStaging": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Staging Folder',\n\t\t\t'Asset Staging Folder'[DevID],\n\t\t\t'Asset Staging Folder'[DevName],\n\t\t\t'Asset Staging Folder'[HardwareSerialNumber],\n\t\t\t'Asset Staging Folder'[Model],\n\t\t\t'Asset Staging Folder'[Site],\n\t\t\t'Asset Staging Folder'[ReportingStatus],\n\t\t\t'Asset Staging Folder'[Days Offline],\n\t\t\t'Asset Staging Folder'[IP],\n\t\t\t'Asset Staging Folder'[Online],\n\t\t\t'Asset Staging Folder'[Build],\n\t\t\t'Asset Staging Folder'[LastConnTime],\n\t\t\t'Asset Staging Folder'[LastDisConnTime],\n\t\t\t'Asset Staging Folder'[EnrollmentTime]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Staging Folder'[DevID],\n\t'Asset Staging Folder'[DevName],\n\t'Asset Staging Folder'[HardwareSerialNumber],\n\t'Asset Staging Folder'[Model],\n\t'Asset Staging Folder'[Site],\n\t'Asset Staging Folder'[ReportingStatus],\n\t'Asset Staging Folder'[Days Offline],\n\t'Asset Staging Folder'[IP],\n\t'Asset Staging Folder'[Online],\n\t'Asset Staging Folder'[Build],\n\t'Asset Staging Folder'[LastConnTime],\n\t'Asset Staging Folder'[LastDisConnTime],\n\t'Asset Staging Folder'[EnrollmentTime]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  }
+                },
+                "Run_a_query_against_a_datasetLostStolen": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Lost and Stolen',\n\t\t\t'Asset Lost and Stolen'[DevID],\n\t\t\t'Asset Lost and Stolen'[DevName],\n\t\t\t'Asset Lost and Stolen'[HardwareSerialNumber],\n\t\t\t'Asset Lost and Stolen'[Model],\n\t\t\t'Asset Lost and Stolen'[ReportingStatus],\n\t\t\t'Asset Lost and Stolen'[Days Offline],\n\t\t\t'Asset Lost and Stolen'[Online],\n\t\t\t'Asset Lost and Stolen'[IP],\n\t\t\t'Asset Lost and Stolen'[Build],\n\t\t\t'Asset Lost and Stolen'[LastConnTime],\n\t\t\t'Asset Lost and Stolen'[LastDisConnTime],\n\t\t\t'Asset Lost and Stolen'[EnrollmentTime],\n\t\t\t'Asset Lost and Stolen'[Site]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Lost and Stolen'[DevID],\n\t'Asset Lost and Stolen'[DevName],\n\t'Asset Lost and Stolen'[HardwareSerialNumber],\n\t'Asset Lost and Stolen'[Model],\n\t'Asset Lost and Stolen'[ReportingStatus],\n\t'Asset Lost and Stolen'[Days Offline],\n\t'Asset Lost and Stolen'[Online],\n\t'Asset Lost and Stolen'[IP],\n\t'Asset Lost and Stolen'[Build],\n\t'Asset Lost and Stolen'[LastConnTime],\n\t'Asset Lost and Stolen'[LastDisConnTime],\n\t'Asset Lost and Stolen'[EnrollmentTime],\n\t'Asset Lost and Stolen'[Site]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetStaging": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_datasetAssetReport": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Report',\n\t\t\t'Asset Report'[DevID],\n\t\t\t'Asset Report'[DevName],\n\t\t\t'Asset Report'[HardwareSerialNumber],\n\t\t\t'Asset Report'[Model],\n\t\t\t'Asset Report'[Site],\n\t\t\t'Asset Report'[ReportingStatus],\n\t\t\t'Asset Report'[Days Offline],\n\t\t\t'Asset Report'[IP],\n\t\t\t'Asset Report'[Online],\n\t\t\t'Asset Report'[Build],\n\t\t\t'Asset Report'[LastConnTime],\n\t\t\t'Asset Report'[LastDisConnTime],\n\t\t\t'Asset Report'[EnrollmentTime]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Report'[HardwareSerialNumber],\n\t'Asset Report'[DevID],\n\t'Asset Report'[DevName],\n\t'Asset Report'[Model],\n\t'Asset Report'[Site],\n\t'Asset Report'[ReportingStatus],\n\t'Asset Report'[Days Offline],\n\t'Asset Report'[IP],\n\t'Asset Report'[Online],\n\t'Asset Report'[Build],\n\t'Asset Report'[LastConnTime],\n\t'Asset Report'[LastDisConnTime],\n\t'Asset Report'[EnrollmentTime]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetLostStolen": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_datasetExtendedOffline": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Extended Offline',\n\t\t\t'Asset Extended Offline'[DevID],\n\t\t\t'Asset Extended Offline'[DevName],\n\t\t\t'Asset Extended Offline'[Model],\n\t\t\t'Asset Extended Offline'[Site],\n\t\t\t'Asset Extended Offline'[ReportingStatus],\n\t\t\t'Asset Extended Offline'[LastConnTime],\n\t\t\t'Asset Extended Offline'[LastDisConnTime],\n\t\t\t'Asset Extended Offline'[EnrollmentTime],\n\t\t\t'Asset Extended Offline'[HardwareSerialNumber],\n\t\t\t'Asset Extended Offline'[Days Offline],\n\t\t\t'Asset Extended Offline'[IP],\n\t\t\t'Asset Extended Offline'[Online],\n\t\t\t'Asset Extended Offline'[Build]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Extended Offline'[HardwareSerialNumber] DESC,\n\t'Asset Extended Offline'[DevID],\n\t'Asset Extended Offline'[DevName],\n\t'Asset Extended Offline'[Model],\n\t'Asset Extended Offline'[Site],\n\t'Asset Extended Offline'[ReportingStatus],\n\t'Asset Extended Offline'[LastConnTime],\n\t'Asset Extended Offline'[LastDisConnTime],\n\t'Asset Extended Offline'[EnrollmentTime],\n\t'Asset Extended Offline'[Days Offline],\n\t'Asset Extended Offline'[IP],\n\t'Asset Extended Offline'[Online],\n\t'Asset Extended Offline'[Build]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetAssetReport": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_datasetDuplicateDevices": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Duplicate Device',\n\t\t\t'Asset Duplicate Device'[DevID],\n\t\t\t'Asset Duplicate Device'[DevName],\n\t\t\t'Asset Duplicate Device'[HardwareSerialNumber],\n\t\t\t'Asset Duplicate Device'[Model],\n\t\t\t'Asset Duplicate Device'[Site],\n\t\t\t'Asset Duplicate Device'[ReportingStatus],\n\t\t\t'Asset Duplicate Device'[Days Offline],\n\t\t\t'Asset Duplicate Device'[IP],\n\t\t\t'Asset Duplicate Device'[Online],\n\t\t\t'Asset Duplicate Device'[Build],\n\t\t\t'Asset Duplicate Device'[LastConnTime],\n\t\t\t'Asset Duplicate Device'[LastDisConnTime],\n\t\t\t'Asset Duplicate Device'[EnrollmentTime]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Duplicate Device'[DevID],\n\t'Asset Duplicate Device'[DevName],\n\t'Asset Duplicate Device'[HardwareSerialNumber],\n\t'Asset Duplicate Device'[Model],\n\t'Asset Duplicate Device'[Site],\n\t'Asset Duplicate Device'[ReportingStatus],\n\t'Asset Duplicate Device'[Days Offline],\n\t'Asset Duplicate Device'[IP],\n\t'Asset Duplicate Device'[Online],\n\t'Asset Duplicate Device'[Build],\n\t'Asset Duplicate Device'[LastConnTime],\n\t'Asset Duplicate Device'[LastDisConnTime],\n\t'Asset Duplicate Device'[EnrollmentTime]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetExtendedOffline": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_datasetZebraTestDevices": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Zebra Test Devices',\n\t\t\t'Asset Zebra Test Devices'[DevID],\n\t\t\t'Asset Zebra Test Devices'[DevName],\n\t\t\t'Asset Zebra Test Devices'[HardwareSerialNumber],\n\t\t\t'Asset Zebra Test Devices'[Model],\n\t\t\t'Asset Zebra Test Devices'[Site],\n\t\t\t'Asset Zebra Test Devices'[ReportingStatus],\n\t\t\t'Asset Zebra Test Devices'[Days Offline],\n\t\t\t'Asset Zebra Test Devices'[IP],\n\t\t\t'Asset Zebra Test Devices'[Online],\n\t\t\t'Asset Zebra Test Devices'[Build],\n\t\t\t'Asset Zebra Test Devices'[LastConnTime],\n\t\t\t'Asset Zebra Test Devices'[LastDisConnTime],\n\t\t\t'Asset Zebra Test Devices'[EnrollmentTime]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Zebra Test Devices'[DevID],\n\t'Asset Zebra Test Devices'[DevName],\n\t'Asset Zebra Test Devices'[HardwareSerialNumber],\n\t'Asset Zebra Test Devices'[Model],\n\t'Asset Zebra Test Devices'[Site],\n\t'Asset Zebra Test Devices'[ReportingStatus],\n\t'Asset Zebra Test Devices'[Days Offline],\n\t'Asset Zebra Test Devices'[IP],\n\t'Asset Zebra Test Devices'[Online],\n\t'Asset Zebra Test Devices'[Build],\n\t'Asset Zebra Test Devices'[LastConnTime],\n\t'Asset Zebra Test Devices'[LastDisConnTime],\n\t'Asset Zebra Test Devices'[EnrollmentTime]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetDuplicateDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_datasetSOTILicense": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset SOTI License Summary',\n\t\t\t'Asset SOTI License Summary'[Category],\n\t\t\t'Asset SOTI License Summary'[SortOrder],\n\t\t\t'Asset SOTI License Summary'[Value]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset SOTI License Summary'[SortOrder],\n\t'Asset SOTI License Summary'[Category],\n\t'Asset SOTI License Summary'[Value]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetZebraTestDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_datasetDeviceSummary": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "6cecca7e-8939-49bc-a5cc-012b90e84a44",
+                      "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'Asset Device Totals Summary',\n\t\t\t'Asset Device Totals Summary'[Category],\n\t\t\t'Asset Device Totals Summary'[Value],\n\t\t\t'Asset Device Totals Summary'[SortOrder]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Asset Device Totals Summary'[SortOrder],\n\t'Asset Device Totals Summary'[Category],\n\t'Asset Device Totals Summary'[Value]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi-1"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetSOTILicense": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectStaging": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetStaging')?['body/firstTableRows']",
+                    "select": {
+                      "DeviceID": "@item()?['Asset Staging Folder[DevID]']",
+                      "DevName": "@string(item()?['Asset Staging Folder[DevName]'])",
+                      "HardwareSerialNumber": "@item()?['Asset Staging Folder[HardwareSerialNumber]']",
+                      "Model": "@item()?['Asset Staging Folder[Model]']",
+                      "Site": "@item()?['Asset Staging Folder[Site]']",
+                      "ReportingStatus": "@item()?['Asset Staging Folder[ReportingStatus]']",
+                      "LastConnTime": "@if(empty(item()?['Asset Staging Folder[LastConnTime]']), null, formatDateTime(item()?['Asset Staging Folder[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "LastDisConnTime": "@if(empty(item()?['Asset Staging Folder[LastDisConnTime]']), null, formatDateTime(item()?['Asset Staging Folder[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "EnrollmentTime": "@if(empty(item()?['Asset Staging Folder[EnrollmentTime]']), null, formatDateTime(item()?['Asset Staging Folder[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "IP": "@item()?['Asset Staging Folder[IP]']",
+                      "Days Offline": "@item()?['Asset Staging Folder[Days Offline]']",
+                      "Online": "@item()?['Asset Staging Folder[Online]']",
+                      "Build": "@item()?['Asset Staging Folder[Build]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_datasetDeviceSummary": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectStagingLostStolen": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetLostStolen')?['body/firstTableRows']",
+                    "select": {
+                      "DeviceID": "@item()?['Asset Lost and Stolen[DevID]']",
+                      "DevName": "@string(item()?['Asset Lost and Stolen[DevName]'])",
+                      "HardwareSerialNumber": "@item()?['Asset Lost and Stolen[HardwareSerialNumber]']",
+                      "Model": "@item()?['Asset Lost and Stolen[Model]']",
+                      "Site": "@item()?['Asset Lost and Stolen[Site]']",
+                      "ReportingStatus": "@item()?['Asset Lost and Stolen[ReportingStatus]']",
+                      "LastConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "LastDisConnTime": "@if(empty(item()?['Asset Lost and Stolen[LastDisConnTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "EnrollmentTime": "@if(empty(item()?['Asset Lost and Stolen[EnrollmentTime]']), null, formatDateTime(item()?['Asset Lost and Stolen[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "IP": "@item()?['Asset Lost and Stolen[IP]']",
+                      "Days Offline": "@item()?['Asset Lost and Stolen[Days Offline]']",
+                      "Online": "@item()?['Asset Lost and Stolen[Online]']",
+                      "Build": "@item()?['Asset Lost and Stolen[Build]']"
+                    }
+                  },
+                  "runAfter": {
+                    "SelectStaging": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectStagingAssetReport": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetAssetReport')?['body/firstTableRows']",
+                    "select": {
+                      "DeviceID": "@item()?['Asset Report[DevID]']",
+                      "DevName": "@string(item()?['Asset Report[DevName]'])",
+                      "HardwareSerialNumber": "@item()?['Asset Report[HardwareSerialNumber]']",
+                      "Model": "@item()?['Asset Report[Model]']",
+                      "Site": "@item()?['Asset Report[Site]']",
+                      "ReportingStatus": "@item()?['Asset Report[ReportingStatus]']",
+                      "LastConnTime": "@if(empty(item()?['Asset Report[LastConnTime]']), null, formatDateTime(item()?['Asset Report[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "LastDisConnTime": "@if(empty(item()?['Asset Report[LastDisConnTime]']), null, formatDateTime(item()?['Asset Report[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "EnrollmentTime": "@if(empty(item()?['Asset Report[EnrollmentTime]']), null, formatDateTime(item()?['Asset Report[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "IP": "@item()?['Asset Report[IP]']",
+                      "Days Offline": "@item()?['Asset Report[Days Offline]']",
+                      "Online": "@item()?['Asset Report[Online]']",
+                      "Build": "@item()?['Asset Report[Build]']"
+                    }
+                  },
+                  "runAfter": {
+                    "SelectStagingLostStolen": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectStagingExtendedOffline": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetExtendedOffline')?['body/firstTableRows']",
+                    "select": {
+                      "DeviceID": "@item()?['Asset Extended Offline[DevID]']",
+                      "DevName": "@string(item()?['Asset Extended Offline[DevName]'])",
+                      "HardwareSerialNumber": "@item()?['Asset Extended Offline[HardwareSerialNumber]']",
+                      "Model": "@item()?['Asset Extended Offline[Model]']",
+                      "Site": "@item()?['Asset Extended Offline[Site]']",
+                      "ReportingStatus": "@item()?['Asset Extended Offline[ReportingStatus]']",
+                      "LastConnTime": "@if(empty(item()?['Asset Extended Offline[LastConnTime]']), null, formatDateTime(item()?['Asset Extended Offline[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "LastDisConnTime": "@if(empty(item()?['Asset Extended Offline[LastDisConnTime]']), null, formatDateTime(item()?['Asset Extended Offline[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "EnrollmentTime": "@if(empty(item()?['Asset Extended Offline[EnrollmentTime]']), null, formatDateTime(item()?['Asset Extended Offline[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "IP": "@item()?['Asset Extended Offline[IP]']",
+                      "Days Offline": "@item()?['Asset Extended Offline[Days Offline]']",
+                      "Online": "@item()?['Asset Extended Offline[Online]']",
+                      "Build": "@item()?['Asset Extended Offline[Build]']"
+                    }
+                  },
+                  "runAfter": {
+                    "SelectStagingAssetReport": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectStagingDuplicateDevices": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetDuplicateDevices')?['body/firstTableRows']",
+                    "select": {
+                      "DeviceID": "@item()?['Asset Duplicate Device[DevID]']",
+                      "DevName": "@string(item()?['Asset Duplicate Device[DevName]'])",
+                      "HardwareSerialNumber": "@item()?['Asset Duplicate Device[HardwareSerialNumber]']",
+                      "Model": "@item()?['Asset Duplicate Device[Model]']",
+                      "Site": "@item()?['Asset Duplicate Device[Site]']",
+                      "ReportingStatus": "@item()?['Asset Duplicate Device[ReportingStatus]']",
+                      "LastConnTime": "@if(empty(item()?['Asset Duplicate Device[LastConnTime]']), null, formatDateTime(item()?['Asset Duplicate Device[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "LastDisConnTime": "@if(empty(item()?['Asset Duplicate Device[LastDisConnTime]']), null, formatDateTime(item()?['Asset Duplicate Device[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "EnrollmentTime": "@if(empty(item()?['Asset Duplicate Device[EnrollmentTime]']), null, formatDateTime(item()?['Asset Duplicate Device[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "IP": "@item()?['Asset Duplicate Device[IP]']",
+                      "Days Offline": "@item()?['Asset Duplicate Device[Days Offline]']",
+                      "Online": "@item()?['Asset Duplicate Device[Online]']",
+                      "Build": "@item()?['Asset Duplicate Device[Build]']"
+                    }
+                  },
+                  "runAfter": {
+                    "SelectStagingExtendedOffline": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectStagingZebraTestDevices": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetZebraTestDevices')?['body/firstTableRows']",
+                    "select": {
+                      "DeviceID": "@item()?['Asset Zebra Test Devices[DevID]']",
+                      "DevName": "@string(item()?['Asset Zebra Test Devices[DevName]'])",
+                      "HardwareSerialNumber": "@item()?['Asset Zebra Test Devices[HardwareSerialNumber]']",
+                      "Model": "@item()?['Asset Zebra Test Devices[Model]']",
+                      "Site": "@item()?['Asset Zebra Test Devices[Site]']",
+                      "ReportingStatus": "@item()?['Asset Zebra Test Devices[ReportingStatus]']",
+                      "LastConnTime": "@if(empty(item()?['Asset Zebra Test Devices[LastConnTime]']), null, formatDateTime(item()?['Asset Zebra Test Devices[LastConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "LastDisConnTime": "@if(empty(item()?['Asset Zebra Test Devices[LastDisConnTime]']), null, formatDateTime(item()?['Asset Zebra Test Devices[LastDisConnTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "EnrollmentTime": "@if(empty(item()?['Asset Zebra Test Devices[EnrollmentTime]']), null, formatDateTime(item()?['Asset Zebra Test Devices[EnrollmentTime]'], 'yyyy-MM-dd HH:mm:ss'))",
+                      "IP": "@item()?['Asset Zebra Test Devices[IP]']",
+                      "Days Offline": "@item()?['Asset Zebra Test Devices[Days Offline]']",
+                      "Online": "@item()?['Asset Zebra Test Devices[Online]']",
+                      "Build": "@item()?['Asset Zebra Test Devices[Build]']"
+                    }
+                  },
+                  "runAfter": {
+                    "SelectStagingDuplicateDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectStagingSOTILicense": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetSOTILicense')?['body/firstTableRows']",
+                    "select": {
+                      "Category": "@item()?['Asset SOTI License Summary[Category]']",
+                      "Value": "@item()?['Asset SOTI License Summary[Value]']"
+                    }
+                  },
+                  "runAfter": {
+                    "SelectStagingZebraTestDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table_SOTIic": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('SelectStagingSOTILicense')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "SelectStagingSOTILicense": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_SOTILic": {
+                  "type": "Compose",
+                  "inputs": "<style>\n    /* 1. Force the table to respect strict widths */\n    table {\n        width: 100%;\n        max-width: 800px; /* Optional: Stops it from getting too wide on big screens */\n        border: 1px solid #b3adad;\n        border-collapse: collapse;\n        table-layout: fixed; /* <--- THIS IS THE KEY FIX */\n        font-family: Arial, Helvetica, sans-serif;\n        font-size: 14px;\n    }\n\n    /* 2. Styling for Headers */\n    table th {\n        border: 1px solid #b3adad;\n        background-color: #FFCC00; \n        color: #d40511;\n        font-weight: bold;\n        padding: 8px;\n        text-align: center;\n        overflow: hidden; /* Prevents long text from breaking layout */\n    }\n\n    /* 3. Styling for Rows */\n    table td {\n        border: 1px solid #b3adad;\n        text-align: center;\n        background-color: #ffffff;\n        color: #313030;\n        padding: 8px;\n        word-wrap: break-word; /* Forces long text to wrap to next line */\n    }\n\n    /* 4. DEFINE COLUMN WIDTHS \n       This forces the first column to ALWAYS be 60% and second 40%, \n       regardless of how much text is inside. */\n    table th:first-child, table td:first-child {\n        width: 65%;\n    }\n    table th:last-child, table td:last-child {\n        width: 35%;\n    }\n</style>@{body('Create_HTML_table_SOTIic')}",
+                  "runAfter": {
+                    "Create_HTML_table_SOTIic": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Filter_array": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetSOTILicense')?['body/firstTableRows']",
+                    "where": "@contains(item()?['Asset SOTI License Summary[Category]'],'Free Licences')"
+                  },
+                  "runAfter": {
+                    "Compose_SOTILic": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "varLicenseCount": {
+                  "type": "Compose",
+                  "inputs": "@int(first(body('Filter_array'))?['Asset SOTI License Summary[Value]'])",
+                  "runAfter": {
+                    "Filter_array": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectDeviceSummary": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_datasetDeviceSummary')?['body/firstTableRows']",
+                    "select": {
+                      "Category": "@item()?['Asset Device Totals Summary[Category]']",
+                      "Value": "@item()?['Asset Device Totals Summary[Value]']"
+                    }
+                  },
+                  "runAfter": {
+                    "varLicenseCount": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table_DeviceSummary": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('SelectDeviceSummary')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "SelectDeviceSummary": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_DeviceSummary": {
+                  "type": "Compose",
+                  "inputs": "<style>\n    /* 1. Force the table to respect strict widths */\n    table {\n        width: 100%;\n        max-width: 800px; /* Optional: Stops it from getting too wide on big screens */\n        border: 1px solid #b3adad;\n        border-collapse: collapse;\n        table-layout: fixed; /* <--- THIS IS THE KEY FIX */\n        font-family: Arial, Helvetica, sans-serif;\n        font-size: 12px;\n    }\n\n    /* 2. Styling for Headers */\n    table th {\n        border: 1px solid #b3adad;\n        background-color: #E66C37; \n        color: #FFFFFF;\n        font-weight: bold;\n        padding: 6px;\n        text-align: center;\n        overflow: hidden; /* Prevents long text from breaking layout */\n    }\n\n    /* 3. Styling for Rows */\n    table td {\n        border: 1px solid #b3adad;\n        text-align: center;\n        background-color: #ffffff;\n        color: #313030;\n        padding: 6px;\n        word-wrap: break-word; /* Forces long text to wrap to next line */\n    }\n\n    /* 4. DEFINE COLUMN WIDTHS \n       This forces the first column to ALWAYS be 60% and second 40%, \n       regardless of how much text is inside. */\n    table th:first-child, table td:first-child {\n        width: 65%;\n    }\n    table th:last-child, table td:last-child {\n        width: 35%;\n    }\n</style>@{body('Create_HTML_table_DeviceSummary')}",
+                  "runAfter": {
+                    "Create_HTML_table_DeviceSummary": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            },
+            "Scope_2": {
+              "type": "Scope",
+              "actions": {
+                "ConditionStaging": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectStaging'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_tableStaging": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectStaging')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableStaging": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentStaging",
+                        "value": "@body('Create_CSV_tableStaging')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_tableStaging": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Create_HTML_table": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectStaging')",
+                        "format": "HTML"
+                      },
+                      "runAfter": {
+                        "Set_variableStaging": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Compose": {
+                      "type": "Compose",
+                      "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                      "runAfter": {
+                        "Create_HTML_table": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_1": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentStaging",
+                          "value": "DevID,\tDevName,\tHardwareSerialNumber,\tModel,\tSite,\tReportingStatus,\tLastConnTime,\tLastDisConnTime,\tEnrollmentTime,\tDays Offline,\tIP,\tOnline,\tBuild\n"
+                        }
+                      }
+                    }
+                  }
+                },
+                "Create_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/CONSUM/SSIS_ASSETSUMMARY/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "Staging_Folder_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                      "body": "@variables('varCSVContentStaging')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionStaging": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "ConditionLostAndStolen": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectStagingLostStolen'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_tableLostAndStolen": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectStagingLostStolen')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableLostAndStolen": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentLostAndStolen",
+                        "value": "@body('Create_CSV_tableLostAndStolen')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_tableLostAndStolen": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_3": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentLostAndStolen",
+                          "value": "DevID,\tDevName,\tHardwareSerialNumber,\tModel,\tSite,\tReportingStatus,\tLastConnTime,\tLastDisConnTime,\tEnrollmentTime,\tDays Offline,\tIP,\tOnline,\tBuild\n"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/CONSUM/SSIS_ASSETSUMMARY/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "LostAndStolen_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                      "body": "@variables('varCSVContentLostAndStolen')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionLostAndStolen": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "ConditionZebraTestDevice": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectStagingZebraTestDevices'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_tableZebraTestDevice": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectStagingZebraTestDevices')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableZebraTestDevice": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentZebraTestDevices",
+                        "value": "@body('Create_CSV_tableZebraTestDevice')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_tableZebraTestDevice": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_2": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentZebraTestDevices",
+                          "value": "DevID,\tDevName,\tHardwareSerialNumber,\tModel,\tSite,\tReportingStatus,\tLastConnTime,\tLastDisConnTime,\tEnrollmentTime,\tDays Offline,\tIP,\tOnline,\tBuild\n"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_1": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_2": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/CONSUM/SSIS_ASSETSUMMARY/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "ZebraTestDevice_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                      "body": "@variables('varCSVContentZebraTestDevices')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionZebraTestDevice": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "ConditionDuplicateSN": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectStagingDuplicateDevices'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_tableDuplicateSN": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectStagingDuplicateDevices')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableDuplicateSN": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentDuplicateDevices",
+                        "value": "@body('Create_CSV_tableDuplicateSN')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_tableDuplicateSN": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_4": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentDuplicateDevices",
+                          "value": "DevID,\tDevName,\tHardwareSerialNumber,\tModel,\tSite,\tReportingStatus,\tLastConnTime,\tLastDisConnTime,\tEnrollmentTime,\tDays Offline,\tIP,\tOnline,\tBuild\n"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_2": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_3": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/CONSUM/SSIS_ASSETSUMMARY/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "DuplicateSN_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                      "body": "@variables('varCSVContentDuplicateDevices')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionDuplicateSN": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "ConditionExtendedOffline": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectStagingExtendedOffline'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_tableExtendedOffline": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectStagingExtendedOffline')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableExtendedOffline": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentExtendedOffline",
+                        "value": "@body('Create_CSV_tableExtendedOffline')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_tableExtendedOffline": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_5": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentExtendedOffline",
+                          "value": "DevID,\tDevName,\tHardwareSerialNumber,\tModel,\tSite,\tReportingStatus,\tLastConnTime,\tLastDisConnTime,\tEnrollmentTime,\tDays Offline,\tIP,\tOnline,\tBuild\n"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_3": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_4": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/CONSUM/SSIS_ASSETSUMMARY/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "ExtendedOffline_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                      "body": "@variables('varCSVContentExtendedOffline')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionExtendedOffline": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "ConditionAssetReport": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectStaging'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_tableAssetReport": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectStagingAssetReport')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableExtendedOffline_1": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentAssetReport",
+                        "value": "@body('Create_CSV_tableAssetReport')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_tableAssetReport": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_6": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentAssetReport",
+                          "value": "DevID,\tDevName,\tHardwareSerialNumber,\tModel,\tSite,\tReportingStatus,\tLastConnTime,\tLastDisConnTime,\tEnrollmentTime,\tDays Offline,\tIP,\tOnline,\tBuild\n"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_4": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_5": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/CONSUM/SSIS_ASSETSUMMARY/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "AssetReport_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                      "body": "@variables('varCSVContentAssetReport')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionAssetReport": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Scope": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Scope_3": {
+              "type": "Scope",
+              "actions": {
+                "ConditionSOTILic": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "less": [
+                          "@110",
+                          50
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Condition": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "less": [
+                              "@110",
+                              10
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Send_an_email_(V2)": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "emailMessage/To": "@outputs('EmailTO')",
+                              "emailMessage/Subject": "🚨Consum CRITICAL: SOTI Licences are lowest - urgent action required",
+                              "emailMessage/Body": "<p class=\"editor-paragraph\">Dear customer,<br><br>The SOTI licenses have breached the 🚨 critical threshold for licenses. Please review the attached spreadsheet to free up licences. Failure to act will result in devices not being able to be staged.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">SOTI Licenses Information</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose_SOTILic')}</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Device Totals</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose_DeviceSummary')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</p><p class=\"editor-paragraph\"><br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                              "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                              "emailMessage/Cc": "@outputs('EmailCC')",
+                              "emailMessage/Attachments": [
+                                {
+                                  "Name": "StagingFolder_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                  "ContentBytes": "@variables('varCSVContentStaging')"
+                                },
+                                {
+                                  "Name": "LostAndStolen_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                  "ContentBytes": "@variables('varCSVContentLostAndStolen')"
+                                },
+                                {
+                                  "Name": "ZebraTestDevices_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                  "ContentBytes": "@variables('varCSVContentZebraTestDevices')"
+                                },
+                                {
+                                  "Name": "DuplicateSN_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                  "ContentBytes": "@variables('varCSVContentDuplicateDevices')"
+                                },
+                                {
+                                  "Name": "ExtendedOffline_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                  "ContentBytes": "@variables('varCSVContentExtendedOffline')"
+                                },
+                                {
+                                  "Name": "AssetReport_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                  "ContentBytes": "@variables('varCSVContentAssetReport')"
+                                }
+                              ],
+                              "emailMessage/Importance": "Normal"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                              "operationId": "SendEmailV2",
+                              "connectionName": "shared_office365"
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Send_an_email_(V2)_1": {
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "parameters": {
+                                "emailMessage/To": "@outputs('EmailTO')",
+                                "emailMessage/Subject": "⚠️Consum WARNING: SOTI Licences are low - urgent action required",
+                                "emailMessage/Body": "<p class=\"editor-paragraph\">Dear customer,<br><br>The SOTI licenses have breached the ⚠️ warning threshold for licenses. Please review the attached spreadsheet to free up licences. Failure to act will result in devices not being able to be staged.</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">SOTI Licenses Information</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose_SOTILic')}</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Device Total</strong></b><br>@{outputs('Compose_DeviceSummary')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</p><p class=\"editor-paragraph\"><br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                                "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                                "emailMessage/Cc": "@outputs('EmailCC')",
+                                "emailMessage/Attachments": [
+                                  {
+                                    "Name": "StagingFolder_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                    "ContentBytes": "@variables('varCSVContentStaging')"
+                                  },
+                                  {
+                                    "Name": "LostAndStolen_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                    "ContentBytes": "@variables('varCSVContentLostAndStolen')"
+                                  },
+                                  {
+                                    "Name": "ZebraTestDevices_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                    "ContentBytes": "@variables('varCSVContentZebraTestDevices')"
+                                  },
+                                  {
+                                    "Name": "DuplicateSN_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                    "ContentBytes": "@variables('varCSVContentDuplicateDevices')"
+                                  },
+                                  {
+                                    "Name": "ExtendedOffline_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                    "ContentBytes": "@variables('varCSVContentExtendedOffline')"
+                                  },
+                                  {
+                                    "Name": "AssetReport_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                                    "ContentBytes": "@variables('varCSVContentAssetReport')"
+                                  }
+                                ],
+                                "emailMessage/Importance": "Normal"
+                              },
+                              "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                                "operationId": "SendEmailV2",
+                                "connectionName": "shared_office365"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Terminate": {
+                        "type": "Terminate",
+                        "inputs": {
+                          "runStatus": "Succeeded"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Scope_2": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "varCSVContentAssetReport": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨FAILED FLOW ALERT: DHL SSIS- UK CRITICAL SOTI Licenses are low🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨FAILED FLOW ALERT: DHL SSIS- UK CRITICAL SOTI Licenses are low🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5b43695a-8691-4947-92f2-58a4b58bce6d"
+              }
+            },
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨FAILED FLOW ALERT: DHL SSIS- UK CRITICAL SOTI Licenses are low🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Master": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "emea.mlm.support@zebra.com; GlobalPremierSupport@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "GMSSBA@zebra.com;adela.bodor@zebra.com;DMSDeliveryLeads@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

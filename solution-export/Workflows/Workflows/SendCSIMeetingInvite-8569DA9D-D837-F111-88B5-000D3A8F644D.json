@@ -1,0 +1,99 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "2adb2ce9-7492-4844-8676-71a7ed6afac5"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "AttendeeEmail",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "MeetingSubject",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_2": {
+                  "title": "MeetingBodyHTML",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text",
+                "text_1",
+                "text_2"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Create_event_(V4)": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "86382d81-9474-4005-8a33-771eb872cf7f"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_office365",
+              "operationId": "V4CalendarPostItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+            },
+            "parameters": {
+              "table": "AAMkAGNmZDQxYjdkLTY1NGUtNDNhOS04OTRjLTgzNDhjNDRmNjE2YQBGAAAAAABiVtC8Vbw_RYg8q-rT7hRKBwBkKvR1BcR4SZj7Y8LMD_-8AAAAAAEGAABkKvR1BcR4SZj7Y8LMD_-8AAADTckiAAA=",
+              "item/subject": "@triggerBody()['text_1']",
+              "item/start": "@addDays(utcNow(), 1, 'yyyy-MM-ddT09:00:00Z')",
+              "item/end": "@addDays(utcNow(), 1, 'yyyy-MM-ddT09:30:00Z')",
+              "item/timeZone": "(UTC) Coordinated Universal Time",
+              "item/requiredAttendees": "@triggerBody()['text']",
+              "item/body": "<p>@{triggerBody()['text_2']}</p>"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

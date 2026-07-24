@@ -1,0 +1,259 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_44623"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "UTC",
+            "startTime": "2025-12-15T16:00:00Z"
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Out of Contact TC58'[Site Name])),\n\t\t\tNOT('Out of Contact TC58'[Site Name] IN {\"ARROW XL \"})\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Out of Contact TC58',\n\t\t\t\t'Out of Contact TC58'[SerialNumber],\n\t\t\t\t'Out of Contact TC58'[DeviceName],\n\t\t\t\t'Out of Contact TC58'[DeviceModelName],\n\t\t\t\t'Out of Contact TC58'[BatteryLevel],\n\t\t\t\t'Out of Contact TC58'[Hours Disconnected],\n\t\t\t\t'Out of Contact TC58'[CustomColumnsDeployment],\n\t\t\t\t'Out of Contact TC58'[Site Name]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Out of Contact TC58'[SerialNumber],\n\t'Out of Contact TC58'[DeviceName],\n\t'Out of Contact TC58'[DeviceModelName],\n\t'Out of Contact TC58'[BatteryLevel],\n\t'Out of Contact TC58'[Hours Disconnected],\n\t'Out of Contact TC58'[CustomColumnsDeployment],\n\t'Out of Contact TC58'[Site Name]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "Initialize_variable_varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Initialize_variable_varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Select": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Device Name": "@item()?['Out of Contact TC58[DeviceName]']",
+              "Device Serial Number": "@string(item()?['Out of Contact TC58[SerialNumber]'])",
+              "Model": "@item()?['Out of Contact TC58[DeviceModelName]']",
+              "Last Known Battery Level": "@item()?['Out of Contact TC58[BatteryLevel]']",
+              "Site Name": "@item()?['Out of Contact TC58[Site Name]']",
+              "Hours Disconnected": "@item()?['Out of Contact TC58[Hours Disconnected]']",
+              "Deployment_Mode": "@item()?['Out of Contact TC58[CustomColumnsDeployment]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Condition": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(body('Select'))",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Create_CSV_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select')",
+                "format": "CSV"
+              }
+            },
+            "Set_variable": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varCSVContent",
+                "value": "@body('Create_CSV_table')"
+              },
+              "runAfter": {
+                "Create_CSV_table": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select')",
+                "format": "HTML"
+              },
+              "runAfter": {
+                "Set_variable": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #8e44ad; /* Changed to red */\n        color: #ffffff;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>@{body('Create_HTML_table')}",
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@trim(outputs('EmailTO'))",
+                  "emailMessage/Subject": "AXL TC58: Out Of Contact @{formatDateTime(utcNow(),'ddMMyyyy')}",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Customer,<br><br>Please find attached the daily \"Out of Contact Devices\" report.</p><p class=\"editor-paragraph\">@{outputs('Compose')}<br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com.</strong></b><br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential, and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('EmailCC')",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "TC58_OutOfContact_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "ContentBytes": "@variables('varCSVContent')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_variable_1": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varCSVContent",
+                  "value": "Device Name,\tDevice Serial Number,\tModel,\tLast Known Battery Level,\tSite Name,\tHours Disconnected,\tDeployment_Mode"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_file": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "folderPath": "/Shared Documents/ARROWXL/SSIS_OUTOFCONTACTDEVICES/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}",
+              "name": "TC58_OutOfContact_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+              "body": "@variables('varCSVContent')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {
+            "Condition": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "Zebra.wigan.rdts@arrowxl.co.uk;Zebra.airdrie.rdts@arrowxl.co.uk;Zebra.enfield.rdts@arrowxl.co.uk;Zebra.carrickfergus.rdts@arrowxl.co.uk;Zebra.inverness.rdts@arrowxl.co.uk;Zebra.Urban85.rdts@arrowxl.co.uk;mark.watkinson@arrowxl.co.uk;Jakub.Polak@zebra.com;nh6432@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "GMSSBA@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

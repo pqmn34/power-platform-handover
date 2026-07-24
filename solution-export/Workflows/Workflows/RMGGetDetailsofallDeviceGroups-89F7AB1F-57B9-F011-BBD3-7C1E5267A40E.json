@@ -1,0 +1,322 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsharepointonline_cc95c"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_sharepointonline-1": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_keyvault": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "api": {
+          "name": "shared_keyvault"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_Details_of_All_Groups": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "c4a0f7d2-3c92-431c-b147-7397b27532f7"
+          },
+          "type": "Http",
+          "inputs": {
+            "uri": "https://zebrams001.eu.suremdm.io/api/group/1/getAll",
+            "method": "GET",
+            "headers": {
+              "ApiKey": "13967834-72B0-42F0-8F8C-66A69BE028D8",
+              "Content-Type": "application/json"
+            },
+            "authentication": {
+              "type": "Basic",
+              "username": "@{outputs('UID')?['body/value']}",
+              "password": "@{outputs('PSWD')?['body/value']}"
+            }
+          }
+        },
+        "Parse_JSON": {
+          "runAfter": {
+            "Get_Details_of_All_Groups": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6580ba4b-3bfb-4483-ad8b-0d61ab9ca38b"
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('Get_Details_of_All_Groups')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Groups": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ParentGroupID": {},
+                      "DefaultJobsCount": {
+                        "type": "integer"
+                      },
+                      "DeviceNameRule": {},
+                      "GroupName": {
+                        "type": "string"
+                      },
+                      "GroupID": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "ParentGroupID",
+                      "DefaultJobsCount",
+                      "DeviceNameRule",
+                      "GroupName",
+                      "GroupID"
+                    ]
+                  }
+                },
+                "TotalSubgroups": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "Get_items": {
+          "runAfter": {
+            "Parse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "59ed9e12-b5ac-42d4-a3e9-c91da61f35c4"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "b95fcff4-e734-4b58-97e7-9ed9a7ff4ebf",
+              "viewScopeOption": "RecursiveAll"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          },
+          "runtimeConfiguration": {
+            "paginationPolicy": {
+              "minimumItemCount": 10000
+            }
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "Delete_item": {
+              "metadata": {
+                "operationMetadataId": "2e7f884f-a243-4904-8278-1cf586072643"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "b95fcff4-e734-4b58-97e7-9ed9a7ff4ebf",
+                  "id": "@items('Apply_to_each')?['ID']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "DeleteItem"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5c68bf91-1980-4715-8063-a954b905591c"
+          },
+          "type": "Foreach"
+        },
+        "Apply_to_each_2": {
+          "foreach": "@body('Parse_JSON')?['Groups']",
+          "actions": {
+            "Create_item": {
+              "metadata": {
+                "operationMetadataId": "496675c1-4984-4197-9b45-ff1813f41e19"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "b95fcff4-e734-4b58-97e7-9ed9a7ff4ebf",
+                  "item/Group_x0020_ID": "@items('Apply_to_each_2')?['GroupID']",
+                  "item/Group_x0020_Name": "@items('Apply_to_each_2')?['GroupName']",
+                  "item/Parent_x0020_Group_x0020_ID": "@items('Apply_to_each_2')?['ParentGroupID']",
+                  "item/Default_x0020_Jobs_x0020_Count": "@items('Apply_to_each_2')?['DefaultJobsCount']",
+                  "item/Device_x0020_Name_x0020_Rule": "@items('Apply_to_each_2')?['DeviceNameRule']",
+                  "item/Total_x0020_Devices": "@items('Apply_to_each_2')?['GroupType']",
+                  "item/GroupPath": "@items('Apply_to_each_2')?['GroupPath']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline-1",
+                  "operationId": "PostItem"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Delay": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "02314ffd-3b17-47cf-8420-9eeb9170d574"
+          },
+          "type": "Foreach"
+        },
+        "Initialize_variable": {
+          "runAfter": {
+            "PSWD": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3e01883a-caa8-40de-8f0e-645bbe59cbbf"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LostGroupID",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "Delay": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d1c66167-2a1c-4ad5-977d-adfad4a332da"
+          },
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 1,
+              "unit": "Minute"
+            }
+          }
+        },
+        "UID": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "connectionName": "shared_keyvault",
+              "operationId": "GetSecret"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "PSWD": {
+          "runAfter": {
+            "UID": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "connectionName": "shared_keyvault",
+              "operationId": "GetSecret"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,79 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sftpwithssh-1": {
+        "api": {
+          "name": "shared_sftpwithssh"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsftpwithssh_e9fb8"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Filter_array": {
+          "type": "Query",
+          "inputs": {
+            "from": "@body('List_files_in_folder')",
+            "where": "@endswith(item()?['name'], '.csv')"
+          },
+          "runAfter": {
+            "List_files_in_folder": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0ae0af5f-2bc5-4571-94a2-57edb006d0e6"
+          }
+        },
+        "List_files_in_folder": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "L2ZpbGVz"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sftpwithssh",
+              "operationId": "ListFolder",
+              "connectionName": "shared_sftpwithssh-1"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "L2ZpbGVz": "/files",
+            "operationMetadataId": "e3398ff8-7eea-4968-a895-6a874a198a9b"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

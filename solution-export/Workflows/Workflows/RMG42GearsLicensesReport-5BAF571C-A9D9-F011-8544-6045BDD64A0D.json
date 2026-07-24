@@ -1,0 +1,572 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "6",
+                "8",
+                "11",
+                "14",
+                "17",
+                "20",
+                "3"
+              ],
+              "minutes": [
+                30
+              ]
+            },
+            "startTime": "2025-11-05T08:45:04Z"
+          }
+        }
+      },
+      "actions": {
+        "Get_secret_APIKEY": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-api-key-movedevice-42g"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {}
+        },
+        "Get_secret_UID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_APIKEY": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secret_PSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_UID": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "RMG: FAILED - FAILED: RMG 42Gears License Information",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\"><span style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">FAILED: </span><span style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">FAILED: RMG 42Gears License Information</span></p><p class=\"editor-paragraph\"><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><br>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_FAILED_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Post_FAILED_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">FAILED: </strong></b><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">RMG 42Gears License Information</strong></b><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><br>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "HTTP": {
+              "type": "Http",
+              "inputs": {
+                "uri": "https://zebrams001.eu.suremdm.io/api/v2/account",
+                "method": "GET",
+                "headers": {
+                  "ApiKey": "@{outputs('Get_secret_APIKEY')?['body/value']}",
+                  "Content-TypeContent-Type": "application/json"
+                },
+                "authentication": {
+                  "type": "Basic",
+                  "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                  "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                }
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Compose_1": {
+              "type": "Compose",
+              "inputs": "@body('HTTP')",
+              "runAfter": {
+                "Parse_JSON": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Parse_JSON": {
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@body('HTTP')",
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "UserID": {
+                          "type": "string"
+                        },
+                        "Company": {
+                          "type": "string"
+                        },
+                        "Name": {
+                          "type": "string"
+                        },
+                        "CustomerID": {
+                          "type": "string"
+                        },
+                        "MaxDeviceCount": {
+                          "type": "integer"
+                        },
+                        "DeviceCount": {
+                          "type": "integer"
+                        },
+                        "TotalStorageSize": {
+                          "type": "integer"
+                        },
+                        "UsedStorageSize": {
+                          "type": "integer"
+                        },
+                        "IsTrial": {
+                          "type": "boolean"
+                        },
+                        "ExpiryDate": {
+                          "type": "string"
+                        },
+                        "ODOORedirectUrl": {
+                          "type": "string"
+                        },
+                        "MinLocationTrackingPeriodicity": {
+                          "type": "integer"
+                        },
+                        "MinTelecomMgmtTracPeriodicity": {
+                          "type": "integer"
+                        },
+                        "HomeDeviceCount": {
+                          "type": "integer"
+                        },
+                        "HideDynamicJob": {
+                          "type": "string"
+                        },
+                        "DateCreatedEpoch": {
+                          "type": "integer"
+                        },
+                        "useRingCaptchaSms": {
+                          "type": "boolean"
+                        },
+                        "bOptedInForMail": {
+                          "type": "boolean"
+                        },
+                        "MSPID": {},
+                        "showAppPlugin": {
+                          "type": "boolean"
+                        },
+                        "OPLicenseStatus": {
+                          "type": "integer"
+                        },
+                        "InternetConnectivity": {
+                          "type": "boolean"
+                        },
+                        "IsDeepThoughtConfigured": {
+                          "type": "boolean"
+                        },
+                        "IsSSHConfigured": {
+                          "type": "boolean"
+                        },
+                        "IsChromeOSConfigured": {
+                          "type": "boolean"
+                        },
+                        "IsBigQueryEnabled": {
+                          "type": "boolean"
+                        },
+                        "UseSaaSLicenseManagement": {
+                          "type": "boolean"
+                        },
+                        "CertForAPNSAvailable": {
+                          "type": "boolean"
+                        },
+                        "NPSSurveyConfigurations": {
+                          "type": "object",
+                          "properties": {
+                            "IsNpsEnabledInConfig": {
+                              "type": "boolean"
+                            },
+                            "IsNpsEnabledForCustomer": {
+                              "type": "boolean"
+                            },
+                            "IsWithinSurveyTimeSpan": {
+                              "type": "boolean"
+                            },
+                            "NextNpsSurveyDate": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "loginTime": {
+                          "type": "string"
+                        },
+                        "IsUsingChargify": {
+                          "type": "boolean"
+                        },
+                        "IsUsingODOO": {
+                          "type": "boolean"
+                        },
+                        "IsAdminPanelAccount": {
+                          "type": "boolean"
+                        },
+                        "HideLanguage": {
+                          "type": "integer"
+                        },
+                        "Country": {
+                          "type": "string"
+                        },
+                        "LicensePurchasedDate": {},
+                        "UseMasking": {
+                          "type": "integer"
+                        },
+                        "CustomerRegisteredDate": {
+                          "type": "string"
+                        },
+                        "AdditionalUsers": {
+                          "type": "integer"
+                        },
+                        "authType": {
+                          "type": "string"
+                        },
+                        "EnableMemConnector": {
+                          "type": "boolean"
+                        },
+                        "EnableZlaOTA": {
+                          "type": "boolean"
+                        },
+                        "IsBillingSystemUnderMaintenance": {
+                          "type": "boolean"
+                        },
+                        "SortedToolbar": {
+                          "type": "string"
+                        },
+                        "isJobRevisionEnable": {
+                          "type": "boolean"
+                        },
+                        "PatnerID": {},
+                        "PartnerName": {
+                          "type": "string"
+                        },
+                        "isoddoConsentCustomer": {
+                          "type": "boolean"
+                        },
+                        "EnableHotjar": {
+                          "type": "integer"
+                        },
+                        "IsFreshDeskEnabled": {
+                          "type": "boolean"
+                        },
+                        "ServiceNowPluginEnabled": {
+                          "type": "integer"
+                        },
+                        "isoldconsoledepricated": {
+                          "type": "integer"
+                        },
+                        "isGPTRunscriptEnable": {
+                          "type": "integer"
+                        },
+                        "EnableRelayServer": {
+                          "type": "string"
+                        },
+                        "StorageType": {
+                          "type": "integer"
+                        },
+                        "LicenseExpiryDate": {
+                          "type": "string"
+                        },
+                        "EnableCriticalAgentUpgrade": {
+                          "type": "string"
+                        },
+                        "NewEnrollmentTypeCustomer": {
+                          "type": "boolean"
+                        },
+                        "IsTemplate": {
+                          "type": "boolean"
+                        },
+                        "UseGlobalJobs": {
+                          "type": "boolean"
+                        },
+                        "ShowBitLockerProfileWindows": {
+                          "type": "integer"
+                        },
+                        "EnableAdvPatchManagement": {
+                          "type": "integer"
+                        },
+                        "EnableAdvPatchManagementiOS": {
+                          "type": "integer"
+                        },
+                        "EnableAdvPatchManagementMacOS": {
+                          "type": "integer"
+                        },
+                        "EnableAdvPatchManagementLinux": {
+                          "type": "integer"
+                        },
+                        "GrantAgentPermission": {
+                          "type": "integer"
+                        },
+                        "DefaultOSUpdatesPlatform": {},
+                        "ThirdPartyAppUpdateAvailability": {
+                          "type": "integer"
+                        },
+                        "DLLVulnerabilityEmailList": {}
+                      }
+                    },
+                    "status": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "HTTP": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_item": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "b3e2dbd1-43e8-4768-a74f-76f94fe9e6fb",
+                  "view": "9cb64f3b-8f2b-42da-bd3a-cf0bbd93e9ff",
+                  "item/Title": "@body('Parse_JSON')?['data']?['UserID']",
+                  "item/field_0": "@body('Parse_JSON')?['data']?['IsSupportUser']",
+                  "item/field_2/Value": "@if(equals(body('Parse_JSON')?['data']?['IsSsoUser'], true), 'True', 'False')",
+                  "item/field_3": "@body('Parse_JSON')?['data']?['Company']",
+                  "item/field_4": "@body('Parse_JSON')?['data']?['Name']",
+                  "item/field_5/Value": "@if(equals(body('Parse_JSON')?['data']?['supportedGoogleMap'], true), 'True', 'False')",
+                  "item/field_6": "@body('Parse_JSON')?['data']?['CustomerID']",
+                  "item/field_7": "@body('Parse_JSON')?['data']?['MaxDeviceCount']",
+                  "item/field_8": "@body('Parse_JSON')?['data']?['DeviceCount']",
+                  "item/field_9": "@body('Parse_JSON')?['data']?['TotalStorageSize']",
+                  "item/field_10": "@body('Parse_JSON')?['data']?['UsedStorageSize']",
+                  "item/field_11": "@body('Parse_JSON')?['data']?['ThingsDeviceCount']",
+                  "item/field_12": "@body('Parse_JSON')?['data']?['ThingsLicenseCount']",
+                  "item/field_13": "@body('Parse_JSON')?['data']?['licenseType']",
+                  "item/field_14": "@body('Parse_JSON')?['data']?['VRDevicecount']",
+                  "item/field_15": "@body('Parse_JSON')?['data']?['VRLicenseCount']",
+                  "item/field_16": "@body('Parse_JSON')?['data']?['IsMTDPurchased']",
+                  "item/field_17": "@body('Parse_JSON')?['data']?['MTDLicenseCount']",
+                  "item/field_18": "@body('Parse_JSON')?['data']?['MTDDevicecount']",
+                  "item/field_19": "@body('Parse_JSON')?['data']?['VPNLicenseCount']",
+                  "item/field_20": "@body('Parse_JSON')?['data']?['MTDDevicecount']",
+                  "item/field_21": "@body('Parse_JSON')?['data']?['ExpiryDate']",
+                  "item/field_22": "@body('Parse_JSON')?['data']?['ODOORedirectUrl']",
+                  "item/field_23": "@body('Parse_JSON')?['data']?['MinLocationTrackingPeriodicity']",
+                  "item/field_24": "@body('Parse_JSON')?['data']?['MinTelecomMgmtTracPeriodicity']",
+                  "item/field_25": "@body('Parse_JSON')?['data']?['HomeDeviceCount']",
+                  "item/field_26": "@body('Parse_JSON')?['data']?['DeviceCountForUser']",
+                  "item/field_28": "@body('Parse_JSON')?['data']?['DateCreatedEpoch']",
+                  "item/field_29/Value": "@if(equals(body('Parse_JSON')?['data']?['useRingCaptchaSms'], true), 'True', 'False')",
+                  "item/field_30/Value": "@if(equals(body('Parse_JSON')?['data']?['bOptedInForMail'], true), 'True', 'False')",
+                  "item/field_31/Value": "@if(equals(body('Parse_JSON')?['data']?['showAppPlugin'], true), 'True', 'False')",
+                  "item/field_32": "@body('Parse_JSON')?['data']?['OPLicenseStatus']",
+                  "item/field_33/Value": "@if(equals(body('Parse_JSON')?['data']?['InternetConnectivity'], true), 'True', 'False')",
+                  "item/field_34/Value": "@if(equals(body('Parse_JSON')?['data']?['IsDeepThoughtConfigured'], true), 'True', 'False')",
+                  "item/field_35/Value": "@if(equals(body('Parse_JSON')?['data']?['IsBigQueryEnabled'], true), 'True', 'False')",
+                  "item/field_36/Value": "@if(equals(body('Parse_JSON')?['data']?['UseSaaSLicenseManagement'], true), 'True', 'False')",
+                  "item/field_37": "@body('Parse_JSON')?['data']?['loginTime']",
+                  "item/field_38/Value": "@if(equals(body('Parse_JSON')?['data']?['IsUsingChargify'], true), 'True', 'False')",
+                  "item/field_39/Value": "@if(equals(body('Parse_JSON')?['data']?['IsUsingODOO'], true), 'True', 'False')",
+                  "item/field_40/Value": "@if(equals(body('Parse_JSON')?['data']?['IsAdminPanelAccount'], true), 'True', 'False')",
+                  "item/field_41": "@body('Parse_JSON')?['data']?['HideLanguage']",
+                  "item/field_42": "@body('Parse_JSON')?['data']?['Country']",
+                  "item/field_43": "@body('Parse_JSON')?['data']?['LicensePurchasedDate']",
+                  "item/field_44/Value": "@if(equals(body('Parse_JSON')?['data']?['istunnelurl'], true), 'True', 'False')",
+                  "item/field_45": "@body('Parse_JSON')?['data']?['CustomerRegisteredDate']",
+                  "item/field_46": "@body('Parse_JSON')?['data']?['AdditionalUsers']",
+                  "item/field_47": "@body('Parse_JSON')?['data']?['authType']",
+                  "item/field_48/Value": "@if(equals(body('Parse_JSON')?['data']?['IsBillingSystemUnderMaintenance'], true), 'True', 'False')",
+                  "item/field_49": "@body('Parse_JSON')?['data']?['SortedToolbar']",
+                  "item/field_50/Value": "@if(equals(body('Parse_JSON')?['data']?['isJobRevisionEnable'], true), 'True', 'False')",
+                  "item/field_51": "@body('Parse_JSON')?['data']?['PatnerID']",
+                  "item/field_52": "@body('Parse_JSON')?['data']?['PartnerName']",
+                  "item/field_53/Value": "@if(equals(body('Parse_JSON')?['data']?['isoddoConsentCustomer'], true), 'True', 'False')",
+                  "item/field_54": "@body('Parse_JSON')?['data']?['EnableHotjar']",
+                  "item/field_55/Value": "@if(equals(body('Parse_JSON')?['data']?['IsFreshDeskEnabled'], true), 'True', 'False')",
+                  "item/field_56": "@body('Parse_JSON')?['data']?['ServiceNowPluginEnabled']",
+                  "item/field_57": "@body('Parse_JSON')?['data']?['isoldconsoledepricated']",
+                  "item/field_58": "@body('Parse_JSON')?['data']?['isGPTRunscriptEnable']",
+                  "item/field_59": "@body('Parse_JSON')?['data']?['EnableRelayServer']",
+                  "item/field_60": "@body('Parse_JSON')?['data']?['StorageType']",
+                  "item/field_61": "@body('Parse_JSON')?['data']?['LicenseExpiryDate']",
+                  "item/field_62": "@body('Parse_JSON')?['data']?['EnableCriticalAgentUpgrade']",
+                  "item/field_63/Value": "@if(equals(body('Parse_JSON')?['data']?['NewEnrollmentTypeCustomer'], true), 'True', 'False')",
+                  "item/field_64/Value": "@if(equals(body('Parse_JSON')?['data']?['IsTemplate'], true), 'True', 'False')",
+                  "item/field_65/Value": "@if(equals(body('Parse_JSON')?['data']?['UseGlobalJobs'], true), 'True', 'False')",
+                  "item/field_66/Value": "@if(equals(body('Parse_JSON')?['data']?['IntercomEnabledFromHub'], true), 'True', 'False')",
+                  "item/field_67": "@body('Parse_JSON')?['data']?['ShowBitLockerProfileWindows']",
+                  "item/field_68": "@body('Parse_JSON')?['data']?['ThirdPartyAppUpdateAvailability']",
+                  "item/field_69": "@body('Parse_JSON')?['data']?['DLLVulnerabilityEmailList']",
+                  "item/field_70": "@body('Parse_JSON')?['data']?['NetDiscoveryHideORShow']",
+                  "item/field_71": "@body('Parse_JSON')?['data']?['EnableAdvCvePatchManagement']",
+                  "item/field_72/Value": "@if(equals(body('Parse_JSON')?['data']?['EnableJit'], true), 'True', 'False')",
+                  "item/field_73": "@body('Parse_JSON')?['data']?['NewFilterEnabled']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "PostItem",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Compose_1": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Get_secret_PSWD": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

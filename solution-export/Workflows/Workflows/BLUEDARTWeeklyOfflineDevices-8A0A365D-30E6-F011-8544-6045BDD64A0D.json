@@ -1,0 +1,478 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "startTime": "2025-12-31T07:00:00Z",
+            "schedule": {
+              "weekDays": [
+                "Wednesday"
+              ],
+              "hours": [
+                "2"
+              ],
+              "minutes": [
+                30
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: DHL SSIS-Duplicate Devices🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: DHL SSIS-Duplicate Devices🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: DHL SSIS-Duplicate Devices🚨<br><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "dharams@bluedart.com;tbijujohn@zebra.com;jaywants@bluedart.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "eheng.tan@zebra.com;GMSSBA@zebra.com;globaldmslevel2@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+                  "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({TRUE}, 'Offiline_TC57_Devices'[DeviceOffline>7Days])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Offiline_TC57_Devices',\n\t\t\t\t'Offiline_TC57_Devices'[DeviceName],\n\t\t\t\t'Offiline_TC57_Devices'[HardwareSerialNumber],\n\t\t\t\t'Offiline_TC57_Devices'[DeviceOffline>90Days],\n\t\t\t\t'Offiline_TC57_Devices'[OfflineDays],\n\t\t\t\t'Offiline_TC57_Devices'[Path],\n\t\t\t\t'Offiline_TC57_Devices'[Site],\n\t\t\t\t'Offiline_TC57_Devices'[State],\n\t\t\t\t'Offiline_TC57_Devices'[DeviceOffline>7Days],\n\t\t\t\t'Offiline_TC57_Devices'[DeviceOffline>3Days],\n\t\t\t\t'Offiline_TC57_Devices'[DevId]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Offiline_TC57_Devices'[OfflineDays] DESC,\n\t'Offiline_TC57_Devices'[DeviceName],\n\t'Offiline_TC57_Devices'[HardwareSerialNumber],\n\t'Offiline_TC57_Devices'[DeviceOffline>90Days],\n\t'Offiline_TC57_Devices'[Path],\n\t'Offiline_TC57_Devices'[Site],\n\t'Offiline_TC57_Devices'[State],\n\t'Offiline_TC57_Devices'[DeviceOffline>7Days],\n\t'Offiline_TC57_Devices'[DeviceOffline>3Days],\n\t'Offiline_TC57_Devices'[DevId]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              },
+              "runAfter": {
+                "Compose_FinalTableForEmail": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                "select": {
+                  "DeviceName": "@item()?['Offiline_TC57_Devices[DeviceName]']",
+                  "SerialNumber": "@string(item()?['Offiline_TC57_Devices[HardwareSerialNumber]'])",
+                  "Offline>3Days": "@item()?['Offiline_TC57_Devices[DeviceOffline>3Days]']",
+                  "Offline>7Days": "@item()?['Offiline_TC57_Devices[DeviceOffline>7Days]']",
+                  "OfflineDays": "@item()?['Offiline_TC57_Devices[OfflineDays]']",
+                  "Path": "@item()?['Offiline_TC57_Devices[Path]']",
+                  "State": "@item()?['Offiline_TC57_Devices[State]']",
+                  "Site": "@item()?['Offiline_TC57_Devices[Site]']"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Select'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  }
+                },
+                "Set_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContent",
+                    "value": "@body('Create_CSV_table')"
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Set_variable": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                  "runAfter": {
+                    "Create_HTML_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Send_an_email_(V2)": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "@outputs('EmailTO')",
+                      "emailMessage/Subject": "BlueDart: Offline > 7 Days",
+                      "emailMessage/Body": "<p class=\"editor-paragraph\">Dear team,<br><br>Please find below the \"Offline &gt;7 Days\" devices by State and the pivot table of \"Offline &gt;7 Days\" devices per site.</p><h3 class=\"editor-heading-h3\">@{outputs('Compose_barchart')}<br><span style=\"color: rgb(0, 0, 0);\">Device Count Offline &gt;7 Days per Site</span><br>@{outputs('Compose_FinalTableForEmail')}</h3><p class=\"editor-paragraph\">Detailed Serial Numbers and Information are in the attachment.</p><p class=\"editor-paragraph\"><br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                      "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                      "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                      "emailMessage/Cc": "@outputs('EmailCC')",
+                      "emailMessage/Attachments": [
+                        {
+                          "Name": "BlueDart_OfflineGT7Days_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                          "ContentBytes": "@variables('varCSVContent')"
+                        }
+                      ],
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_barchart": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Export_To_File_for_Power_BI_Reports": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "reportid": "30d61593-baa0-4480-b289-867016c387d2",
+                      "ExportPayloadPowerBIReport/format": "PNG",
+                      "ExportPayloadPowerBIReport/PowerBIReportExportConfiguration/settings/includeHiddenPages": true,
+                      "ExportPayloadPowerBIReport/PowerBIReportExportConfiguration/pages": [
+                        {
+                          "pageName": "45e7895b7149e6db954d"
+                        }
+                      ]
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "InitiateExportToFileForPbiReports",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_barchart": {
+                  "type": "Compose",
+                  "inputs": "<img src=\"data:image/png;base64,@{base64(outputs('Export_to_File_for_Power_BI_Reports')?['body'])}\" width=\"900\" />",
+                  "runAfter": {
+                    "Export_To_File_for_Power_BI_Reports": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Set_variable_1": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContent",
+                      "value": "DeviceName,\tSerialNumber,\tOffline>3Days,\tOffline>7Days,\tOfflineDays,\tPath,\tState,\tSite"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Select": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/BLUEDART/WEEKLYOFFLINE/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}",
+                  "name": "BlueDart_OfflineGT7Days_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                  "body": "@variables('varCSVContent')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Condition": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Compose_FinalTableForEmail": {
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{outputs('ComposePivotTable')}",
+              "runAfter": {
+                "ComposePivotTable": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "ComposePivotTable": {
+              "type": "Compose",
+              "inputs": "@replace(body('Create_HTML_PivotTable'), '<tr><td>TOTAL</td>', '<tr style=\"background-color:#F2F2F2; font-weight:bold;\"><td>TOTAL</td>')"
+            }
+          },
+          "runAfter": {
+            "Create_HTML_PivotTable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "OfflineDevicePerSite": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b953b6f5-d727-40fb-ae9a-e18143a7b916",
+              "specification/query": "DEFINE\n\tVAR __ValueFilterDM1 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(\n\t\t\t\tSUMMARIZECOLUMNS(\n\t\t\t\t\t'Offiline_TC57_Devices'[Site],\n\t\t\t\t\t\"CountHardwareSerialNumber\", CALCULATE(COUNTA('Offiline_TC57_Devices'[HardwareSerialNumber])),\n\t\t\t\t\t\"Offline_7Days\", 'Offiline_TC57_Devices'[Offline>7Days],\n\t\t\t\t\t\"v_Offline_7Days\", 'Offiline_TC57_Devices'[%Offline>7Days]\n\t\t\t\t)\n\t\t\t),\n\t\t\tNOT(ISBLANK([Offline_7Days]))\n\t\t)\n\n\tVAR __DS0Core = \n\t\tSUMMARIZECOLUMNS(\n\t\t\tROLLUPADDISSUBTOTAL('Offiline_TC57_Devices'[Site], \"IsGrandTotalRowTotal\"),\n\t\t\t__ValueFilterDM1,\n\t\t\t\"Offline_7Days\", 'Offiline_TC57_Devices'[Offline>7Days],\n\t\t\t\"CountHardwareSerialNumber\", CALCULATE(COUNTA('Offiline_TC57_Devices'[HardwareSerialNumber])),\n\t\t\t\"v_Offline_7Days\", 'Offiline_TC57_Devices'[%Offline>7Days]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, [Offline_7Days] DESC, 'Offiline_TC57_Devices'[Site]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SelectPivotTable": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('OfflineDevicePerSite')?['body/firstTableRows']",
+            "select": {
+              "Site": "@item()?['Offiline_TC57_Devices[Site]']",
+              "Total Devices": "@item()?['[CountHardwareSerialNumber]']",
+              "Devices Offline > 7 Days": "@item()?['[Offline_7Days]']",
+              "Offline Percentage": "@formatNumber(float(item()?['[v_Offline_7Days]']), 'P2')"
+            }
+          },
+          "runAfter": {
+            "OfflineDevicePerSite": [
+              "Succeeded"
+            ]
+          }
+        },
+        "PivotDataArray": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "PivotDataArray",
+                "type": "array",
+                "value": "@skip(body('SelectPivotTable'), 1)"
+              }
+            ]
+          },
+          "runAfter": {
+            "SelectPivotTable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Append_to_array_variable": {
+          "type": "AppendToArrayVariable",
+          "inputs": {
+            "name": "PivotDataArray",
+            "value": "@setProperty(first(body('SelectPivotTable')), 'Site', 'TOTAL')"
+          },
+          "runAfter": {
+            "PivotDataArray": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_HTML_PivotTable": {
+          "type": "Table",
+          "inputs": {
+            "from": "@variables('PivotDataArray')",
+            "format": "HTML"
+          },
+          "runAfter": {
+            "Append_to_array_variable": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

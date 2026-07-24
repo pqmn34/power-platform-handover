@@ -1,0 +1,245 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "api": {
+          "name": "shared_keyvault"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "uid": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "4c7c37c2-7348-4e22-b63f-67a02e9ada4a"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          }
+        },
+        "pswd": {
+          "runAfter": {
+            "uid": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "59796187-fe0a-4797-a23e-cb45cbba6780"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          }
+        },
+        "Initialize_variable": {
+          "runAfter": {
+            "pswd": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7bf030f6-85ce-4d1d-8b8c-7948ae69d900"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varLogs",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Get_items": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7a75bd52-8b59-4737-b22d-42b1704aaea3"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "1ecb1b06-1046-4f7d-a305-527096b0d656"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetItems",
+              "connectionName": "shared_sharepointonline"
+            }
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('Get_items')?['body/value']",
+          "actions": {
+            "HTTP": {
+              "metadata": {
+                "operationMetadataId": "eac02b60-7f5d-401e-ac36-e203c214a1e0"
+              },
+              "type": "Http",
+              "inputs": {
+                "uri": "https://zebrams001.eu.suremdm.io/api/devicelog/@{items('Apply_to_each')?['Device_ID']}",
+                "method": "GET",
+                "headers": {
+                  "ApiKey": "13967834-72B0-42F0-8F8C-66A69BE028D8",
+                  "Content-Type": "application/json"
+                },
+                "authentication": {
+                  "type": "Basic",
+                  "username": "@outputs('uid')?['body/value']",
+                  "password": "@outputs('pswd')?['body/value']"
+                }
+              }
+            },
+            "Create_file": {
+              "runAfter": {
+                "HTTP": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "51a1f9f1-3093-4945-8814-34d1fcfdf638"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/MS%26SS",
+                  "folderPath": "/RMG/6. DEVICE LOGS",
+                  "name": "@{items('Apply_to_each')?['Device_ID']}_@{utcNow()}.json",
+                  "body": "@body('HTTP')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Send_an_email_(V2)": {
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "289ab73e-8962-4e8d-b708-023d721b4bb2"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@items('Apply_to_each')?['Author/Email']",
+                  "emailMessage/Subject": "@{items('Apply_to_each')?['Device_ID']}_Device_Logs",
+                  "emailMessage/Body": "<p>Greetings!<br>\n<br>\nPlease find attached the device logs as requested.<br>\n<br>\nRegards<br>\n<br>\n@{items('Apply_to_each')?['Author/DisplayName']}</p>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0e9ba4a4-660c-4194-8168-c805ada98b54"
+          },
+          "type": "Foreach"
+        },
+        "Respond_to_a_Power_App_or_flow": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {}
+            },
+            "statusCode": 200
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

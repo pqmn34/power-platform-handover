@@ -1,0 +1,771 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_e6afa"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "UTC",
+            "startTime": "2026-01-07T14:00:00Z"
+          },
+          "evaluatedRecurrence": {
+            "interval": 1,
+            "frequency": "Month",
+            "timeZone": "UTC",
+            "startTime": "2026-01-07T14:00:00Z"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Scope": {
+          "actions": {
+            "LnSOffilineGT15DaysDevices": {
+              "runAfter": {
+                "ComposeMailTable": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "cd9e3733-8464-442a-8be8-e73ae8eb3623",
+                  "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"LnSDeviceOfflineGT15DaysCount\", 'LnSOffilineGT15DaysDevices'[LnSDeviceOfflineGT15DaysCount]\n\t)\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Compose-LnSOffilineGT15DaysDevices": {
+              "runAfter": {
+                "LnSOffilineGT15DaysDevices": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@int(coalesce(outputs('LnSOffilineGT15DaysDevices')?['body']?['firstTableRows']?[0]?['[LnSDeviceOfflineGT15DaysCount]'], 0))"
+            },
+            "LnSDeviceOfflineGT30DaysCount": {
+              "runAfter": {
+                "Create_filegt15days": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "cd9e3733-8464-442a-8be8-e73ae8eb3623",
+                  "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"LnSDeviceOfflineGT30DaysCount\", 'LnSOffilineGT30DaysDevices'[LnSDeviceOfflineGT30DaysCount]\n\t)\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Compose-LnSDeviceOfflineGT30DaysCount": {
+              "runAfter": {
+                "LnSDeviceOfflineGT30DaysCount": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@int(coalesce(outputs('LnSDeviceOfflineGT30DaysCount')?['body']?['firstTableRows']?[0]?['[LnSDeviceOfflineGT30DaysCount]'], 0))"
+            },
+            "LnSOffilineGT60DaysDevices": {
+              "runAfter": {
+                "Create_filegt30days": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "cd9e3733-8464-442a-8be8-e73ae8eb3623",
+                  "specification/query": "// DAX Query\nEVALUATE\n\tROW(\n\t\t\"LnSDeviceOfflineGT60DaysCount\", 'LnSOffilineGT60DaysDevices'[LnSDeviceOfflineGT60DaysCount]\n\t)\n",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Compose-LnSOffilineGT60DaysDevices": {
+              "runAfter": {
+                "LnSOffilineGT60DaysDevices": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@int(coalesce(outputs('LnSOffilineGT60DaysDevices')?['body']?['firstTableRows']?[0]?['[LnSDeviceOfflineGT60DaysCount]'], 0))"
+            },
+            "ConditionGT15Days": {
+              "actions": {
+                "Set_variable-gt15days": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContantGT15Days",
+                    "value": "Device Name,Device Offline GT 15 Days,Hardware Serial Number,ICCID,Model,Offline Days,Path,Site,Enrollment Time,Last Seen,Device ID"
+                  }
+                }
+              },
+              "runAfter": {
+                "Compose-LnSOffilineGT15DaysDevices": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "LnSOffilineGT15DaysDevices-table": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                        "datasetid": "cd9e3733-8464-442a-8be8-e73ae8eb3623",
+                        "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'LnSOffilineGT15DaysDevices',\n\t\t\t'LnSOffilineGT15DaysDevices'[DeviceName],\n\t\t\t'LnSOffilineGT15DaysDevices'[DeviceOffline>15Days],\n\t\t\t'LnSOffilineGT15DaysDevices'[HardwareSerialNumber],\n\t\t\t'LnSOffilineGT15DaysDevices'[ICCID],\n\t\t\t'LnSOffilineGT15DaysDevices'[Model],\n\t\t\t'LnSOffilineGT15DaysDevices'[OfflineDays],\n\t\t\t'LnSOffilineGT15DaysDevices'[Path],\n\t\t\t'LnSOffilineGT15DaysDevices'[Site],\n\t\t\t'LnSOffilineGT15DaysDevices'[EnrollmentTime],\n\t\t\t'LnSOffilineGT15DaysDevices'[LastSeen],\n\t\t\t'LnSOffilineGT15DaysDevices'[DeviceID]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'LnSOffilineGT15DaysDevices'[OfflineDays] DESC,\n\t'LnSOffilineGT15DaysDevices'[DeviceName],\n\t'LnSOffilineGT15DaysDevices'[DeviceOffline>15Days],\n\t'LnSOffilineGT15DaysDevices'[HardwareSerialNumber],\n\t'LnSOffilineGT15DaysDevices'[ICCID],\n\t'LnSOffilineGT15DaysDevices'[Model],\n\t'LnSOffilineGT15DaysDevices'[Path],\n\t'LnSOffilineGT15DaysDevices'[Site],\n\t'LnSOffilineGT15DaysDevices'[EnrollmentTime],\n\t'LnSOffilineGT15DaysDevices'[LastSeen],\n\t'LnSOffilineGT15DaysDevices'[DeviceID]\n",
+                        "specification/serializerSettings/includeNulls": false
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                        "connectionName": "shared_powerbi",
+                        "operationId": "ExecuteDatasetQuery"
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    }
+                  },
+                  "SelectGT15Days": {
+                    "runAfter": {
+                      "LnSOffilineGT15DaysDevices-table": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Select",
+                    "inputs": {
+                      "from": "@outputs('LnSOffilineGT15DaysDevices-table')?['body/firstTableRows']",
+                      "select": {
+                        "Device Name": "@item()?['LnSOffilineGT15DaysDevices[DeviceName]']",
+                        "Device Offline GT 15 Days": "@item()?['LnSOffilineGT15DaysDevices[DeviceOffline>15Days]']",
+                        "Hardware Serial Number": "@item()?['LnSOffilineGT15DaysDevices[HardwareSerialNumber]']",
+                        "ICCID": "@concat('''', item()?['LnSOffilineGT15DaysDevices[ICCID]'])",
+                        "Model": "@item()?['LnSOffilineGT15DaysDevices[Model]']",
+                        "Offline Days": "@item()?['LnSOffilineGT15DaysDevices[OfflineDays]']",
+                        "Path": "@item()?['LnSOffilineGT15DaysDevices[Path]']",
+                        "Site": "@item()?['LnSOffilineGT15DaysDevices[Site]']",
+                        "Enrollment Time": "@formatDateTime(item()?['LnSOffilineGT15DaysDevices[EnrollmentTime]'], 'dd/MM/yyyy HH:mm')",
+                        "Last Seen": "@formatDateTime(item()?['LnSOffilineGT15DaysDevices[LastSeen]'], 'dd/MM/yyyy HH:mm')",
+                        "Device ID": "@item()?['LnSOffilineGT15DaysDevices[DeviceID]']"
+                      }
+                    }
+                  },
+                  "Create_CSV_tablegt15days": {
+                    "runAfter": {
+                      "SelectGT15Days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('SelectGT15Days')",
+                      "format": "CSV"
+                    }
+                  },
+                  "Set_variable-gt15dayscontent": {
+                    "runAfter": {
+                      "Create_CSV_tablegt15days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContantGT15Days",
+                      "value": "@body('Create_CSV_tablegt15days')"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "lessOrEquals": [
+                      "@outputs('Compose-LnSOffilineGT15DaysDevices')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "ConditionGT30Days": {
+              "actions": {
+                "Set_variable-gt30days": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContantGT30Days",
+                    "value": "Device Name,Device Offline GT 30 Days,Hardware Serial Number,ICCID,Model,Offline Days,Path,Site,Enrollment Time,Last Seen,Device ID"
+                  }
+                }
+              },
+              "runAfter": {
+                "Compose-LnSDeviceOfflineGT30DaysCount": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "LnSOffilineGT30DaysDevices-table": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                        "datasetid": "cd9e3733-8464-442a-8be8-e73ae8eb3623",
+                        "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'LnSOffilineGT30DaysDevices',\n\t\t\t'LnSOffilineGT30DaysDevices'[DeviceName],\n\t\t\t'LnSOffilineGT30DaysDevices'[DeviceOffline>30Days],\n\t\t\t'LnSOffilineGT30DaysDevices'[HardwareSerialNumber],\n\t\t\t'LnSOffilineGT30DaysDevices'[ICCID],\n\t\t\t'LnSOffilineGT30DaysDevices'[Model],\n\t\t\t'LnSOffilineGT30DaysDevices'[OfflineDays],\n\t\t\t'LnSOffilineGT30DaysDevices'[Path],\n\t\t\t'LnSOffilineGT30DaysDevices'[Site],\n\t\t\t'LnSOffilineGT30DaysDevices'[EnrollmentTime],\n\t\t\t'LnSOffilineGT30DaysDevices'[LastSeen],\n\t\t\t'LnSOffilineGT30DaysDevices'[DeviceID]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'LnSOffilineGT30DaysDevices'[DeviceName],\n\t'LnSOffilineGT30DaysDevices'[DeviceOffline>30Days],\n\t'LnSOffilineGT30DaysDevices'[HardwareSerialNumber],\n\t'LnSOffilineGT30DaysDevices'[ICCID],\n\t'LnSOffilineGT30DaysDevices'[Model],\n\t'LnSOffilineGT30DaysDevices'[OfflineDays],\n\t'LnSOffilineGT30DaysDevices'[Path],\n\t'LnSOffilineGT30DaysDevices'[Site],\n\t'LnSOffilineGT30DaysDevices'[EnrollmentTime],\n\t'LnSOffilineGT30DaysDevices'[LastSeen],\n\t'LnSOffilineGT30DaysDevices'[DeviceID]\n",
+                        "specification/serializerSettings/includeNulls": false
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                        "connectionName": "shared_powerbi",
+                        "operationId": "ExecuteDatasetQuery"
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    }
+                  },
+                  "SelectGT30Days": {
+                    "runAfter": {
+                      "LnSOffilineGT30DaysDevices-table": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Select",
+                    "inputs": {
+                      "from": "@outputs('LnSOffilineGT30DaysDevices-table')?['body/firstTableRows']",
+                      "select": {
+                        "Device Name": "@item()?['LnSOffilineGT30DaysDevices[DeviceName]']",
+                        "Device Offline GT 30 Days": "@item()?['LnSOffilineGT30DaysDevices[DeviceOffline>30Days]']",
+                        "Hardware Serial Number": "@item()?['LnSOffilineGT30DaysDevices[HardwareSerialNumber]']",
+                        "ICCID": "@concat('''', item()?['LnSOffilineGT30DaysDevices[ICCID]'])",
+                        "Model": "@item()?['LnSOffilineGT30DaysDevices[Model]']",
+                        "Offline Days": "@item()?['LnSOffilineGT30DaysDevices[OfflineDays]']",
+                        "Path": "@item()?['LnSOffilineGT30DaysDevices[Path]']",
+                        "Site": "@item()?['LnSOffilineGT30DaysDevices[Site]']",
+                        "Enrollment Time": "@formatDateTime(item()?['LnSOffilineGT30DaysDevices[EnrollmentTime]'], 'dd/MM/yyyy HH:mm')",
+                        "Last Seen": "@formatDateTime(item()?['LnSOffilineGT30DaysDevices[LastSeen]'], 'dd/MM/yyyy HH:mm')",
+                        "Device ID": "@item()?['LnSOffilineGT30DaysDevices[DeviceID]']"
+                      }
+                    }
+                  },
+                  "Create_CSV_tablegt30days": {
+                    "runAfter": {
+                      "SelectGT30Days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('SelectGT30Days')",
+                      "format": "CSV"
+                    }
+                  },
+                  "Set_variable-gt30dayscontent": {
+                    "runAfter": {
+                      "Create_CSV_tablegt30days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContantGT30Days",
+                      "value": "@body('Create_CSV_tablegt30days')"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "lessOrEquals": [
+                      "@outputs('Compose-LnSDeviceOfflineGT30DaysCount')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "ConditionGT60Days": {
+              "actions": {
+                "Set_variable-gt60days": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContantGT60Days",
+                    "value": "Device Name,Device Offline GT 60 Days,Hardware Serial Number,ICCID,Model,Offline Days,Path,Site,Enrollment Time,Last Seen,Device ID"
+                  }
+                }
+              },
+              "runAfter": {
+                "Compose-LnSOffilineGT60DaysDevices": [
+                  "Succeeded"
+                ]
+              },
+              "else": {
+                "actions": {
+                  "LnSOffilineGT60DaysDevices-table": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                        "datasetid": "cd9e3733-8464-442a-8be8-e73ae8eb3623",
+                        "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'LnSOffilineGT60DaysDevices',\n\t\t\t'LnSOffilineGT60DaysDevices'[DeviceName],\n\t\t\t'LnSOffilineGT60DaysDevices'[HardwareSerialNumber],\n\t\t\t'LnSOffilineGT60DaysDevices'[ICCID],\n\t\t\t'LnSOffilineGT60DaysDevices'[Model],\n\t\t\t'LnSOffilineGT60DaysDevices'[OfflineDays],\n\t\t\t'LnSOffilineGT60DaysDevices'[Path],\n\t\t\t'LnSOffilineGT60DaysDevices'[Site],\n\t\t\t'LnSOffilineGT60DaysDevices'[DeviceID],\n\t\t\t'LnSOffilineGT60DaysDevices'[EnrollmentTime],\n\t\t\t'LnSOffilineGT60DaysDevices'[DeviceOffline>60Days],\n\t\t\t'LnSOffilineGT60DaysDevices'[LastSeen]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'LnSOffilineGT60DaysDevices'[DeviceName],\n\t'LnSOffilineGT60DaysDevices'[HardwareSerialNumber],\n\t'LnSOffilineGT60DaysDevices'[ICCID],\n\t'LnSOffilineGT60DaysDevices'[Model],\n\t'LnSOffilineGT60DaysDevices'[OfflineDays],\n\t'LnSOffilineGT60DaysDevices'[Path],\n\t'LnSOffilineGT60DaysDevices'[Site],\n\t'LnSOffilineGT60DaysDevices'[DeviceID],\n\t'LnSOffilineGT60DaysDevices'[EnrollmentTime],\n\t'LnSOffilineGT60DaysDevices'[DeviceOffline>60Days],\n\t'LnSOffilineGT60DaysDevices'[LastSeen]\n",
+                        "specification/serializerSettings/includeNulls": false
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                        "connectionName": "shared_powerbi",
+                        "operationId": "ExecuteDatasetQuery"
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    }
+                  },
+                  "SelectGT60Days": {
+                    "runAfter": {
+                      "LnSOffilineGT60DaysDevices-table": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Select",
+                    "inputs": {
+                      "from": "@outputs('LnSOffilineGT60DaysDevices-table')?['body/firstTableRows']",
+                      "select": {
+                        "Device Name": "@item()?['LnSOffilineGT60DaysDevices[DeviceName]']",
+                        "Device Offline GT 60 Days": "@item()?['LnSOffilineGT60DaysDevices[DeviceOffline>60Days]']",
+                        "Hardware Serial Number": "@item()?['LnSOffilineGT60DaysDevices[HardwareSerialNumber]']",
+                        "ICCID": "@concat('''', item()?['LnSOffilineGT60DaysDevices[ICCID]'])",
+                        "Model": "@item()?['LnSOffilineGT60DaysDevices[Model]']",
+                        "Offline Days": "@item()?['LnSOffilineGT60DaysDevices[OfflineDays]']",
+                        "Path": "@item()?['LnSOffilineGT60DaysDevices[Path]']",
+                        "Site": "@item()?['LnSOffilineGT60DaysDevices[Site]']",
+                        "Enrollment Time": "@formatDateTime(item()?['LnSOffilineGT60DaysDevices[EnrollmentTime]'], 'dd/MM/yyyy HH:mm')",
+                        "Last Seen": "@formatDateTime(item()?['LnSOffilineGT60DaysDevices[LastSeen]'], 'dd/MM/yyyy HH:mm')",
+                        "Device ID": "@item()?['LnSOffilineGT60DaysDevices[DeviceID]']"
+                      }
+                    }
+                  },
+                  "Create_CSV_tablegt60days": {
+                    "runAfter": {
+                      "SelectGT60Days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "Table",
+                    "inputs": {
+                      "from": "@body('SelectGT60Days')",
+                      "format": "CSV"
+                    }
+                  },
+                  "Set_variable-gt60dayscontent": {
+                    "runAfter": {
+                      "Create_CSV_tablegt60days": [
+                        "Succeeded"
+                      ]
+                    },
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "varCSVContantGT60Days",
+                      "value": "@body('Create_CSV_tablegt60days')"
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "lessOrEquals": [
+                      "@outputs('Compose-LnSOffilineGT60DaysDevices')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            },
+            "Create_filegt15days": {
+              "runAfter": {
+                "ConditionGT15Days": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/EVRI PREMIUM/COLL-8/OFFLINE MORE THAN 15 DAYS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMM')}",
+                  "name": "coll8_offlinegt15days_@{formatDateTime(utcNow(),'yyyyMMdd HH:mm')}.csv",
+                  "body": "@variables('varCSVContantGT15Days')",
+                  "overwrite": true
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "CreateFile"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Create_filegt30days": {
+              "runAfter": {
+                "ConditionGT30Days": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/EVRI PREMIUM/COLL-8/OFFLINE MORE THAN 30 DAYS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMM')}",
+                  "name": "coll8_offlinegt30days_@{formatDateTime(utcNow(),'yyyyMMdd HH:mm')}.csv",
+                  "body": "@variables('varCSVContantGT30Days')",
+                  "overwrite": true
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "CreateFile"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Create_filegt60days": {
+              "runAfter": {
+                "ConditionGT60Days": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/EVRI PREMIUM/COLL-8/OFFLINE MORE THAN 60 DAYS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMM')}",
+                  "name": "coll8_offlinegt60days_@{formatDateTime(utcNow(),'yyyyMMdd HH:mm')}.csv",
+                  "body": "@variables('varCSVContantGT60Days')",
+                  "overwrite": true
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "CreateFile"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Send_an_email_(V2)": {
+              "runAfter": {
+                "Create_filegt60days": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@outputs('EmailTO')",
+                  "emailMessage/Subject": "EVRi Coll-8: SOTI Device Offline > 15/30/60 Days Devices ",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Greetings,</em></i><br><br>Please find the report of offline devices attached.<br><br>Evri Coll-8 team, please follow up with the site managers regarding the devices that have been offline for 15 days.<br>Devices offline for more than 30 days will be moved to the LOST folder on the 15th and locked if they come online.<br>Devices that have been offline for more than 60 days will be deleted from SOTI at the end of the month. Zebra Service Desk will deactivate SIM cards for these devices.<br><b><strong class=\"editor-text-bold\">EVRI COLL-8 DEVICES</strong></b><br>@{outputs('ComposeMailTable')}<br><br>For any questions regarding the report data, don't hesitate to get in touch with your Zebra Service Manager (jakub.polak@zebra.com).</p><br><p class=\"editor-paragraph\"><u><i><em class=\"editor-text-italic editor-text-underline\">Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</em></i></u><br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                  "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('EmailCC')",
+                  "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "DevicesOfflineMoreThan15Days.csv",
+                      "ContentBytes": "@variables('varCSVContantGT15Days')"
+                    },
+                    {
+                      "Name": "DevicesOfflineMoreThan30Days.csv",
+                      "ContentBytes": "@variables('varCSVContantGT30Days')"
+                    },
+                    {
+                      "Name": "ZebraConsOfflineMoreThan60Days.csv",
+                      "ContentBytes": "@variables('varCSVContantGT60Days')"
+                    }
+                  ],
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "SendEmailV2"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Run_a_query_against_a_datasetMailBody": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "cd9e3733-8464-442a-8be8-e73ae8eb3623",
+                  "specification/query": "EVALUATE\n\tROW(\n\t\t\"LnSDeviceOfflineGT15DaysCount\", 'LnSOffilineGT15DaysDevices'[LnSDeviceOfflineGT15DaysCount],\n\t\t\"LnSDeviceOfflineGT30DaysCount\", 'LnSOffilineGT30DaysDevices'[LnSDeviceOfflineGT30DaysCount],\n\t\t\"LnSDeviceOfflineGT60DaysCount\", 'LnSOffilineGT60DaysDevices'[LnSDeviceOfflineGT60DaysCount]\n\t)",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "connectionName": "shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "SelectMailBody": {
+              "runAfter": {
+                "Run_a_query_against_a_datasetMailBody": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_datasetMailBody')?['body/firstTableRows']",
+                "select": {
+                  "Offline > 15 Days": "@item()?['[LnSDeviceOfflineGT15DaysCount]']",
+                  "Offline > 30 Days": "@item()?['[LnSDeviceOfflineGT30DaysCount]']",
+                  "Offline > 60 Days": "@item()?['[LnSDeviceOfflineGT60DaysCount]']"
+                }
+              }
+            },
+            "Create_HTML_table": {
+              "runAfter": {
+                "SelectMailBody": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Table",
+              "inputs": {
+                "from": "@body('SelectMailBody')",
+                "format": "HTML"
+              }
+            },
+            "ComposeMailTable": {
+              "runAfter": {
+                "Create_HTML_table": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}"
+            }
+          },
+          "runAfter": {
+            "varCSVContantGT60Days": [
+              "Succeeded"
+            ]
+          },
+          "type": "Scope"
+        },
+        "varCSVContantGT15Days": {
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContantGT15Days",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "varCSVContantGT30Days": {
+          "runAfter": {
+            "varCSVContantGT15Days": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContantGT30Days",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "varCSVContantGT60Days": {
+          "runAfter": {
+            "varCSVContantGT30Days": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContantGT60Days",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "Error_Handling": {
+          "actions": {
+            "Filter_array": {
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              },
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            },
+            "Error_Message": {
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              },
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')"
+            },
+            "Post_message_in_a_chat_or_channel": {
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n<div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n</div>\n<div style=\"padding: 15px; background-color: #f9f9f9;\">\n<table style=\"width: 100%; border-collapse: collapse;\">\n<tbody>\n<tr>\n<td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n<td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n<td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n<td style=\"padding: 5px 0; color: #d83b01;\"><b><u>@{outputs('Error_Message')}</u></b></td>\n</tr>\n<tr>\n<td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n<td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n</tr>\n</tbody>\n</table>\n<br>\n<a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\nView Failed Run\n</a>\n</div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "connectionName": "shared_teams-1",
+                  "operationId": "PostMessageToConversation"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "type": "Scope"
+        },
+        "EmailTO": {
+          "runAfter": {},
+          "type": "Compose",
+          "inputs": "stephanie.keats@dhl.com;sam.turki@evri.com;Paul.Tate@Evri.com;hukasset.management@hermes-europe.co.uk"
+        },
+        "EmailCC": {
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "DMSDeliveryLeads@zebra.com;Jakub.Polak@zebra.com;GMSSBA@zebra.com;MS_CRM@zebra.com"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,933 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "0"
+              ],
+              "minutes": [
+                15
+              ],
+              "weekDays": [
+                "Wednesday"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_secret_-_Key": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-prod42g-key"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {},
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secret_UID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_-_Key": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secret_PSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_UID": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "YellowMsg_Count": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "DEFINE \n    VAR __TargetDate = TODAY() - 2\n    VAR __DS0FilterTable = TREATAS({\"Match\"}, 'Yellow Message'[Missmatch DOBI])\n    VAR __DateFilter = FILTER('Yellow Message', INT('Yellow Message'[Ship Date]) = INT(__TargetDate))\n\nEVALUATE\n\tSUMMARIZECOLUMNS(\n\t\t__DS0FilterTable,\n        __DateFilter,\n\t\t\"DistinctCountDevice_Serial_Number\", IGNORE(CALCULATE(DISTINCTCOUNT('Yellow Message'[Device Serial Number])))\n\t)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "FailedListYM": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Compose-YellowMessage": {
+          "type": "Compose",
+          "inputs": "@int(coalesce(outputs('YellowMsg_Count')?['body/firstTableRows']?[0]?['[DistinctCountDevice_Serial_Number]'], 0))",
+          "runAfter": {
+            "Compose-RedMessage": [
+              "Succeeded"
+            ]
+          }
+        },
+        "URI": {
+          "type": "Compose",
+          "inputs": "@'https://zebrams001.eu.suremdm.io/api/v2/jobassignment'",
+          "runAfter": {
+            "Get_secret_PSWD": [
+              "Succeeded"
+            ]
+          }
+        },
+        "SuccessListYM": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "SuccessList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "URI": [
+              "Succeeded"
+            ]
+          }
+        },
+        "FailedListYM": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "FailedList",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "SuccessListYM": [
+              "Succeeded"
+            ]
+          }
+        },
+        "RedMsg_Count": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "DEFINE \n    VAR __TargetDate = TODAY() - 10\n    VAR __DS0FilterTable = TREATAS({\"Match\"}, 'Red Message'[Missmatch DOBI])\n    VAR __DateFilter = FILTER('Red Message', INT('Red Message'[Ship Date]) <= INT(__TargetDate))\n\nEVALUATE\n\tSUMMARIZECOLUMNS(\n\t\t__DS0FilterTable,\n        __DateFilter,\n\t\t\"DistinctCountDevice_Serial_Number\", IGNORE(CALCULATE(DISTINCTCOUNT('Red Message'[Device Serial Number])))\n\t)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "YellowMsg_Count": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Compose-RedMessage": {
+          "type": "Compose",
+          "inputs": "@int(coalesce(outputs('RedMsg_Count')?['body/firstTableRows']?[0]?['[DistinctCountDevice_Serial_Number]'], 0))",
+          "runAfter": {
+            "RedMsg_Count": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Condition-RedMessage": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@outputs('Compose-RedMessage')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Run_a_query_against_a_dataset_-_RedMsg": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+                      "specification/query": "DEFINE\n\tVAR __TargetDate = TODAY() - 10\n\tVAR __DS0FilterTable = TREATAS({\"Match\"}, 'Red Message'[Missmatch DOBI])\n    VAR __DateFilter = FILTER('Red Message', INT('Red Message'[Ship Date]) <= INT(__TargetDate))\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Red Message',\n\t\t\t\t'Red Message'[RML DOBI],\n\t\t\t\t'Red Message'[DOBI],\n\t\t\t\t'Red Message'[Battery Health],\n\t\t\t\t'Red Message'[Device Serial Number],\n\t\t\t\t'Red Message'[Message Due Date],\n\t\t\t\t'Red Message'[RML Site],\n\t\t\t\t'Red Message'[Ship Date],\n\t\t\t\t'Red Message'[Missmatch DOBI],\n\t\t\t\t'Red Message'[Site Name],\n\t\t\t\t'Red Message'[Device ID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n            KEEPFILTERS(__DateFilter)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Red Message'[Device Serial Number] DESC",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Select-RedMsg": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_-_RedMsg')?['body/firstTableRows']",
+                    "select": {
+                      "RML DOBI": "@item()?['Red Message[RML DOBI]']",
+                      "DOBI": "@item()?['Red Message[DOBI]']",
+                      "Battery Health": "@item()?['Red Message[Battery Health]']",
+                      "Device Serial Number": "@item()?['Red Message[Device Serial Number]']",
+                      "Message Due Date": "@item()?['Red Message[Message Due Date]']",
+                      "RML Site": "@item()?['Red Message[RML Site]']",
+                      "Ship Date": "@item()?['Red Message[Ship Date]']",
+                      "Missmatch DOBI": "@item()?['Red Message[Missmatch DOBI]']",
+                      "Site Name": "@item()?['Red Message[Site Name]']",
+                      "Device ID": "@item()?['Red Message[Device ID]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_-_RedMsg": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_CSV_table-RedMsgDevices": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select-RedMsg')",
+                    "format": "CSV"
+                  },
+                  "runAfter": {
+                    "Select-RedMsg": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_dataset_-_RedMsgJobID": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+                      "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS(\n\t\t\t{\"Battery_Replacement_Alert_Red\",\n\t\t\t\t\"Battery_Replacement_Alert_Yellow\"},\n\t\t\t'royal_mail_jobs'[job_name]\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE('royal_mail_jobs', 'royal_mail_jobs'[job_name], 'royal_mail_jobs'[job_id]),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'royal_mail_jobs'[job_name], 'royal_mail_jobs'[job_id]\n",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_CSV_table-RedMsgDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Filter_array-RedMsgJobId": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_-_RedMsgJobID')?['body/firstTableRows']",
+                    "where": "@equals(item()?['royal_mail_jobs[job_name]'],'Battery_Replacement_Alert_Red')"
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_-_RedMsgJobID": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose-RedMsgJobId": {
+                  "type": "Compose",
+                  "inputs": "@first(body('Filter_array-RedMsgJobId'))?['royal_mail_jobs[job_id]']",
+                  "runAfter": {
+                    "Filter_array-RedMsgJobId": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Apply_to_each-RedMsg": {
+                  "type": "Foreach",
+                  "foreach": "@body('Select-RedMsg')",
+                  "actions": {
+                    "HTTP_Apply_RM_Job": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "@outputs('URI')",
+                        "method": "POST",
+                        "headers": {
+                          "ApiKey": "@{outputs('Get_secret_-_Key')?['body/value']}",
+                          "Content-TypeContent-Type": "application/json"
+                        },
+                        "body": {
+                          "DeviceIds": [
+                            "@{items('Apply_to_each-RedMsg')?['Device ID']}"
+                          ],
+                          "JobId": "@{outputs('Compose-RedMsgJobId')}",
+                          "DownloadType": "2"
+                        },
+                        "authentication": {
+                          "type": "Basic",
+                          "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                          "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "ConditionRM": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@coalesce(outputs('HTTP_Apply_RM_Job')?['body']?['status'], false)",
+                              true
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Append_to_array_variable-RMSuccess": {
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "SuccessList",
+                            "value": {
+                              "Device ID": "@{items('Apply_to_each-RedMsg')?['Device ID']}",
+                              "Site Name": "@{items('Apply_to_each-RedMsg')?['Site Name']}",
+                              "Device Serial Number": "@{items('Apply_to_each-RedMsg')?['Device Serial Number']}",
+                              "Job ID": "@{outputs('Compose-RedMsgJobId')}",
+                              "HTTP Status": "@{string(outputs('HTTP_Apply_RM_Job')?['statusCode'])}",
+                              "API Message": "@{coalesce(outputs('HTTP_Apply_RM_Job')?['body']?['message'], 'Success')}"
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Append_to_array_variable-RMFailed": {
+                            "type": "AppendToArrayVariable",
+                            "inputs": {
+                              "name": "FailedList",
+                              "value": {
+                                "Device ID": "@{items('Apply_to_each-RedMsg')?['Device ID']}",
+                                "Site Name": "@{items('Apply_to_each-RedMsg')?['Site Name']}",
+                                "Device Serial Number": "@{items('Apply_to_each-RedMsg')?['Device Serial Number']}",
+                                "Job ID": "@{outputs('Compose-RedMsgJobId')}",
+                                "HTTP Status": "@{string(outputs('HTTP_Apply_RM_Job')?['statusCode'])}",
+                                "API Message": "@{coalesce(outputs('HTTP_Apply_RM_Job')?['body']?['message'], 'Failed to apply job')}"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "HTTP_Apply_RM_Job": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Delay_RedMsg": {
+                      "type": "Wait",
+                      "inputs": {
+                        "interval": {
+                          "count": 1,
+                          "unit": "Second"
+                        }
+                      },
+                      "runAfter": {
+                        "ConditionRM": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Compose-RedMsgJobId": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table_-_RMSuccess": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@variables('SuccessList')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Apply_to_each-RedMsg": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table_-_RMFailed": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@variables('FailedList')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Create_HTML_table_-_RMSuccess": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Send_an_email_(V2)_-_RedMessage": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "PQMN34@zebra.com",
+                      "emailMessage/Subject": "RMG: Battery Decommissioning Red Message",
+                      "emailMessage/Body": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Message: \"✅ </strong></b><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">Red Message Update: </strong></b><br>The 42Gears Red Message job has completed.<br><br>Job ID: @{outputs('Compose-RedMsgJobId')}<br>Successful devices: @{length(variables('SuccessList'))}<br>Failed devices: @{length(variables('FailedList'))}<br><br>Successful Devices<br>@{outputs('Create_HTML_table_-_RMSuccess')}<br><br>Failed Devices<br>@{outputs('Create_HTML_table_-_RMFailed')}<br></p><br>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
+                  },
+                  "runAfter": {
+                    "Post_message_in_a_chat_or_channel-RedMessageStatus": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Post_message_in_a_chat_or_channel-RedMessageStatus": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "poster": "Flow bot",
+                      "location": "Channel",
+                      "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                      "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                      "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">Message: \"✅ Red Message Update:</strong></b><br>The 42Gears Red Message job has completed.<br><br>Job ID: @{outputs('Compose-RedMsgJobId')}<br>Successful devices: @{length(variables('SuccessList'))}<br>Failed devices: @{length(variables('FailedList'))}<br><br><br></p><br>"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                      "operationId": "PostMessageToConversation",
+                      "connectionName": "shared_teams"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_HTML_table_-_RMFailed": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Post_message_in_a_chat_or_channel-RedMessage": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "poster": "User",
+                        "location": "Channel",
+                        "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                        "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                        "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Message:</strong></b> \"✅ <b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">Red Message Update:</strong></b> There are 0 devices pending for Yellow messages today. No action taken.\"</p>"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                        "operationId": "PostMessageToConversation",
+                        "connectionName": "shared_teams"
+                      }
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Condition-YellowMessage": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Condition-YellowMessage": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@outputs('Compose-YellowMessage')",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Run_a_query_against_a_dataset_-_YellowMsg": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+                      "specification/query": "DEFINE\n\tVAR __TargetDate = TODAY() - 2\n\tVAR __DS0FilterTable = TREATAS({\"Match\"}, 'Yellow Message'[Missmatch DOBI])\n    VAR __DateFilter = FILTER('Yellow Message', INT('Yellow Message'[Ship Date]) = INT(__TargetDate))\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'Yellow Message',\n\t\t\t\t'Yellow Message'[RML DOBI],\n\t\t\t\t'Yellow Message'[DOBI],\n\t\t\t\t'Yellow Message'[Battery Health],\n\t\t\t\t'Yellow Message'[Device Serial Number],\n\t\t\t\t'Yellow Message'[Message Due Date],\n\t\t\t\t'Yellow Message'[RML Site],\n\t\t\t\t'Yellow Message'[Ship Date],\n\t\t\t\t'Yellow Message'[Missmatch DOBI],\n\t\t\t\t'Yellow Message'[Site Name],\n\t\t\t\t'Yellow Message'[Device ID]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n            KEEPFILTERS(__DateFilter)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Yellow Message'[Device Serial Number] DESC",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Run_a_query_against_a_dataset_-_YellowMsgJobID": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+                      "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS(\n\t\t\t{\"Battery_Monitoring_Alert_Yellow\",\n\t\t\t\t\"Battery_Replacement_Alert_Red\"},\n\t\t\t'royal_mail_jobs'[job_name]\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE('royal_mail_jobs', 'royal_mail_jobs'[job_name], 'royal_mail_jobs'[job_id]),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'royal_mail_jobs'[job_name], 'royal_mail_jobs'[job_id]\n",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_CSV_table-YellowMsgDevices": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Select-YellowMsg": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_-_YellowMsg')?['body/firstTableRows']",
+                    "select": {
+                      "RML DOBI": "@item()?['Yellow Message[RML DOBI]']",
+                      "DOBI": "@item()?['Yellow Message[DOBI]']",
+                      "Battery Health": "@item()?['Yellow Message[Battery Health]']",
+                      "Device Serial Number": "@item()?['Yellow Message[Device Serial Number]']",
+                      "Message Due Date": "@item()?['Yellow Message[Message Due Date]']",
+                      "RML Site": "@item()?['Yellow Message[RML Site]']",
+                      "Ship Date": "@item()?['Yellow Message[Ship Date]']",
+                      "Missmatch DOBI": "@item()?['Yellow Message[Missmatch DOBI]']",
+                      "Site Name": "@item()?['Yellow Message[Site Name]']",
+                      "Device ID": "@item()?['Yellow Message[Device ID]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_-_YellowMsg": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Filter_array-YellowMsgJobId": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_-_YellowMsgJobID')?['body/firstTableRows']",
+                    "where": "@equals(item()?['royal_mail_jobs[job_name]'],'Battery_Monitoring_Alert_Yellow')"
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_-_YellowMsgJobID": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose-YellowMsgJobId": {
+                  "type": "Compose",
+                  "inputs": "@first(body('Filter_array-YellowMsgJobId'))?['royal_mail_jobs[job_id]']",
+                  "runAfter": {
+                    "Filter_array-YellowMsgJobId": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_CSV_table-YellowMsgDevices": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select-YellowMsg')",
+                    "format": "CSV"
+                  },
+                  "runAfter": {
+                    "Select-YellowMsg": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Apply_to_each-YellowMsg": {
+                  "type": "Foreach",
+                  "foreach": "@body('Select-YellowMsg')",
+                  "actions": {
+                    "HTTP_Apply_YM_Job": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "@outputs('URI')",
+                        "method": "POST",
+                        "headers": {
+                          "ApiKey": "@{outputs('Get_secret_-_Key')?['body/value']}",
+                          "Content-TypeContent-Type": "application/json"
+                        },
+                        "body": {
+                          "DeviceIds": [
+                            "@{items('Apply_to_each-YellowMsg')?['Device ID']}"
+                          ],
+                          "JobId": "@{outputs('Compose-YellowMsgJobId')}",
+                          "DownloadType": "2"
+                        },
+                        "authentication": {
+                          "type": "Basic",
+                          "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                          "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "ConditionYM": {
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@coalesce(outputs('HTTP_Apply_YM_Job')?['body']?['status'], false)",
+                              true
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Append_to_array_variable-YMSuccess": {
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "SuccessList",
+                            "value": {
+                              "Device ID": "@{items('Apply_to_each-YellowMsg')?['Device ID']}",
+                              "Site Name": "@{items('Apply_to_each-YellowMsg')?['Site Name']}",
+                              "Device Serial Number": "@{items('Apply_to_each-YellowMsg')?['Device Serial Number']}",
+                              "Job ID": "@{outputs('Compose-YellowMsgJobId')}",
+                              "HTTP Status": "@{string(outputs('HTTP_Apply_YM_Job')?['statusCode'])}",
+                              "API Message": "@{coalesce(outputs('HTTP_Apply_YM_Job')?['body']?['message'], 'Success')}"
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Append_to_array_variable-YMFailed": {
+                            "type": "AppendToArrayVariable",
+                            "inputs": {
+                              "name": "FailedList",
+                              "value": {
+                                "Device ID": "@{items('Apply_to_each-YellowMsg')?['Device ID']}",
+                                "Site Name": "@{items('Apply_to_each-YellowMsg')?['Site Name']}",
+                                "Device Serial Number": "@{items('Apply_to_each-YellowMsg')?['Device Serial Number']}",
+                                "Job ID": "@{outputs('Compose-YellowMsgJobId')}",
+                                "HTTP Status": "@{string(outputs('HTTP_Apply_YM_Job')?['statusCode'])}",
+                                "API Message": "@{coalesce(outputs('HTTP_Apply_YM_Job')?['body']?['message'], 'Failed to apply job')}"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "HTTP_Apply_YM_Job": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Delay_YellowMsg": {
+                      "type": "Wait",
+                      "inputs": {
+                        "interval": {
+                          "count": 1,
+                          "unit": "Second"
+                        }
+                      },
+                      "runAfter": {
+                        "ConditionYM": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Compose-YellowMsgJobId": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table_-_YMFailed": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@variables('FailedList')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Create_HTML_table_-_YMSuccess": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table_-_YMSuccess": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@variables('SuccessList')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Apply_to_each-YellowMsg": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Send_an_email_(V2)_-_YellowMessage": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "pqmn34@zebra.com",
+                      "emailMessage/Subject": "RMG: Battery Decommissioning Yellow Message",
+                      "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,</p><br><p class=\"editor-paragraph\">The 42Gears Yellow Message job has completed.</p><p class=\"editor-paragraph\"><br><b><strong class=\"editor-text-bold\">Job ID:</strong></b> @{outputs('Compose-YellowMsgJobId')}<br><b><strong class=\"editor-text-bold\">Successful devices:</strong></b> @{length(variables('SuccessList'))}<br><b><strong class=\"editor-text-bold\">Failed devices:</strong></b> @{length(variables('FailedList'))}</p><br><h3 class=\"editor-heading-h3\">Successful Devices<br>@{outputs('Create_HTML_table_-_YMSuccess')}<br></h3><p class=\"editor-paragraph\">Failed Devices<br>@{outputs('Create_HTML_table_-_YMFailed')}</p><br><h3 class=\"editor-heading-h3\"><br></h3>",
+                      "emailMessage/Attachments": [
+                        {
+                          "Name": "rmg_yellow_message_@{formatDateTime(utcNow(),'yyyy-mm-dd')}.csv",
+                          "ContentBytes": "@body('Create_CSV_table-YellowMsgDevices')"
+                        }
+                      ],
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "operationId": "SendEmailV2",
+                      "connectionName": "shared_office365"
+                    }
+                  },
+                  "runAfter": {
+                    "Post_message_in_a_chat_or_channel-YellowMessageStatus": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Post_message_in_a_chat_or_channel-YellowMessageStatus": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "poster": "User",
+                      "location": "Channel",
+                      "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                      "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                      "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Message:</strong></b> \"✅ <b><strong class=\"editor-text-bold\" style=\"background-color: rgb(248, 231, 28);\">Yellow Message Update:</strong></b></p><br><p class=\"editor-paragraph\">The 42Gears Yellow Message job has completed.<br><br>Job ID: @{outputs('Compose-YellowMsgJobId')}<br>Successful devices: @{length(variables('SuccessList'))}<br>Failed devices: @{length(variables('FailedList'))}<br><br></p><br>"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                      "operationId": "PostMessageToConversation",
+                      "connectionName": "shared_teams"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_HTML_table_-_YMFailed": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Post_message_in_a_chat_or_channel-YellowMessage": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "poster": "User",
+                        "location": "Channel",
+                        "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                        "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                        "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Message:</strong></b> \"✅ <b><strong class=\"editor-text-bold\" style=\"background-color: rgb(248, 231, 28);\">Yellow Message Update:</strong></b> There are 0 devices pending for Yellow messages today. No action taken.\"</p>"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                        "operationId": "PostMessageToConversation",
+                        "connectionName": "shared_teams"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Delay_Until": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope_-_CATCH_(Error_Handler)": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel-FAILED": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">FLOW FAILED</strong></b>: Battery Message Job 🚨<br>An error occurred during the flow execution.<br><br>Flow Run Link: [@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}]<br>Failed Step: [@{first(body('Filter_array'))?['name']}]<br>Error Details: [@{coalesce(first(body('Filter_array'))?['error']?['message'], 'No specific error message provided by the API/Action.')}]</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Delay_Until": {
+          "type": "Wait",
+          "inputs": {
+            "until": {
+              "timestamp": "@if(\n  less(int(formatDateTime(utcNow(), 'HH')), 4),\n  concat(formatDateTime(utcNow(), 'yyyy-MM-dd'), 'T01:00:00Z'),\n  concat(formatDateTime(addDays(utcNow(), 1), 'yyyy-MM-dd'), 'T01:00:00Z')\n)"
+            }
+          },
+          "runAfter": {
+            "Compose-YellowMessage": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

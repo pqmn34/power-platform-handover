@@ -1,0 +1,184 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "schedule": {
+              "hours": [
+                "10",
+                "15"
+              ]
+            },
+            "timeZone": "Central Europe Standard Time"
+          },
+          "evaluatedRecurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "schedule": {
+              "hours": [
+                "10",
+                "15"
+              ]
+            },
+            "timeZone": "Central Europe Standard Time"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "EVALUATE Delta_New_For_Inc_Tracker",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@body('Run_a_query_against_a_dataset')?['firstTableRows']",
+          "actions": {
+            "Create_item": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "287bf019-f7f2-44cf-a8f6-f087c938f7c6",
+                  "item/Model": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[Model]']",
+                  "item/SerialNumber": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[SerialNumber]']",
+                  "item/AssetNumber": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[AssetNumber]']",
+                  "item/IMEI": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[IMEI]']",
+                  "item/DOBI": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[DOBI]']",
+                  "item/SIMNumber": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[SIMNumber]']",
+                  "item/ContractID": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[ContractID]']",
+                  "item/X012Status": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[X012Status]']",
+                  "item/LastShippedDate": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[LastShippedDate]']",
+                  "item/OperationalStatus": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[OperationalStatus]']",
+                  "item/OS_x0020_Build": "@items('Apply_to_each')?['Delta_New_For_INC_Tracker[OSBuild]']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PostItem"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "type": "Foreach"
+        },
+        "Run_a_query_against_a_dataset1": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "EVALUATE Delta_Changed_For_INC_Tracker\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each1": {
+          "foreach": "@body('Run_a_query_against_a_dataset1')?['firstTableRows']",
+          "actions": {
+            "Update_item": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "287bf019-f7f2-44cf-a8f6-f087c938f7c6",
+                  "id": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[SP_ID]']",
+                  "item/Model": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[Model]']",
+                  "item/SerialNumber": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[SerialNumber]']",
+                  "item/AssetNumber": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[AssetNumber]']",
+                  "item/IMEI": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[IMEI]']",
+                  "item/DOBI": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[DOBI]']",
+                  "item/SIMNumber": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[SIMNumber]']",
+                  "item/ContractID": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[ContractID]']",
+                  "item/X012Status": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[X012Status]']",
+                  "item/LastShippedDate": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[LastShippedDate]']",
+                  "item/OperationalStatus": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[OperationalStatus]']",
+                  "item/OS_x0020_Build": "@items('Apply_to_each1')?['Delta_Changed_For_INC_Tracker[OSBuild]']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PatchItem"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset1": [
+              "Succeeded"
+            ]
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

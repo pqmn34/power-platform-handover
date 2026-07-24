@@ -1,0 +1,357 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_1e112"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "UTC",
+            "startTime": "2026-04-06T00:00Z",
+            "schedule": {
+              "hours": [
+                "7"
+              ],
+              "minutes": [
+                30
+              ],
+              "weekDays": [
+                "Monday"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "varCSVContent": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "adela.bodor@zebra.com;fastrack@zebra.com",
+          "runAfter": {}
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Condition": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Select'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Create_CSV_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "CSV"
+                  }
+                },
+                "Set_variable": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varCSVContent",
+                    "value": "@body('Create_CSV_table')"
+                  },
+                  "runAfter": {
+                    "Create_CSV_table": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_HTML_table": {
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@body('Select')",
+                    "format": "HTML"
+                  },
+                  "runAfter": {
+                    "Set_variable": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #FFCC00; /* Changed to red */\n        color: #d40511;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                  "runAfter": {
+                    "Create_HTML_table": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Terminate": {
+                    "type": "Terminate",
+                    "inputs": {
+                      "runStatus": "Succeeded"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Select": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                  "folderPath": "/Shared Documents/NKD/WEEKLY REPAIR DATA/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}",
+                  "name": "nkd_weekly_repair_report_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                  "body": "@variables('varCSVContent')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Condition": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@outputs('EmailTO')",
+                  "emailMessage/Subject": "NKD: Weekly Repair Report - @{formatDateTime(utcNow(),'ddMMyyyy')}",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Hello Fastrack team,</p><br><p class=\"editor-paragraph\">Attached the open RMAs for NKD (6417259). Please arrange collection for Friday and send the label to the following email addresses:<br><u><span class=\"editor-text-underline\">fiko@nkd.de;</span></u><u><span class=\"editor-text-underline\">adela.bodor@zebra.com</span></u></p><p class=\"editor-paragraph\">@{outputs('Compose')}</p><br><p class=\"editor-paragraph\"><br><i><em class=\"editor-text-italic\">Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email. Please reach out to adela.bodor@zebra.com if any questions.</em></i><br><br>Regards,<br>Strategic Innovation and Automation<br><br><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br>This email and any files transmitted with it are confidential and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('EmailCC')",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "nkd_weekly_repair_report_@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.csv",
+                      "ContentBytes": "@variables('varCSVContent')"
+                    }
+                  ],
+                  "emailMessage/ReplyTo": "adela.bodor@zebra.com",
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Select": {
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                "select": {
+                  "RepairOrderNumber": "@item()?['Cases[Repair Order Number]']",
+                  "LineStatus": "@item()?['Repair Order Lines[Line Status]']",
+                  "RepairCreatedDate": "@if(empty(item()?['Date - Repair Created Date[Repair Created Date]']), null, formatDateTime(item()?['Date - Repair Created Date[Repair Created Date]'],'yyyy-MM-dd'))",
+                  "ShipDate": "@if(empty(item()?['Date - Ship Date[Ship Date]']), null, formatDateTime(item()?['Date - Ship Date[Ship Date]'],'yyyy-MM-dd HH:mm:ss'))",
+                  "DueDate": "@if(empty(item()?['Date - Due Date[Due Date]']), null, formatDateTime(item()?['Date - Due Date[Due Date]'],'yyyy-MM-dd'))",
+                  "SerialNumberIn": "@item()?['Repair Order Lines[Serial Number In]']",
+                  "ProductNumberIn": "@item()?['Repair Order Lines[Product Number In]']",
+                  "SerialNumberOut": "@item()?['Repair Order Lines[Serial Number Out]']",
+                  "ProductNumberOut": "@item()?['Repair Order Lines[Product Number Out]']",
+                  "ProblemDescription": "@item()?['Repair Order Lines[Problem Description]']",
+                  "OTD": "@item()?['Repair Order Lines Reporting Fields[OTD]']",
+                  "FaultType": "@item()?['Repair Order Lines Reporting Fields[Fault Type]']",
+                  "ShipToAddress": "@item()?['Repair Order Lines[Ship To Address]']",
+                  "City": "@item()?['Ship To Site[City]']",
+                  "ShippingCountry": "@item()?['Ship To Site[Shipping Country]']",
+                  "OutboundTrackingNumber": "@item()?['Repair Order Lines[Outbound Tracking Number]']",
+                  "StoreNumber": "@item()?['Ship To Site[Store Number]']",
+                  "EndCustomerName": "@item()?['Repair Order Lines Reporting Fields[End Customer Name]']"
+                }
+              },
+              "runAfter": {
+                "Run_a_query_against_a_dataset": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Run_a_query_against_a_dataset": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                  "datasetid": "99c19fde-1fa7-47eb-8a03-19a40f6eb83a",
+                  "specification/query": "DEFINE\n    // MONDAY TO SUNDAY WEEK: Notice both use 'WEEKDAY(..., 2)' to be consistent.\n    VAR __StartOfLastWeek = TODAY() - WEEKDAY(TODAY(), 2) - 6\n    VAR __EndOfLastWeek   = TODAY() - WEEKDAY(TODAY(), 2)\n\n    VAR __RawData = \n        SUMMARIZECOLUMNS(\n            'Cases'[Repair Order Number],\n            'Repair Order Lines'[Line Status],\n            'Date - Repair Created Date'[Repair Created Date],\n            'Date - Ship Date'[Ship Date],\n            'Date - Due Date'[Due Date],\n            'Repair Order Lines'[Serial Number In],\n            'Repair Order Lines'[Product Number In],\n            'Repair Order Lines'[Serial Number Out],\n            'Repair Order Lines'[Product Number Out],\n            'Repair Order Lines'[Problem Description],\n            'Repair Order Lines Reporting Fields'[OTD],\n            'Repair Order Lines Reporting Fields'[Fault Type],\n            'Repair Order Lines'[Ship To Address],\n            'Ship To Site'[City],\n            'Ship To Site'[Shipping Country],\n            'Repair Order Lines'[Outbound Tracking Number],\n            'Ship To Site'[Store Number],\n            'Repair Order Lines Reporting Fields'[End Customer Name],\n            \n            // Filters\n            TREATAS({\"NKD\"}, 'MLM contracts'[MLM Customer]),\n            FILTER(\n                ALL('Date - Repair Created Date'[Repair Created Date]),\n                'Date - Repair Created Date'[Repair Created Date] >= __StartOfLastWeek &&\n                'Date - Repair Created Date'[Repair Created Date] <= __EndOfLastWeek\n            ),\n            \n        \n            \"__RecordCount\", COUNTROWS('Repair Order Lines')\n        )\n\n    VAR __ResultTable = \n        SELECTCOLUMNS(\n            __RawData,\n            \"'Cases'[Repair Order Number]\", 'Cases'[Repair Order Number],\n            \"'Repair Order Lines'[Line Status]\", 'Repair Order Lines'[Line Status],\n            \"'Date - Repair Created Date'[Repair Created Date]\", 'Date - Repair Created Date'[Repair Created Date],\n            \"'Date - Ship Date'[Ship Date]\", 'Date - Ship Date'[Ship Date],\n            \"'Date - Due Date'[Due Date]\", 'Date - Due Date'[Due Date],\n            \"'Repair Order Lines'[Serial Number In]\", 'Repair Order Lines'[Serial Number In],\n            \"'Repair Order Lines'[Product Number In]\", 'Repair Order Lines'[Product Number In],\n            \"'Repair Order Lines'[Serial Number Out]\", 'Repair Order Lines'[Serial Number Out],\n            \"'Repair Order Lines'[Product Number Out]\", 'Repair Order Lines'[Product Number Out],\n            \"'Repair Order Lines'[Problem Description]\", 'Repair Order Lines'[Problem Description],\n            \"'Repair Order Lines Reporting Fields'[OTD]\", 'Repair Order Lines Reporting Fields'[OTD],\n            \"'Repair Order Lines Reporting Fields'[Fault Type]\", 'Repair Order Lines Reporting Fields'[Fault Type],\n            \"'Repair Order Lines'[Ship To Address]\", 'Repair Order Lines'[Ship To Address],\n            \"'Ship To Site'[City]\", 'Ship To Site'[City],\n            \"'Ship To Site'[Shipping Country]\", 'Ship To Site'[Shipping Country],\n            \"'Repair Order Lines'[Outbound Tracking Number]\", 'Repair Order Lines'[Outbound Tracking Number],\n            \"'Ship To Site'[Store Number]\", 'Ship To Site'[Store Number],\n            \"'Repair Order Lines Reporting Fields'[End Customer Name]\", 'Repair Order Lines Reporting Fields'[End Customer Name]\n        )\n\nEVALUATE\n    __ResultTable\n\nORDER BY\n    'Cases'[Repair Order Number],\n    'Repair Order Lines'[Line Status],\n    'Date - Repair Created Date'[Repair Created Date],\n    'Date - Ship Date'[Ship Date],\n    'Date - Due Date'[Due Date],\n    'Repair Order Lines'[Serial Number In],\n    'Repair Order Lines'[Product Number In],\n    'Repair Order Lines'[Serial Number Out],\n    'Repair Order Lines'[Product Number Out],\n    'Repair Order Lines'[Problem Description],\n    'Repair Order Lines Reporting Fields'[OTD],\n    'Repair Order Lines Reporting Fields'[Fault Type],\n    'Repair Order Lines'[Ship To Address],\n    'Ship To Site'[City],\n    'Ship To Site'[Shipping Country],\n    'Repair Order Lines'[Outbound Tracking Number],\n    'Ship To Site'[Store Number],\n    'Repair Order Lines Reporting Fields'[End Customer Name]",
+                  "specification/serializerSettings/includeNulls": false
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                  "operationId": "ExecuteDatasetQuery",
+                  "connectionName": "shared_powerbi-1"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "varCSVContent": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "gmssba@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "CatchError": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<div style=\"border: 1px solid #e0e0e0; border-radius: 5px; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\">\n    <div style=\"background-color: #d83b01; color: white; padding: 10px; font-weight: bold; font-size: 16px;\">\n        🚨 FAILED: @{workflow()?['tags']['flowDisplayName']}\n    </div>\n    <div style=\"padding: 15px; background-color: #f9f9f9;\">\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tbody>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666; width: 30%;\"><strong>Flow Name:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{workflow()?['tags']['flowDisplayName']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Failed Action:</strong></td>\n                    <td style=\"padding: 5px 0;\">@{body('Filter_array')?[0]?['name']}</td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><strong>Error Message:</strong></td>\n                    <td style=\"padding: 5px 0; color: #d83b01;\"><b><u></u></b></td>\n                </tr>\n                <tr>\n                    <td style=\"padding: 5px 0; color: #666;\"><strong>Run ID:</strong></td>\n                    <td style=\"padding: 5px 0; font-family: monospace; font-size: 12px;\">@{workflow()?['run']?['name']}</td>\n                </tr>\n            </tbody>\n        </table>\n        <br>\n        <a href=\"@{concat('https://make.powerautomate.com/environments/', workflow()?['tags']?['environmentName'], '/flows/', workflow()?['name'], '/runs/', workflow()?['run']?['name'])}\" style=\"background-color: #0078d4; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;\">\n           View Failed Run\n        </a>\n    </div>\n</div>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "runAfter": {
+                "Error_Message": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17abc631-73de-42a9-8eed-e0fced8927f4"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Scope')",
+                "where": "@equals(item()?['status'],'Failed')"
+              },
+              "metadata": {
+                "operationMetadataId": "08e78cd4-f7ed-4d96-af4f-ecde0685b1e1"
+              }
+            },
+            "Error_Message": {
+              "type": "Compose",
+              "inputs": "@coalesce(\n    first(body('Filter_Array'))?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['outputs']?['body']?['error']?['message'],\n    first(body('Filter_Array'))?['error']?['message'],\n    'Unknown Error')",
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a9e6c5c5-033e-49fc-9627-d2f232ced68a"
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69d47855-5ed9-43dc-a4af-b9ea6ec2ff02"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

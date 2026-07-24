@@ -1,0 +1,349 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "Central Europe Standard Time",
+            "schedule": {
+              "hours": [
+                "0",
+                "6",
+                "7"
+              ],
+              "minutes": [
+                10
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "StrategicInnovationandAutomation@Zebra.com",
+              "emailMessage/Subject": "🛑ALERT EVRI: EVRI_OfflineDeviceAlert_DeviceBaseline Flow FAILED",
+              "emailMessage/Body": "<p class=\"editor-paragraph\">&lt;b&gt;🚨 ALERT EVRI: EVRI_OfflineDeviceAlert_DeviceBaseline Flow FAILED&lt;/b&gt;<br><br><br>&lt;b&gt;Flow Name:&lt;/b&gt; &lt;code&gt;@{workflow().name}&lt;/code&gt;<br><br><br>&lt;b&gt;Run ID:&lt;/b&gt; &lt;code&gt;@{workflow().run.name}&lt;/code&gt;<br><br><br>&lt;b&gt;Time:&lt;/b&gt; &lt;code&gt;@{utcNow()}&lt;/code&gt;<br><br><br>&lt;b&gt;Status:&lt;/b&gt; One or more device processing scopes (ZebraTC75, BYOD, ET45, etc.) have &lt;span style=\"color:red\"&gt;&lt;b&gt;FAILED&lt;/b&gt;&lt;/span&gt; or timed out.<br><br><br>&lt;b&gt;Action Needed:&lt;/b&gt; Please check the Power Automate run log for more details.<br><br><br>&lt;i&gt;This is an automated alert from Power Automate.&lt;/i&gt;</p><br>",
+              "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+              "emailMessage/Importance": "High"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365"
+            }
+          },
+          "runAfter": {
+            "Parent_Scope": [
+              "Failed",
+              "TimedOut",
+              "Skipped"
+            ]
+          }
+        },
+        "Parent_Scope": {
+          "type": "Scope",
+          "actions": {
+            "Scope_ET45": {
+              "type": "Scope",
+              "actions": {
+                "Run_a_query_against_a_dataset_ET45": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                      "specification/query": "EVALUATE\nROW(\n    \"Online_ET45_Devices\", 'Devices ET45'[Online_ET45_Devices],\n    \"Online_ET45_Percentage\", 'Devices ET45'[Online_ET45_Percentage]\n)",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "ComposeET45P": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(mul(outputs('Run_a_query_against_a_dataset_ET45')?['body']?['firstTableRows'][0]?['[Online_ET45_Percentage]'],100), 'N1')",
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_ET45": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_items_ET45": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                      "$filter": "Title eq 'ET45'"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ComposeET45P": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "For_each_ET45": {
+                  "type": "Foreach",
+                  "foreach": "@outputs('Get_items_ET45')?['body/value']",
+                  "actions": {
+                    "Update_itemET45": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                          "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                          "id": "@item()?['ID']",
+                          "item/Title": "ET45",
+                          "item/OnlineDevices": "@outputs('Run_a_query_against_a_dataset_ET45')?['body']?['firstTableRows'][0]?['[Online_ET45_Devices]']",
+                          "item/OnlinePercentage": "@outputs('ComposeET45P')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "operationId": "PatchItem",
+                          "connectionName": "shared_sharepointonline"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_items_ET45": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Scope_BYOD": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Scope_BYOD": {
+              "type": "Scope",
+              "actions": {
+                "Run_a_query_against_a_dataset_SamsungBYOD": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                      "specification/query": "EVALUATE\nROW(\n    \"Online_BYOD_Devices\", 'Samsung and ET45 DB'[Online_BYOD_Devices],\n    \"Online_BYOD_Percentage\", 'Samsung and ET45 DB'[Online_BYOD_Percentage]\n)",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "ComposeBYODP": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(mul(outputs('Run_a_query_against_a_dataset_SamsungBYOD')?['body']?['firstTableRows'][0]?['[Online_BYOD_Percentage]'],100), 'N1')",
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_SamsungBYOD": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_items_BYOD": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                      "$filter": "Title eq 'BYOD'"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ComposeBYODP": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "For_eachBYOD": {
+                  "type": "Foreach",
+                  "foreach": "@outputs('Get_items_BYOD')?['body/value']",
+                  "actions": {
+                    "Update_itemBYOD": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                          "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                          "id": "@item()?['ID']",
+                          "item/Title": "BYOD",
+                          "item/OnlineDevices": "@outputs('Run_a_query_against_a_dataset_SamsungBYOD')?['body']?['firstTableRows'][0]?['[Online_BYOD_Devices]']",
+                          "item/OnlinePercentage": "@outputs('ComposeBYODP')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "operationId": "PatchItem",
+                          "connectionName": "shared_sharepointonline"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_items_BYOD": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Scope_ZebraTC75": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Scope_ZebraTC75": {
+              "type": "Scope",
+              "actions": {
+                "Run_a_query_against_a_dataset_ZebraTC75": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+                      "specification/query": "EVALUATE\nROW(\n    \"OnlineDevices\", 'Zebra DB'[OnlineDevices],\n    \"OnlinePercentage\", 'Zebra DB'[OnlinePercentage]\n)",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "ComposeZebraTC75P": {
+                  "type": "Compose",
+                  "inputs": "@formatNumber(mul(outputs('Run_a_query_against_a_dataset_ZebraTC75')?['body']?['firstTableRows'][0]?['[OnlinePercentage]'], 100), 'N1')",
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_ZebraTC75": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Get_itemsZebraTC75": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                      "$filter": "Title eq 'ZebraTC75'"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ComposeZebraTC75P": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "For_eachZebraTC57": {
+                  "type": "Foreach",
+                  "foreach": "@outputs('Get_itemsZebraTC75')?['body/value']",
+                  "actions": {
+                    "Update_itemZebraTC75": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                          "table": "d7854f8c-b390-4622-a35f-73350bc90400",
+                          "id": "@items('For_eachZebraTC57')?['ID']",
+                          "item/Title": "ZebraTC75",
+                          "item/OnlineDevices": "@outputs('Run_a_query_against_a_dataset_ZebraTC75')?['body']?['firstTableRows'][0]?['[OnlineDevices]']",
+                          "item/OnlinePercentage": "@outputs('ComposeZebraTC75P')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "operationId": "PatchItem",
+                          "connectionName": "shared_sharepointonline"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_itemsZebraTC75": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {}
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

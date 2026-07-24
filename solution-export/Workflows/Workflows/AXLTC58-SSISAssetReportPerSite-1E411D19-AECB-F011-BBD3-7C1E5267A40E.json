@@ -1,0 +1,1032 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "schedule": {
+              "hours": [
+                "12"
+              ],
+              "minutes": [
+                15
+              ],
+              "weekDays": [
+                "Monday"
+              ]
+            },
+            "timeZone": "UTC",
+            "startTime": "2026-01-07T01:00:00Z"
+          }
+        }
+      },
+      "actions": {
+        "varCSVContent_WIGAN": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent WIGAN",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentAIRDRIE": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentAIRDRIE",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContent_WIGAN": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentCARRICKFERGUS": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContentCARRICKFERGUS",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentAIRDRIE": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentENFIELD85": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent ENFIELD85",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentCARRICKFERGUS": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentINVERNESS": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent INVERNESS",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentENFIELD85": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varCSVContentWORCESTER": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varCSVContent WORCESTER",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varCSVContentINVERNESS": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "Stephen.Murphy@arrowxl.co.uk;Jakub.Polak@zebra.com;Martin.Lucas@arrowxl.co.uk;David.Windle@arrowxl.co.uk;David.Bowe@arrowxl.co.uk;nh6432@zebra.com",
+          "runAfter": {}
+        },
+        "MasterScope": {
+          "type": "Scope",
+          "actions": {
+            "Scope_1": {
+              "type": "Scope",
+              "actions": {
+                "ConditionWIGAN": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectWIGAN'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_table_WIGAN": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectWIGAN')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableWIGAN": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContent WIGAN",
+                        "value": "@body('Create_CSV_table_WIGAN')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table_WIGAN": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_WIGAN": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContent WIGAN",
+                          "value": "Device Serial Number,Device Friendly name,Model,Last Known Battery Level,Site Name,Hours Disconnected,Deployment Mode"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "SelectWIGAN": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/ARROWXL/SSIS_DAILYASSETREPORTS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "TC58_WIGAN_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "body": "@variables('varCSVContent WIGAN')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionWIGAN": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Run_a_query_against_a_dataset_AIRDRIE": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                      "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"ARROW XL AIRDRIE\"}, 'axl_device_info_42g'[Site Name])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'axl_device_info_42g',\n\t\t\t\t'axl_device_info_42g'[SerialNumber],\n\t\t\t\t'axl_device_info_42g'[DeviceName],\n\t\t\t\t'axl_device_info_42g'[DeviceModelName],\n\t\t\t\t'axl_device_info_42g'[BatteryLevel],\n\t\t\t\t'axl_device_info_42g'[Hours Disconnected],\n\t\t\t\t'axl_device_info_42g'[Site Name],\n\t\t\t\t'axl_device_info_42g'[Deployment Mode]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'axl_device_info_42g'[SerialNumber],\n\t'axl_device_info_42g'[DeviceName],\n\t'axl_device_info_42g'[DeviceModelName],\n\t'axl_device_info_42g'[BatteryLevel],\n\t'axl_device_info_42g'[Hours Disconnected],\n\t'axl_device_info_42g'[Site Name],\n\t'axl_device_info_42g'[Deployment Mode]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_1": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectAIRDRIE": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_AIRDRIE')?['body/firstTableRows']",
+                    "select": {
+                      "Device Serial Number": "@string(item()?['axl_device_info_42g[SerialNumber]'])",
+                      "Device Friendly name": "@item()?['axl_device_info_42g[DeviceName]']",
+                      "Model": "@item()?['axl_device_info_42g[DeviceModelName]']",
+                      "Last Known Battery Level": "@item()?['axl_device_info_42g[BatteryLevel]']",
+                      "Site Name": "@item()?['axl_device_info_42g[Site Name]']",
+                      "Hours Disconnected": "@item()?['axl_device_info_42g[Hours Disconnected]']",
+                      "Deployment Mode": "@item()?['axl_device_info_42g[Deployment Mode]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_AIRDRIE": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ConditionAIRDRIE": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectAIRDRIE'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_table_AIRDRIE": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectAIRDRIE')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableAIRDRIE": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentAIRDRIE",
+                        "value": "@body('Create_CSV_table_AIRDRIE')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table_AIRDRIE": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variableAIRDRIE_1": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentAIRDRIE",
+                          "value": "Device Serial Number,Device Friendly name,Model,Last Known Battery Level,Site Name,Hours Disconnected,Deployment Mode"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "SelectAIRDRIE": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_1_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/ARROWXL/SSIS_DAILYASSETREPORTS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "TC58_AIRDRIE_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "body": "@variables('varCSVContentAIRDRIE')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionAIRDRIE": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Run_a_query_against_a_dataset_CARRICKFERGUS": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                      "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"ARROW XL CARRICKFERGUS\"}, 'axl_device_info_42g'[Site Name])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'axl_device_info_42g',\n\t\t\t\t'axl_device_info_42g'[SerialNumber],\n\t\t\t\t'axl_device_info_42g'[DeviceName],\n\t\t\t\t'axl_device_info_42g'[DeviceModelName],\n\t\t\t\t'axl_device_info_42g'[BatteryLevel],\n\t\t\t\t'axl_device_info_42g'[Hours Disconnected],\n\t\t\t\t'axl_device_info_42g'[Site Name],\n\t\t\t\t'axl_device_info_42g'[Deployment Mode]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'axl_device_info_42g'[SerialNumber],\n\t'axl_device_info_42g'[DeviceName],\n\t'axl_device_info_42g'[DeviceModelName],\n\t'axl_device_info_42g'[BatteryLevel],\n\t'axl_device_info_42g'[Hours Disconnected],\n\t'axl_device_info_42g'[Site Name],\n\t'axl_device_info_42g'[Deployment Mode]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_1_1": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectCARRICKFERGUS": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_CARRICKFERGUS')?['body/firstTableRows']",
+                    "select": {
+                      "Device Serial Number": "@string(item()?['axl_device_info_42g[SerialNumber]'])",
+                      "Device Friendly name": "@item()?['axl_device_info_42g[DeviceName]']",
+                      "Model": "@item()?['axl_device_info_42g[DeviceModelName]']",
+                      "Last Known Battery Level": "@item()?['axl_device_info_42g[BatteryLevel]']",
+                      "Site Name": "@item()?['axl_device_info_42g[Site Name]']",
+                      "Hours Disconnected": "@item()?['axl_device_info_42g[Hours Disconnected]']",
+                      "Deployment Mode": "@item()?['axl_device_info_42g[Deployment Mode]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_CARRICKFERGUS": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ConditionCARRICKFERGUS": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectCARRICKFERGUS'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_table_CARRICKFERGUS": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectCARRICKFERGUS')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableCARRICKFERGUS": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContentCARRICKFERGUS",
+                        "value": "@body('Create_CSV_table_CARRICKFERGUS')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table_CARRICKFERGUS": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variableCARRICKFERGUS_1": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContentCARRICKFERGUS",
+                          "value": "Device Serial Number,Device Friendly name,Model,Last Known Battery Level,Site Name,Hours Disconnected,Deployment Mode"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "SelectCARRICKFERGUS": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_1_1_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/ARROWXL/SSIS_DAILYASSETREPORTS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "TC58_CARRICKFERGUS_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "body": "@variables('varCSVContentCARRICKFERGUS')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionCARRICKFERGUS": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Run_a_query_against_a_dataset_ENFIELD85": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                      "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"ARROW XL ENFIELD 85\"}, 'axl_device_info_42g'[Site Name])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'axl_device_info_42g',\n\t\t\t\t'axl_device_info_42g'[SerialNumber],\n\t\t\t\t'axl_device_info_42g'[DeviceName],\n\t\t\t\t'axl_device_info_42g'[DeviceModelName],\n\t\t\t\t'axl_device_info_42g'[BatteryLevel],\n\t\t\t\t'axl_device_info_42g'[Hours Disconnected],\n\t\t\t\t'axl_device_info_42g'[Site Name],\n\t\t\t\t'axl_device_info_42g'[Deployment Mode]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'axl_device_info_42g'[SerialNumber],\n\t'axl_device_info_42g'[DeviceName],\n\t'axl_device_info_42g'[DeviceModelName],\n\t'axl_device_info_42g'[BatteryLevel],\n\t'axl_device_info_42g'[Hours Disconnected],\n\t'axl_device_info_42g'[Site Name],\n\t'axl_device_info_42g'[Deployment Mode]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_1_1_1": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectENFIELD85": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_ENFIELD85')?['body/firstTableRows']",
+                    "select": {
+                      "Device Serial Number": "@string(item()?['axl_device_info_42g[SerialNumber]'])",
+                      "Device Friendly name": "@item()?['axl_device_info_42g[DeviceName]']",
+                      "Model": "@item()?['axl_device_info_42g[DeviceModelName]']",
+                      "Last Known Battery Level": "@item()?['axl_device_info_42g[BatteryLevel]']",
+                      "Site Name": "@item()?['axl_device_info_42g[Site Name]']",
+                      "Hours Disconnected": "@item()?['axl_device_info_42g[Hours Disconnected]']",
+                      "Deployment Mode": "@item()?['axl_device_info_42g[Deployment Mode]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_ENFIELD85": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ConditionENFIELD85": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectENFIELD85'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_table_ENFIELD85": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectENFIELD85')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variable_ENFIELD85": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContent ENFIELD85",
+                        "value": "@body('Create_CSV_table_ENFIELD85')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table_ENFIELD85": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variable_ENFIELD85_1": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContent ENFIELD85",
+                          "value": "Device Serial Number,Device Friendly name,Model,Last Known Battery Level,Site Name,Hours Disconnected,Deployment Mode"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "SelectENFIELD85": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_1_1_1_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/ARROWXL/SSIS_DAILYASSETREPORTS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "TC58_ENFIELD85_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "body": "@variables('varCSVContent ENFIELD85')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionENFIELD85": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Run_a_query_against_a_dataset_INVERNESS": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                      "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"ARROW XL INVERNESS\"}, 'axl_device_info_42g'[Site Name])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'axl_device_info_42g',\n\t\t\t\t'axl_device_info_42g'[SerialNumber],\n\t\t\t\t'axl_device_info_42g'[DeviceName],\n\t\t\t\t'axl_device_info_42g'[DeviceModelName],\n\t\t\t\t'axl_device_info_42g'[BatteryLevel],\n\t\t\t\t'axl_device_info_42g'[Hours Disconnected],\n\t\t\t\t'axl_device_info_42g'[Site Name],\n\t\t\t\t'axl_device_info_42g'[Deployment Mode]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'axl_device_info_42g'[SerialNumber],\n\t'axl_device_info_42g'[DeviceName],\n\t'axl_device_info_42g'[DeviceModelName],\n\t'axl_device_info_42g'[BatteryLevel],\n\t'axl_device_info_42g'[Hours Disconnected],\n\t'axl_device_info_42g'[Site Name],\n\t'axl_device_info_42g'[Deployment Mode]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_1_1_1_1": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectINVERNESS": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_INVERNESS')?['body/firstTableRows']",
+                    "select": {
+                      "Device Serial Number": "@string(item()?['axl_device_info_42g[SerialNumber]'])",
+                      "Device Friendly name": "@item()?['axl_device_info_42g[DeviceName]']",
+                      "Model": "@item()?['axl_device_info_42g[DeviceModelName]']",
+                      "Last Known Battery Level": "@item()?['axl_device_info_42g[BatteryLevel]']",
+                      "Site Name": "@item()?['axl_device_info_42g[Site Name]']",
+                      "Hours Disconnected": "@item()?['axl_device_info_42g[Hours Disconnected]']",
+                      "Deployment Mode": "@item()?['axl_device_info_42g[Deployment Mode]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_INVERNESS": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ConditionINVERNESS": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectINVERNESS'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_table_INVERNESS": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectINVERNESS')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableINVERNESS": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContent INVERNESS",
+                        "value": "@body('Create_CSV_table_INVERNESS')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table_INVERNESS": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variableINVERNESS_1": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContent INVERNESS",
+                          "value": "Device Serial Number,Device Friendly name,Model,Last Known Battery Level,Site Name,Hours Disconnected,Deployment Mode"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "SelectINVERNESS": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file_1_1_1_1_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/ARROWXL/SSIS_DAILYASSETREPORTS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "TC58_INVERNESS_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "body": "@variables('varCSVContent INVERNESS')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionINVERNESS": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Run_a_query_against_a_dataset_WORCESTER": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                      "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"ARROW XL WORCESTER\"}, 'axl_device_info_42g'[Site Name])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'axl_device_info_42g',\n\t\t\t\t'axl_device_info_42g'[SerialNumber],\n\t\t\t\t'axl_device_info_42g'[DeviceName],\n\t\t\t\t'axl_device_info_42g'[DeviceModelName],\n\t\t\t\t'axl_device_info_42g'[BatteryLevel],\n\t\t\t\t'axl_device_info_42g'[Hours Disconnected],\n\t\t\t\t'axl_device_info_42g'[Site Name],\n\t\t\t\t'axl_device_info_42g'[Deployment Mode]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'axl_device_info_42g'[SerialNumber],\n\t'axl_device_info_42g'[DeviceName],\n\t'axl_device_info_42g'[DeviceModelName],\n\t'axl_device_info_42g'[BatteryLevel],\n\t'axl_device_info_42g'[Hours Disconnected],\n\t'axl_device_info_42g'[Site Name],\n\t'axl_device_info_42g'[Deployment Mode]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  },
+                  "runAfter": {
+                    "Create_file_1_1_1_1_1": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "SelectWORCESTER": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_WORCESTER')?['body/firstTableRows']",
+                    "select": {
+                      "Device Serial Number": "@string(item()?['axl_device_info_42g[SerialNumber]'])",
+                      "Device Friendly name": "@item()?['axl_device_info_42g[DeviceName]']",
+                      "Model": "@item()?['axl_device_info_42g[DeviceModelName]']",
+                      "Last Known Battery Level": "@item()?['axl_device_info_42g[BatteryLevel]']",
+                      "Site Name": "@item()?['axl_device_info_42g[Site Name]']",
+                      "Hours Disconnected": "@item()?['axl_device_info_42g[Hours Disconnected]']",
+                      "Deployment Mode": "@item()?['axl_device_info_42g[Deployment Mode]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_WORCESTER": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "ConditionWORCESTER": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('SelectWORCESTER'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Create_CSV_table_WORCESTER": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('SelectWORCESTER')",
+                        "format": "CSV"
+                      }
+                    },
+                    "Set_variableWORCESTER": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "varCSVContent WORCESTER",
+                        "value": "@body('Create_CSV_table_WORCESTER')"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table_WORCESTER": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Set_variableWORCESTER_1": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "varCSVContent WORCESTER",
+                          "value": "Device Serial Number,Device Friendly name,Model,Last Known Battery Level,Site Name,Hours Disconnected,Deployment Mode"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "SelectWORCESTER": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Create_file": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "folderPath": "/Shared Documents/ARROWXL/SSIS_DAILYASSETREPORTS/@{formatDateTime(utcNow(),'yyyy')}/@{formatDateTime(utcNow(),'MMMM')}/@{formatDateTime(utcNow(),'dd')}",
+                      "name": "TC58_WORCESTER_@{formatDateTime(utcNow(),'ddMMyyyy')}.csv",
+                      "body": "@variables('varCSVContent WORCESTER')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "CreateFile",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "ConditionWORCESTER": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "SelectWIGAN": {
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('Run_a_query_against_a_dataset_WIGAN')?['body/firstTableRows']",
+                    "select": {
+                      "Device Serial Number": "@string(item()?['axl_device_info_42g[SerialNumber]'])",
+                      "Device Friendly name": "@item()?['axl_device_info_42g[DeviceName]']",
+                      "Model": "@item()?['axl_device_info_42g[DeviceModelName]']",
+                      "Last Known Battery Level": "@item()?['axl_device_info_42g[BatteryLevel]']",
+                      "Site Name": "@item()?['axl_device_info_42g[Site Name]']",
+                      "Hours Disconnected": "@item()?['axl_device_info_42g[Hours Disconnected]']",
+                      "Deployment Mode": "@item()?['axl_device_info_42g[Deployment Mode]']"
+                    }
+                  },
+                  "runAfter": {
+                    "Run_a_query_against_a_dataset_WIGAN": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Run_a_query_against_a_dataset_WIGAN": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "2e960942-cc11-4af1-bb4a-c4441e276ad2",
+                      "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"ARROW XL Wigan\"}, 'axl_device_info_42g'[Site Name])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'axl_device_info_42g',\n\t\t\t\t'axl_device_info_42g'[SerialNumber],\n\t\t\t\t'axl_device_info_42g'[DeviceName],\n\t\t\t\t'axl_device_info_42g'[DeviceModelName],\n\t\t\t\t'axl_device_info_42g'[BatteryLevel],\n\t\t\t\t'axl_device_info_42g'[Hours Disconnected],\n\t\t\t\t'axl_device_info_42g'[Site Name],\n\t\t\t\t'axl_device_info_42g'[Deployment Mode]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'axl_device_info_42g'[SerialNumber],\n\t'axl_device_info_42g'[DeviceName],\n\t'axl_device_info_42g'[DeviceModelName],\n\t'axl_device_info_42g'[BatteryLevel],\n\t'axl_device_info_42g'[Hours Disconnected],\n\t'axl_device_info_42g'[Site Name],\n\t'axl_device_info_42g'[Deployment Mode]",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                }
+              }
+            },
+            "Send_an_email_(V2)ARROW_XL": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "@trim(outputs('EmailTO'))",
+                  "emailMessage/Subject": "AXL TC58: Asset List Per Site",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Dear Customer,<br><br>Please find attached the weekly \"TC58 Asset Reports\" per Site.</p><p class=\"editor-paragraph\"><br>Important: This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.<br><br>For any questions regarding the report data, please reach out to the Premier Analytics team at <b><strong class=\"editor-text-bold\">premier.analytics@zebra.com</strong></b>.<br><br>Regards,<br>Strategic Innovation and Automation</p><p class=\"editor-paragraph\"><br><span style=\"color: rgb(208, 2, 27);\">- CONFIDENTIAL-</span><br><br><i><em class=\"editor-text-italic\">This email and any files transmitted with it are confidential, and may also be legally privileged. If you are not the intended recipient, you may not review, use, copy, or distribute this message. If you receive this email in error, please notify the sender immediately by reply email and then delete this email.</em></i></p>",
+                  "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Cc": "@outputs('EmailCC')",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "TC58_WORCESTER.csv",
+                      "ContentBytes": "@variables('varCSVContent WORCESTER')"
+                    },
+                    {
+                      "Name": "TC58_INVERNESS.csv",
+                      "ContentBytes": "@variables('varCSVContent INVERNESS')"
+                    },
+                    {
+                      "Name": "TC58_ENFIELD85.csv",
+                      "ContentBytes": "@variables('varCSVContent ENFIELD85')"
+                    },
+                    {
+                      "Name": "TC58_CARRICKFERGUS.csv",
+                      "ContentBytes": "@variables('varCSVContentCARRICKFERGUS')"
+                    },
+                    {
+                      "Name": "TC58_AIRDRIE.csv",
+                      "ContentBytes": "@variables('varCSVContentAIRDRIE')"
+                    },
+                    {
+                      "Name": "TC58_WIGAN.csv",
+                      "ContentBytes": "@variables('varCSVContent WIGAN')"
+                    }
+                  ],
+                  "emailMessage/Importance": "Normal"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Scope_1": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "varCSVContentWORCESTER": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "GMSSBA@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: AXL TC58- SSIS Asset Report Per Site 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: AXL TC58- SSIS Asset Report Per Site 🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: AXL TC58- SSIS Asset Report Per Site 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "MasterScope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "Success_Alert": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel_2": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"color: rgb(255, 255, 255); background-color: rgb(126, 211, 33);\">FLOW PASSED ALERT</strong></b><span style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\">: AXL TC58- SSIS Asset Report Per Site </span><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "MasterScope": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

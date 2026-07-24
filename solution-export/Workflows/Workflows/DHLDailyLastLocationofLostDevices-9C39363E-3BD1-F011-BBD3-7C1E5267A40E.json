@@ -1,0 +1,194 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Week",
+            "interval": 1,
+            "timeZone": "Central Europe Standard Time",
+            "startTime": "2022-10-05T07:00:00Z",
+            "schedule": {
+              "hours": [
+                "8"
+              ],
+              "minutes": [
+                0
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "a752b491-7a34-4d37-83be-899a3da6c63f"
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "3f0a252e-8705-4d80-96bc-e2060c3e501d",
+              "specification/query": "DEFINE\nVAR _lostreport = SUMMARIZECOLUMNS(\n    'Last Location of Lost'[DeviceName], \n    'Last Location of Lost'[Serial Number], \n    'Last Location of Lost'[Model], \n    'Last Location of Lost'[IP], \n    'Last Location of Lost'[Location], \n    'Last Location of Lost'[Connection Type], \n    'Last Location of Lost'[Site], \n    'Last Location of Lost'[Last Location], \n    'Last Location of Lost'[Agent Online], \n    'Last Location of Lost'[Agent Connect time], \n    'Last Location of Lost'[Agent disconnect time]\n)\nEVALUATE\n_lostreport\nORDER BY 'Last Location of Lost'[DeviceName] ASC\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "3d11a8af-145d-40dc-aa4b-6d117a79c406"
+          }
+        },
+        "Create_CSV_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "CSV"
+          },
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3e96f955-62cb-4799-bc95-0eb6623489d1"
+          }
+        },
+        "Create_file": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/MS&SS",
+              "folderPath": "/UK Mail Documents/Last Location Report",
+              "name": "DHL_LostDevice_@{utcNow()}.csv",
+              "body": "@body('Create_CSV_table')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "CreateFile",
+              "connectionName": "shared_sharepointonline"
+            }
+          },
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "54e21fe9-e79e-46c9-9ebf-27a07e9b237e"
+          }
+        },
+        "Select": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Device Name": "@item()?['Last Location of Lost[DeviceName]']",
+              "Serial Number": "@item()?['Last Location of Lost[Serial Number]']",
+              "Model": "@item()?['Last Location of Lost[Model]']",
+              "IP": "@item()?['Last Location of Lost[IP]']",
+              "Location": "@item()?['Last Location of Lost[Location]']",
+              "Connection Type": "@item()?['Last Location of Lost[Connection Type]']",
+              "Site": "@item()?['Last Location of Lost[Site]']",
+              "Last Location": "@item()?['Last Location of Lost[Last Location]']",
+              "Agent Online": "@item()?['Last Location of Lost[Agent Online]']",
+              "Agent Connect Time": "@item()?['Last Location of Lost[Agent Connect Time]']",
+              "Agent Disconnect Time": "@item()?['Last Location of Lost[Agent Disconnect Time]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e3759b5e-b7cd-4ef9-aaad-3a0d566090cc"
+          }
+        },
+        "Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "Offline Location Report for Lost Devices",
+              "emailMessage/Body": "<p><i>Greetings!</i><br>\n<br>\nLost Devices data has been saved with the Last Known Location.</p>\n<ul>\n  <li>@{outputs('Create_file')?['body/Name']}</li>\n  <li>@{outputs('Create_file')?['body/Path']}<br>\n<ul><br>\n<p>Regards",
+              "emailMessage/Attachments": [
+                {
+                  "Name": "DHL_LostDevice_@{utcNow()}.csv",
+                  "ContentBytes": "@body('Create_CSV_table')"
+                }
+              ],
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365"
+            }
+          },
+          "runAfter": {
+            "Create_file": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e6b637c9-21c3-47fd-81a3-eae2ceb7d134"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

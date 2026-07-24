@@ -1,0 +1,373 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Week",
+            "timeZone": "W. Europe Standard Time",
+            "startTime": "2025-05-28T08:30:00Z",
+            "schedule": {
+              "weekDays": [
+                "Wednesday"
+              ],
+              "hours": [
+                "11"
+              ],
+              "minutes": [
+                30
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "FAILED_Send_an_email_(V2)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "FAILED: RMG RML Offline MoreThan 44 Days as per the Redlands Data",
+              "emailMessage/Body": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FAILED</strong></b></p>",
+              "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+              "emailMessage/Importance": "High"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SendEmailV2",
+              "connectionName": "shared_office365"
+            }
+          },
+          "runAfter": {
+            "Master_Scope": [
+              "Failed",
+              "TimedOut",
+              "Skipped"
+            ]
+          }
+        },
+        "Master_Scope": {
+          "type": "Scope",
+          "actions": {
+            "Scope_1": {
+              "type": "Scope",
+              "actions": {
+                "RMG_RML_LOST_Offline_MoreThan_44_Days_as_per_the_Redlands_Data": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                      "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                      "specification/query": "EVALUATE\n\tROW(\n\t\"CountDeviceNameOfflineGT44Days\", 'Lost_Offline_GT44_Days_42Gears'[CountDeviceNameOfflineGT44Days]\n)",
+                      "specification/serializerSettings/includeNulls": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                      "operationId": "ExecuteDatasetQuery",
+                      "connectionName": "shared_powerbi"
+                    }
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "@outputs('RMG_RML_LOST_Offline_MoreThan_44_Days_as_per_the_Redlands_Data')?['body/firstTableRows'][0]?['[CountDeviceNameOfflineGT44Days]']",
+                  "runAfter": {
+                    "RMG_RML_LOST_Offline_MoreThan_44_Days_as_per_the_Redlands_Data": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            },
+            "Scope_2": {
+              "type": "Scope",
+              "actions": {
+                "Condition": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@outputs('Compose')",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Run_a_query_against_a_dataset": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                          "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+                          "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Lost_Offline_GT44_Days_42Gears'[Device Name])),\n\t\t\tAND(\n\t\t\t\tNOT(SEARCH(\"PEAK\", 'Lost_Offline_GT44_Days_42Gears'[Device Name], 1, 0) >= 1),\n\t\t\t\tNOT(SEARCH(\"-\", 'Lost_Offline_GT44_Days_42Gears'[Device Name], 1, 0) >= 1)\n\t\t\t)\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Offline\"}, 'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days])\n\n\tVAR __DS0FilterTable3 = \n\t\tTREATAS({\"Home/Lost_Stolen/Lost\"}, 'Lost_Offline_GT44_Days_42Gears'[Group Path])\n\n\tVAR __DS0FilterTable4 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Lost_Offline_GT44_Days_42Gears'[Build])),\n\t\t\tSEARCH(\"LETTER\", 'Lost_Offline_GT44_Days_42Gears'[Build], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0FilterTable5 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Lost_Offline_44Days_X012'[Address])),\n\t\t\tNOT(SEARCH(\"NDA\", 'Lost_Offline_44Days_X012'[Address], 1, 0) >= 1)\n\t\t)\n\n\tVAR __DS0FilterTable6 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('Lost_Offline_44Days_X012'[Post Code])),\n\t\t\tNOT('Lost_Offline_44Days_X012'[Post Code] IN {\"\"})\n\t\t)\n\n\tVAR __DS0FilterTable7 = \n\t\tTREATAS({\"Offline\"}, 'Lost_RML_Offline_44Days_Redlands'[Offline > 44 Days])\n\n\tVAR __DS0Core = \n\t\tSELECTCOLUMNS(\n\t\t\tKEEPFILTERS(\n\t\t\t\tFILTER(\n\t\t\t\t\tKEEPFILTERS(\n\t\t\t\t\t\tSUMMARIZECOLUMNS(\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Device Name],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[PEAK],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Serial Number],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[IMEI],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[ICCID],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Group Path],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Build],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Stock],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Status],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Asset No.],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Last Seen],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Address],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[Post Code],\n\t\t\t\t\t\t\t'Lost_RML_Offline_44Days_Redlands'[Date Last Used],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days],\n\t\t\t\t\t\t\t'Lost_Offline_44Days_X012'[DOBI],\n\t\t\t\t\t\t\t'Lost_Offline_GT44_Days_42Gears'[DeviceID],\n\t\t\t\t\t\t\t__DS0FilterTable,\n\t\t\t\t\t\t\t__DS0FilterTable2,\n\t\t\t\t\t\t\t__DS0FilterTable3,\n\t\t\t\t\t\t\t__DS0FilterTable4,\n\t\t\t\t\t\t\t__DS0FilterTable5,\n\t\t\t\t\t\t\t__DS0FilterTable6,\n\t\t\t\t\t\t\t__DS0FilterTable7,\n\t\t\t\t\t\t\t\"CountRowsLost_Offline_GT44_Days_42Gears\", COUNTROWS('Lost_Offline_GT44_Days_42Gears'),\n\t\t\t\t\t\t\t\"CountRowsLost_Offline_44Days_X012\", COUNTROWS('Lost_Offline_44Days_X012'),\n\t\t\t\t\t\t\t\"CountRowsLost_RML_Offline_44Days_Redlands\", COUNTROWS('Lost_RML_Offline_44Days_Redlands')\n\t\t\t\t\t\t)\n\t\t\t\t\t),\n\t\t\t\t\tOR(\n\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tOR(\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Device Name])),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[PEAK]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Serial Number]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[IMEI]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[ICCID]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Group Path]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Build]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Stock]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Status]))\n\t\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Asset No.]))\n\t\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Last Seen]))\n\t\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Address]))\n\t\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[Post Code]))\n\t\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_RML_Offline_44Days_Redlands'[Date Last Used]))\n\t\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days]))\n\t\t\t\t\t\t\t),\n\t\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_44Days_X012'[DOBI]))\n\t\t\t\t\t\t),\n\t\t\t\t\t\tNOT(ISBLANK('Lost_Offline_GT44_Days_42Gears'[DeviceID]))\n\t\t\t\t\t)\n\t\t\t\t)\n\t\t\t),\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Device Name]\", 'Lost_Offline_GT44_Days_42Gears'[Device Name],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[PEAK]\", 'Lost_Offline_GT44_Days_42Gears'[PEAK],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Serial Number]\", 'Lost_Offline_GT44_Days_42Gears'[Serial Number],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[IMEI]\", 'Lost_Offline_GT44_Days_42Gears'[IMEI],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days]\", 'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[ICCID]\", 'Lost_Offline_GT44_Days_42Gears'[ICCID],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Group Path]\", 'Lost_Offline_GT44_Days_42Gears'[Group Path],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Build]\", 'Lost_Offline_GT44_Days_42Gears'[Build],\n\t\t\t\"'Lost_Offline_44Days_X012'[Stock]\", 'Lost_Offline_44Days_X012'[Stock],\n\t\t\t\"'Lost_Offline_44Days_X012'[Status]\", 'Lost_Offline_44Days_X012'[Status],\n\t\t\t\"'Lost_Offline_44Days_X012'[Asset No.]\", 'Lost_Offline_44Days_X012'[Asset No.],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Last Seen]\", 'Lost_Offline_GT44_Days_42Gears'[Last Seen],\n\t\t\t\"'Lost_Offline_44Days_X012'[Address]\", 'Lost_Offline_44Days_X012'[Address],\n\t\t\t\"'Lost_Offline_44Days_X012'[Post Code]\", 'Lost_Offline_44Days_X012'[Post Code],\n\t\t\t\"'Lost_RML_Offline_44Days_Redlands'[Date Last Used]\", 'Lost_RML_Offline_44Days_Redlands'[Date Last Used],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days]\", 'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days],\n\t\t\t\"'Lost_Offline_44Days_X012'[DOBI]\", 'Lost_Offline_44Days_X012'[DOBI],\n\t\t\t\"'Lost_Offline_GT44_Days_42Gears'[DeviceID]\", 'Lost_Offline_GT44_Days_42Gears'[DeviceID]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'Lost_Offline_GT44_Days_42Gears'[Device Name],\n\t'Lost_Offline_GT44_Days_42Gears'[PEAK],\n\t'Lost_Offline_GT44_Days_42Gears'[Serial Number],\n\t'Lost_Offline_GT44_Days_42Gears'[IMEI],\n\t'Lost_Offline_GT44_Days_42Gears'[Offline > 44 Days],\n\t'Lost_Offline_GT44_Days_42Gears'[ICCID],\n\t'Lost_Offline_GT44_Days_42Gears'[Group Path],\n\t'Lost_Offline_GT44_Days_42Gears'[Build],\n\t'Lost_Offline_44Days_X012'[Stock],\n\t'Lost_Offline_44Days_X012'[Status],\n\t'Lost_Offline_44Days_X012'[Asset No.],\n\t'Lost_Offline_GT44_Days_42Gears'[Last Seen],\n\t'Lost_Offline_44Days_X012'[Address],\n\t'Lost_Offline_44Days_X012'[Post Code],\n\t'Lost_RML_Offline_44Days_Redlands'[Date Last Used],\n\t'Lost_Offline_GT44_Days_42Gears'[Offline > 16 Days],\n\t'Lost_Offline_44Days_X012'[DOBI],\n\t'Lost_Offline_GT44_Days_42Gears'[DeviceID]",
+                          "specification/serializerSettings/includeNulls": false
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                          "operationId": "ExecuteDatasetQuery",
+                          "connectionName": "shared_powerbi-1"
+                        }
+                      }
+                    },
+                    "Select": {
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                        "select": {
+                          "Serial Number": "@item()?['Lost_Offline_GT44_Days_42Gears[Serial Number]']",
+                          "Device Name": "@item()?['Lost_Offline_GT44_Days_42Gears[Device Name]']",
+                          "PEAK": "@item()?['Lost_Offline_GT44_Days_42Gears[PEAK]']",
+                          "IMEI": "@item()?['Lost_Offline_GT44_Days_42Gears[IMEI]']",
+                          "Offline > 44 Days": "@item()?['Lost_Offline_GT44_Days_42Gears[Offline > 44 Days]']",
+                          "ICCID": "@item()?['Lost_Offline_GT44_Days_42Gears[ICCID]']",
+                          "DOBI": "@item()?['Lost_Offline_44Days_X012[DOBI]']",
+                          "Group Path": "@item()?['Lost_Offline_GT44_Days_42Gears[Group Path]']",
+                          "Build": "@item()?['Lost_Offline_GT44_Days_42Gears[Build]']",
+                          "Stock": "@item()?['Lost_Offline_44Days_X012[Stock]']",
+                          "Status": "@item()?['Lost_Offline_44Days_X012[Status]']",
+                          "Asset No.": "@item()?['Lost_Offline_44Days_X012[Asset No.]']",
+                          "Last Seen": "@if(equals(item()?['Lost_Offline_GT44_Days_42Gears[Last Seen]'], null), '', formatDateTime(item()?['Lost_Offline_GT44_Days_42Gears[Last Seen]'], 'dd/MM/yyyy'))",
+                          "Address": "@item()?['Lost_Offline_44Days_X012[Address]']",
+                          "Post Code": "@item()?['Lost_Offline_44Days_X012[Post Code]']",
+                          "Date Last Used": "@if(equals(item()?['Lost_RML_Offline_44Days_Redlands[Date Last Used]'], null), '', formatDateTime(item()?['Lost_RML_Offline_44Days_Redlands[Date Last Used]'], 'dd/MM/yyyy'))"
+                        }
+                      },
+                      "runAfter": {
+                        "Run_a_query_against_a_dataset": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Create_HTML_table": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('Select')",
+                        "format": "HTML"
+                      },
+                      "runAfter": {
+                        "Select_DeviceID": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Compose_Email": {
+                      "type": "Compose",
+                      "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #e74c3c; /* Changed to red */\n        color: #ffffff;\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}",
+                      "runAfter": {
+                        "Create_HTML_table": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Send_an_email_(V2)": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "PQMN34@zebra.com;jose.miranda@zebra.com;ruben.silva@zebra.com;jocasta.malinova@zebra.com",
+                          "emailMessage/Subject": "RML: ACTION REQUIRED: RML LOST Devices Offline > 44 days to be updated as WIPE",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\">Good morning,<br><br>Please see the list of devices that have been offline for at least 44 days, these devices will be wiped in 2 days if they are not powered up beforehand. After they have been wiped, if the affected sites locate their PDAs, please ask them to report an incident to the PDA Service Desk to request replacement of the PDAs.</p><p class=\"editor-paragraph\">@{outputs('Compose_Email')}<br>Many thanks,</p><br><p class=\"editor-paragraph\">RMG PDA Servicedesk L1</p>",
+                          "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                          "emailMessage/Attachments": [
+                            {
+                              "Name": "RML_LOST_Offline_>_44_Days.csv",
+                              "ContentBytes": "@body('Create_CSV_table')"
+                            }
+                          ],
+                          "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                          "emailMessage/Importance": "High"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      },
+                      "runAfter": {
+                        "Delay": [
+                          "SUCCEEDED"
+                        ]
+                      }
+                    },
+                    "Create_CSV_table": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('Select')",
+                        "format": "CSV"
+                      },
+                      "runAfter": {
+                        "Compose_Email": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Select_DeviceID": {
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                        "select": {
+                          "Device ID": "@item()?['Lost_Offline_GT44_Days_42Gears[DeviceID]']"
+                        }
+                      },
+                      "runAfter": {
+                        "Select_for_SharePoint": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Select_for_SharePoint": {
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                        "select": {
+                          "DeviceID": "@item()?['Lost_Offline_GT44_Days_42Gears[DeviceID]']",
+                          "Serial Number": "@item()?['Lost_Offline_GT44_Days_42Gears[Serial Number]']",
+                          "Device Name": "@item()?['Lost_Offline_GT44_Days_42Gears[Device Name]']",
+                          "PEAK": "@item()?['Lost_Offline_GT44_Days_42Gears[PEAK]']",
+                          "IMEI": "@item()?['Lost_Offline_GT44_Days_42Gears[IMEI]']",
+                          "Offline > 44 Days": "@item()?['Lost_Offline_GT44_Days_42Gears[Offline > 44 Days]']",
+                          "ICCID": "@item()?['Lost_Offline_GT44_Days_42Gears[ICCID]']",
+                          "DOBI": "@item()?['Lost_Offline_44Days_X012[DOBI]']",
+                          "Group Path": "@item()?['Lost_Offline_GT44_Days_42Gears[Group Path]']",
+                          "Build": "@item()?['Lost_Offline_GT44_Days_42Gears[Build]']",
+                          "Stock": "@item()?['Lost_Offline_44Days_X012[Stock]']",
+                          "Status": "@item()?['Lost_Offline_44Days_X012[Status]']",
+                          "Asset No.": "@item()?['Lost_Offline_44Days_X012[Asset No.]']",
+                          "Last Seen": "@if(equals(item()?['Lost_Offline_GT44_Days_42Gears[Last Seen]'], null), '', formatDateTime(item()?['Lost_Offline_GT44_Days_42Gears[Last Seen]'], 'dd/MM/yyyy'))",
+                          "Address": "@item()?['Lost_Offline_44Days_X012[Address]']",
+                          "Post Code": "@item()?['Lost_Offline_44Days_X012[Post Code]']",
+                          "Date Last Used": "@if(equals(item()?['Lost_RML_Offline_44Days_Redlands[Date Last Used]'], null), '', formatDateTime(item()?['Lost_RML_Offline_44Days_Redlands[Date Last Used]'], 'dd/MM/yyyy'))"
+                        }
+                      },
+                      "runAfter": {
+                        "Select": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Create_CSV_table_for_SharePoint": {
+                      "type": "Table",
+                      "inputs": {
+                        "from": "@body('Select_for_SharePoint')",
+                        "format": "CSV"
+                      },
+                      "runAfter": {
+                        "Create_CSV_table": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Create_file": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                          "folderPath": "/Shared Documents/RMG/LOST AND STOLEN/WIPE/RML/INFORMED",
+                          "name": "rml_gt44days_before_moving_@{concat(formatDateTime(utcNow(), 'yyyyMMdd'), '.csv')}",
+                          "body": "@body('Create_CSV_table_for_SharePoint')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "operationId": "CreateFile",
+                          "connectionName": "shared_sharepointonline"
+                        }
+                      },
+                      "runAfter": {
+                        "Create_CSV_table_for_SharePoint": [
+                          "Succeeded"
+                        ]
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "Delay": {
+                      "type": "Wait",
+                      "inputs": {
+                        "interval": {
+                          "count": 1,
+                          "unit": "Hour"
+                        }
+                      },
+                      "runAfter": {
+                        "Create_file": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  }
+                }
+              },
+              "runAfter": {
+                "Scope_1": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {}
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

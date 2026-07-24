@@ -1,0 +1,624 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline-1": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_d102c"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_file_is_created_or_modified_(properties_only)": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+              "table": "1333b483-ec3b-48e9-a400-71208aaa9db2",
+              "folderPath": "/Shared Documents/EVRi/INTEGRITY/Evri Label reporting - Integrity"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "operationId": "GetOnUpdatedFileItems",
+              "connectionName": "shared_sharepointonline-1"
+            }
+          },
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Minute"
+          },
+          "splitOn": "@triggerOutputs()?['body/value']"
+        }
+      },
+      "actions": {
+        "Master_Scope": {
+          "type": "Scope",
+          "actions": {
+            "_PFW_WIPE_FILE": {
+              "type": "Scope",
+              "actions": {
+                "Compose_Expected_LABEL_Filename": {
+                  "type": "Compose",
+                  "inputs": "@concat('EVRI SHIPMENTS ', outputs('Compose_Today''s_Date_String_(yyyyMMdd)'), '.csv')"
+                },
+                "Get_files_(properties_only)_LABEL": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                      "table": "1333b483-ec3b-48e9-a400-71208aaa9db2",
+                      "folderPath": "/Shared Documents/EVRi/INTEGRITY/Evri Label reporting - Integrity"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "GetFileItems",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_Expected_LABEL_Filename": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "paginationPolicy": {
+                      "minimumItemCount": 5000
+                    }
+                  }
+                },
+                "Filter_array_LABELFILE": {
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@outputs('Get_files_(properties_only)_LABEL')?['body/value']",
+                    "where": "@equals(toUpper(item()?['{FilenameWithExtension}']),toUpper(outputs('Compose_Expected_LABEL_Filename')))"
+                  },
+                  "runAfter": {
+                    "Get_files_(properties_only)_LABEL": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Condition_LABELFILE": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(body('Filter_array_LABELFILE'))",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "For_each": {
+                      "type": "Foreach",
+                      "foreach": "@body('Filter_array_LABELFILE')",
+                      "actions": {
+                        "Get_file_content_LABEL_FILE": {
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                              "id": "@items('For_each')?['{Identifier}']",
+                              "inferContentType": true
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                              "operationId": "GetFileContent",
+                              "connectionName": "shared_sharepointonline"
+                            }
+                          }
+                        },
+                        "Convert_CSV_Content_to_String_LABELFILE": {
+                          "type": "Compose",
+                          "inputs": "@string(outputs('Get_file_content_LABEL_FILE')?['body'])",
+                          "runAfter": {
+                            "Get_file_content_LABEL_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Split_CSV_into_Lines_LABEL_FILE": {
+                          "type": "Compose",
+                          "inputs": "@split(outputs('Convert_CSV_Content_to_String_LABELFILE'), '\\n')",
+                          "runAfter": {
+                            "Convert_CSV_Content_to_String_LABELFILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Condition_": {
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Split_CSV_into_Lines_LABEL_FILE'))",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Append_to_array_variable_LABELFILE": {
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "AttachmentsArray",
+                                "value": {
+                                  "Name": "EVRI SHIPMENTS @{formatDateTime(utcNow(), 'ddMMyy')}.csv",
+                                  "ContentBytes": "@body('Get_file_content_LABEL_FILE')"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          },
+                          "runAfter": {
+                            "Split_CSV_into_Lines_LABEL_FILE": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "Send_an_email_(V2)": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "@trim(outputs('EmailTO'))",
+                          "emailMessage/Subject": "EVRI INTEGRITY: Labels Weekly Shipment Report",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">Greetings!</em></i></p><p class=\"editor-paragraph\"><br><i><em class=\"editor-text-italic\">Please find the attached Weekly Shipment Report.</em></i></p><p class=\"editor-paragraph\">@{outputs('Compose_barchart')}</p><p class=\"editor-paragraph\">@{outputs('Compose_FinalTableForEmail')}</p><p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\">Important:</strong></b> This is an automated notification sent from an unmonitored mailbox. Please do not reply to this email.</p><p class=\"editor-paragraph\"><i><em class=\"editor-text-italic\">For any questions regarding the report data, please reach out to the Premier Analytics team at </em></i><i><b><strong class=\"editor-text-bold editor-text-italic\">premier.analytics@zebra.com</strong></b></i><i><em class=\"editor-text-italic\">.</em></i><br><br><i><em class=\"editor-text-italic\">Regards,</em></i><br><i><em class=\"editor-text-italic\">Strategic Innovation and Automation</em></i></p>",
+                          "emailMessage/Sensitivity": "1fa9043b-8ae1-46ea-be88-6bb09c64f9f6",
+                          "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                          "emailMessage/Cc": "@trim(outputs('EmailCC'))",
+                          "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                          "emailMessage/Attachments": "@variables('AttachmentsArray')",
+                          "emailMessage/Importance": "High"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      },
+                      "runAfter": {
+                        "Compose_barchart": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Export_To_File_for_Power_BI_Reports": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+                          "reportid": "36e9ad47-7cb0-49ef-8f0c-57b9f448f4b3",
+                          "ExportPayloadPowerBIReport/format": "PNG",
+                          "ExportPayloadPowerBIReport/PowerBIReportExportConfiguration/pages": [
+                            {
+                              "pageName": "1d4b099007000e620a8e"
+                            }
+                          ]
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+                          "operationId": "InitiateExportToFileForPbiReports",
+                          "connectionName": "shared_powerbi"
+                        }
+                      },
+                      "runAfter": {
+                        "For_each": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Compose_barchart": {
+                      "type": "Compose",
+                      "inputs": "<img src=\"data:image/png;base64,@{base64(outputs('Export_to_File_for_Power_BI_Reports')?['body'])}\" width=\"1000\" />",
+                      "runAfter": {
+                        "Export_To_File_for_Power_BI_Reports": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Get_files_(properties_only)_LABEL_False": {
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "dataset": "https://zebra.sharepoint.com/sites/DMSBAExternal",
+                            "table": "1333b483-ec3b-48e9-a400-71208aaa9db2",
+                            "$orderby": "Modified desc",
+                            "folderPath": "/Shared Documents/EVRi/INTEGRITY/Evri Label reporting - Integrity"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                            "operationId": "GetFileItems",
+                            "connectionName": "shared_sharepointonline"
+                          }
+                        }
+                      },
+                      "Filter_for_CSV_files_only": {
+                        "type": "Query",
+                        "inputs": {
+                          "from": "@outputs('Get_files_(properties_only)_LABEL_False')?['body/value']",
+                          "where": "@endsWith(toLower(item()?['{FilenameWithExtension}']),'.csv')"
+                        },
+                        "runAfter": {
+                          "Get_files_(properties_only)_LABEL_False": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Condition": {
+                        "type": "If",
+                        "expression": {
+                          "and": [
+                            {
+                              "greater": [
+                                "@length(body('Filter_for_CSV_files_only'))",
+                                0
+                              ]
+                            }
+                          ]
+                        },
+                        "actions": {
+                          "FAILED_Send_an_email_(V2)_FILE_TYPO": {
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "parameters": {
+                                "emailMessage/To": "PQMN34@zebra.com;Jakub.Polak@zebra.com;Ivan.DeMarzi@zebra.com",
+                                "emailMessage/Subject": "ACTION REQUIRED: EVRI Shipments file for @{formatDateTime(utcNow(), 'dd-MMM-yyyy')} has a likely typo",
+                                "emailMessage/Body": "<p>Hello Team,</p>\n<p>The automated process ran but could not find the correctly named EVRI Shipments file for today.</p>\n<hr>\n<p><b>Expected Filename:</b><br>\n<code>@{outputs('Compose_Expected_LABEL_Filename')}</code></p>\n<p>However, we found another recently modified CSV file in the folder that might be the correct one with a typo. Since we sorted the files by modification date, this is the most recent CSV file available.</p>\n\n<h3>Potential Match Details</h3>\n<p><b>Filename Found:</b><br>\n<code>@{first(body('Filter_for_CSV_files_only'))?['{FilenameWithExtension}']}</code></p>\n\n<p><b>Last Modified By:</b> @{first(body('Filter_for_CSV_files_only'))?['Editor']?['DisplayName']}<br>\n<b>Last Modified On:</b> @{formatDateTime(first(body('Filter_for_CSV_files_only'))?['Modified'], 'dd-MMM-yyyy HH:mm')}</p>\n\n<hr>\n<h3>Action Required</h3>\n<p>Please check the folder. If the file listed under \"Potential Match\" is the correct one, <b>please rename it</b> to match the <b>Expected Filename</b> shown above.</p>\n<p><b>Folder Link:</b><br>\n<a href=\"https://zebra.sharepoint.com/sites/DMSBAExternal/Shared%20Documents/EVRi/INTEGRITY/Evri%20Label%20reporting%20-%20Integrity\">Click here to open the Evri Label Reporting Folder</a>\n</p>\n\n<p>Thank you,<br>\nStrategic Innovation and Automation</p>",
+                                "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                                "emailMessage/Importance": "High"
+                              },
+                              "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                                "operationId": "SendEmailV2",
+                                "connectionName": "shared_office365"
+                              }
+                            }
+                          }
+                        },
+                        "else": {
+                          "actions": {
+                            "FAILED_Send_an_email_(V2)_NO_FILE_FOUND": {
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "emailMessage/To": "PQMN34@zebra.com;Jakub.Polak@zebra.com;Ivan.DeMarzi@zebra.com",
+                                  "emailMessage/Subject": "ACTION REQUIRED: No EVRI Shipments CSV file was uploaded for @{formatDateTime(utcNow(), 'dd-MMM-yyyy')}",
+                                  "emailMessage/Body": "<p>Hello Team,</p>\n<p>The automated process ran to find the daily EVRI Shipments file, but it failed.</p>\n<p><b>The expected file was not found, and there were NO .csv files at all in the target SharePoint folder.</b></p>\n<p><b>Expected Filename:</b><br>\n<code>@{outputs('Compose_Expected_LABEL_Filename')}</code></p>\n<h3>Action Required</h3>\n<p>Please upload the correct daily CSV file to the SharePoint folder as soon as possible.</p>\n<p><b>Folder Link:</b><br>\n<a href=\"YOUR_SHAREPOINT_FOLDER_URL_HERE\">Click here to open the Evri Label Reporting Folder</a>\n</p>\n<p>Thank you,<br>\nPower Automate Bot</p>",
+                                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                                  "emailMessage/Importance": "High"
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                                  "operationId": "SendEmailV2",
+                                  "connectionName": "shared_office365"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "runAfter": {
+                          "Filter_for_CSV_files_only": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Filter_array_LABELFILE": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Compose_FinalTableForEmail": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨 <b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\">FLOW FAILED ALERT</strong></b>: EVRI INTEGRITY Label Reporting! 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨FLOW FAILED ALERT: EVRI INTEGRITY Label Reporting!🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨FLOW ALERT: EVRI INTEGRITY Label Reporting!🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Master_Scope": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          }
+        },
+        "Compose_Today's_Date_String_(yyyyMMdd)": {
+          "type": "Compose",
+          "inputs": "@formatDateTime(utcNow(), 'ddMMyy')",
+          "runAfter": {
+            "TriggerCondition_": [
+              "Succeeded"
+            ]
+          }
+        },
+        "TriggerCondition_": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "startsWith": [
+                  "@toUpper(triggerBody()?['{Name}'])",
+                  "EVRI SHIPMENTS"
+                ]
+              },
+              {
+                "endsWith": [
+                  "@triggerBody()?['{FilenameWithExtension}']",
+                  "v"
+                ]
+              },
+              {
+                "equals": [
+                  "@formatDateTime(triggerOutputs()?['body/Created'], 'yyyy-MM-dd')",
+                  "@formatDateTime(utcNow(), 'yyyy-MM-dd')"
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Delay": {
+              "type": "Wait",
+              "inputs": {
+                "interval": {
+                  "count": 12,
+                  "unit": "Minute"
+                }
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Terminate": {
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Succeeded"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Append_to_array_variable": {
+          "type": "AppendToArrayVariable",
+          "inputs": {
+            "name": "finalDataArray",
+            "value": "@setProperty(first(body('Select')), 'Calendar Week', 'TOTAL')"
+          },
+          "runAfter": {
+            "finalDataArray": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Select": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "Calendar Week": "@item()?['WeeklyLabelTrend[CalendarWeek]']",
+              "Count of Labels": "@item()?['[DistinctCountConsignmentNumber]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Run_a_query_against_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "8f81c853-50fe-41a0-a3ac-49ac10067d34",
+              "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZECOLUMNS(\n\t\t\tROLLUPADDISSUBTOTAL('WeeklyLabelTrend'[CalendarWeek], \"IsGrandTotalRowTotal\"),\n\t\t\t\"DistinctCountConsignmentNumber\", CALCULATE(DISTINCTCOUNT('WeeklyLabelTrend'[ConsignmentNumber]))\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t[IsGrandTotalRowTotal] DESC, 'WeeklyLabelTrend'[CalendarWeek]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "AttachmentsArray": [
+              "Succeeded"
+            ]
+          }
+        },
+        "AttachmentsArray": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AttachmentsArray",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "Compose_Today's_Date_String_(yyyyMMdd)": [
+              "Succeeded"
+            ]
+          }
+        },
+        "finalDataArray": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "finalDataArray",
+                "type": "array",
+                "value": "@skip(body('Select'), 1)"
+              }
+            ]
+          },
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Create_HTML_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@variables('finalDataArray')",
+            "format": "HTML"
+          },
+          "runAfter": {
+            "Append_to_array_variable": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Compose": {
+          "type": "Compose",
+          "inputs": "@replace(body('Create_HTML_table'), '<tr><td>TOTAL</td>', '<tr style=\"background-color:#F2F2F2; font-weight:bold;\"><td>TOTAL</td>')",
+          "runAfter": {
+            "Create_HTML_table": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Compose_FinalTableForEmail": {
+          "type": "Compose",
+          "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>@{outputs('Compose')}",
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "Joanna.Baldwin@Evri.com;Paul.Tate@Evri.com;parcelshop.admin@hermes-europe.co.uk;Parcelshop.networkdev@hermes-europe.co.uk;Jack.Cheshire@Evri.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "EWilkinson@zebra.com;james.fray@integrity-connect.co.uk;Kevin.Dando@integrity-print.com;GMSSBA@zebra.com;Jakub.Polak@zebra.com;Ivan.DeMarzi@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,644 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      },
+      "shared_keyvault": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "api": {
+          "name": "shared_keyvault"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "8"
+              ]
+            }
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset": {
+          "runAfter": {
+            "ComposeDeviceCount": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tTREATAS({\"Seasonal\"}, 'groupId_42gears_device_relocation_path'[Deployment Mode])\n\n\tVAR __DS0FilterTable2 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('groupId_42gears_device_relocation_path'[TargetGroupPath])),\n\t\t\tNOT('groupId_42gears_device_relocation_path'[TargetGroupPath] IN {BLANK()})\n\t\t)\n\n\tVAR __DS0FilterTable3 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('groupId_42gears_device_relocation_path'[X012_CleanedDOBI])),\n\t\t\tNOT('groupId_42gears_device_relocation_path'[X012_CleanedDOBI] IN {BLANK()})\n\t\t)\n\n\tVAR __DS0FilterTable4 = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('groupId_42gears_device_relocation_path'[Group Path])),\n\t\t\tSEARCH(\"_Staging\", 'groupId_42gears_device_relocation_path'[Group Path], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'groupId_42gears_device_relocation_path',\n\t\t\t\t'groupId_42gears_device_relocation_path'[X012_CleanedDOBI],\n\t\t\t\t'groupId_42gears_device_relocation_path'[Group Path],\n\t\t\t\t'groupId_42gears_device_relocation_path'[TargetGroupID],\n\t\t\t\t'groupId_42gears_device_relocation_path'[TargetGroupPath],\n\t\t\t\t'groupId_42gears_device_relocation_path'[Device ID],\n\t\t\t\t'groupId_42gears_device_relocation_path'[Serial Number]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2),\n\t\t\tKEEPFILTERS(__DS0FilterTable3),\n\t\t\tKEEPFILTERS(__DS0FilterTable4)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'groupId_42gears_device_relocation_path'[TargetGroupPath],\n\t'groupId_42gears_device_relocation_path'[X012_CleanedDOBI],\n\t'groupId_42gears_device_relocation_path'[Group Path],\n\t'groupId_42gears_device_relocation_path'[TargetGroupID],\n\t'groupId_42gears_device_relocation_path'[Device ID],\n\t'groupId_42gears_device_relocation_path'[Serial Number]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          }
+        },
+        "Select": {
+          "runAfter": {
+            "Run_a_query_against_a_dataset": [
+              "Succeeded"
+            ]
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+            "select": {
+              "X012 DOBI": "@item()?['groupId_42gears_device_relocation_path[X012_CleanedDOBI]']",
+              "42G Group Path": "@item()?['groupId_42gears_device_relocation_path[Group Path]']",
+              "Target Group Path": "@item()?['groupId_42gears_device_relocation_path[TargetGroupPath]']",
+              "Serial Number": "@item()?['groupId_42gears_device_relocation_path[Serial Number]']",
+              "Device ID": "@item()?['groupId_42gears_device_relocation_path[Device ID]']",
+              "Target Group Path ID": "@item()?['groupId_42gears_device_relocation_path[TargetGroupID]']"
+            }
+          }
+        },
+        "Create_CSV_table": {
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "CSV"
+          }
+        },
+        "DeviceCount": {
+          "runAfter": {
+            "arrFailureLog": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "EVALUATE\n\tROW(\n\t\t\"Count_of_Serial_Number_for_Seasonal\", 'groupId_42gears_device_relocation_path'[Count of Serial Number for Seasonal]\n\t)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          }
+        },
+        "ComposeDeviceCount": {
+          "runAfter": {
+            "DeviceCount": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@outputs('DeviceCount')?['body/firstTableRows']"
+        },
+        "arrSuccessLog": {
+          "runAfter": {
+            "Get_secret_PSWD": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "arrSuccessLog",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "arrFailureLog": {
+          "runAfter": {
+            "arrSuccessLog": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "arrFailureLog",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Condition_IF_any_device": {
+          "actions": {
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "folderPath": "/Shared Documents/DOCUMENTS/1. ACCOUNTS/ROYAL MAIL GROUP/3. PROJECT/PEAK PROJECT/PEAK PDA RELOCATED",
+                  "name": "Peak_2025_relocated_as_per_X012_@{formatDateTime(utcNow(),'yyyy-MM-dd-HH-mm')}.csv",
+                  "body": "@body('Create_CSV_table')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Scope": {
+              "actions": {
+                "Apply_to_each": {
+                  "foreach": "@outputs('Run_a_query_against_a_dataset')?['body/firstTableRows']",
+                  "actions": {
+                    "Condition": {
+                      "actions": {
+                        "Append_to_string_variable_PASSED": {
+                          "runAfter": {
+                            "Append_to_array_variable_PASSED": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "AppendToStringVariable",
+                          "inputs": {
+                            "name": "varSuccessLog",
+                            "value": "SUCCESS: Moved SN @{items('Apply_to_each')?['groupId_42gears_device_relocation_path[Serial Number]']} to group @{items('Apply_to_each')?['groupId_42gears_device_relocation_path[TargetGroupPath]']}"
+                          }
+                        },
+                        "Append_to_array_variable_PASSED": {
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "arrSuccessLog",
+                            "value": {
+                              "Serial Number": "@{items('Apply_to_each')?['groupId_42gears_device_relocation_path[Serial Number]']}",
+                              "Moved To Group": "@{items('Apply_to_each')?['groupId_42gears_device_relocation_path[TargetGroupPath]']}"
+                            }
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "Compose": [
+                          "Succeeded"
+                        ]
+                      },
+                      "else": {
+                        "actions": {
+                          "Append_to_string_variable_FAILED": {
+                            "runAfter": {
+                              "Append_to_array_variable_FAILED": [
+                                "Succeeded"
+                              ]
+                            },
+                            "type": "AppendToStringVariable",
+                            "inputs": {
+                              "name": "varFailureLog",
+                              "value": "FAILED: SN @{items('Apply_to_each')?['groupId_42gears_device_relocation_path[Serial Number]']}. Status: @{outputs('HTTP')?['statusCode']}. Error: @{outputs('HTTP')?['body']}"
+                            }
+                          },
+                          "Append_to_array_variable_FAILED": {
+                            "type": "AppendToArrayVariable",
+                            "inputs": {
+                              "name": "arrFailureLog",
+                              "value": {
+                                "Serial Number": "@{items('Apply_to_each')?['groupId_42gears_device_relocation_path[Serial Number]']}",
+                                "Moved To Group": "@{items('Apply_to_each')?['groupId_42gears_device_relocation_path[TargetGroupPath]']}"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@outputs('Compose')",
+                              200
+                            ]
+                          }
+                        ]
+                      },
+                      "type": "If"
+                    },
+                    "HTTP": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "https://zebrams001.eu.suremdm.io/api/deviceassignment",
+                        "method": "PUT",
+                        "headers": {
+                          "ApiKey": "@{outputs('Get_secret_APIKEY')?['body/value']}",
+                          "Content-TypeContent-Type": "application/json"
+                        },
+                        "body": [
+                          {
+                            "DeviceID": "@{items('Apply_to_each')?['groupId_42gears_device_relocation_path[Device ID]']}",
+                            "GroupID": "@{items('Apply_to_each')?['groupId_42gears_device_relocation_path[TargetGroupID]']}"
+                          }
+                        ],
+                        "authentication": {
+                          "type": "Basic",
+                          "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                          "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "Compose": {
+                      "runAfter": {
+                        "HTTP": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@int(outputs('HTTP')['statusCode'])"
+                    }
+                  },
+                  "type": "Foreach",
+                  "runtimeConfiguration": {
+                    "concurrency": {
+                      "repetitions": 30
+                    }
+                  }
+                },
+                "Create_HTML_table_PASSED": {
+                  "runAfter": {
+                    "Apply_to_each": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@variables('arrSuccessLog')",
+                    "format": "HTML",
+                    "columns": [
+                      {
+                        "header": "Serial Number",
+                        "value": "@item()?['Serial Number']"
+                      },
+                      {
+                        "header": "Moved To Group",
+                        "value": "@item()?['Moved To Group']"
+                      }
+                    ]
+                  }
+                },
+                "Create_HTML_table_FAILED": {
+                  "runAfter": {
+                    "Apply_to_each": [
+                      "TimedOut",
+                      "Skipped",
+                      "Failed"
+                    ]
+                  },
+                  "type": "Table",
+                  "inputs": {
+                    "from": "@variables('arrFailureLog')",
+                    "format": "HTML"
+                  }
+                },
+                "SUCCESS_Handling": {
+                  "actions": {
+                    "SUCCESS_Send_an_email_(V2)": {
+                      "runAfter": {
+                        "Post_PASSED_message_in_a_chat_or_channel": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "PQMN34@zebra.com",
+                          "emailMessage/Subject": "RMG: SUCCESSFULLY COMPLETED-RMG PEAK Device Auto Relocations as per X012",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\">SUCCESSFULLY COMPLETED</strong></b><span style=\"background-color: rgb(126, 211, 33); color: rgb(0, 0, 0);\"> </span>: RMG PEAK Device Auto Relocations as per X012</p><p class=\"editor-paragraph\"><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br><br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><p class=\"editor-paragraph\">SUCCESSFUL MOVES:@{if(empty(variables('arrSuccessLog')), 'None', outputs('Compose_PASSED_HTML_Table'))}</p><br>",
+                          "emailMessage/Importance": "High"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      }
+                    },
+                    "Post_PASSED_message_in_a_chat_or_channel": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Channel",
+                          "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                          "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                          "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(65, 117, 5); color: rgb(255, 255, 255);\">SUCCESSFULLY COMPLETED: </strong></b><span style=\"color: rgb(255, 255, 255); background-color: rgb(65, 117, 5);\">RMG PEAK Device Auto Relocations as per X012</span><span style=\"background-color: rgb(65, 117, 5);\"><br></span><br>SUCCESSFUL MOVES:@{if(empty(variables('arrSuccessLog')), 'None', outputs('Compose_PASSED_HTML_Table'))}</p><br>"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                          "operationId": "PostMessageToConversation",
+                          "connectionName": "shared_teams"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_PASSED_HTML_Table": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Scope"
+                },
+                "Error_Handling": {
+                  "actions": {
+                    "FAILED_Send_an_email_(V2)": {
+                      "runAfter": {
+                        "Post_FAILED_message_in_a_chat_or_channel": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "emailMessage/To": "PQMN34@zebra.com",
+                          "emailMessage/Subject": "RMG: FAILED - RMG PEAK Device Auto Relocations as per X012",
+                          "emailMessage/Body": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">F</strong></b><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">AILED</strong></b>: RMG PEAK Device Auto Relocations as per X012</p><p class=\"editor-paragraph\"><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br>FAILED MOVES:<br>@{if(empty(variables('arrFailureLog')), 'None', outputs('Compose_FAILED_HTML_Table'))}</p>",
+                          "emailMessage/Importance": "High"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "SendEmailV2",
+                          "connectionName": "shared_office365"
+                        }
+                      }
+                    },
+                    "Post_FAILED_message_in_a_chat_or_channel": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Channel",
+                          "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                          "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                          "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">FAILED: </strong></b><span style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">RMG PEAK Device Auto Relocations as per X012</span><br>FAILED MOVES:<br>@{if(empty(variables('arrFailureLog')), 'None', outputs('Compose_FAILED_HTML_Table'))}</p>"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                          "operationId": "PostMessageToConversation",
+                          "connectionName": "shared_teams"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_FAILED_HTML_Table": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Scope"
+                },
+                "Compose_PASSED_HTML_Table": {
+                  "runAfter": {
+                    "Create_HTML_table_PASSED": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@replace(outputs('Create_HTML_table_PASSED')?['body'], '<table>', '<style>table {border: 1px solid #ddd; border-collapse: collapse; font-family: sans-serif; width: 100%;} th, td {border: 1px solid #ddd; padding: 8px; text-align: left;} th {background-color: #C00000; color: white; font-weight: bold; text-align: center;}</style><table>')"
+                },
+                "Compose_FAILED_HTML_Table": {
+                  "runAfter": {
+                    "Create_HTML_table_FAILED": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Compose",
+                  "inputs": "@replace(outputs('Create_HTML_table_FAILED')?['body'], '<table>', '<style>table {border: 1px solid #ddd; border-collapse: collapse; font-family: sans-serif; width: 100%;} th, td {border: 1px solid #ddd; padding: 8px; text-align: left;} th {background-color: #C00000; color: white; font-weight: bold; text-align: center;}</style><table>')"
+                }
+              },
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Scope"
+            }
+          },
+          "runAfter": {
+            "varFailureLog": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "No_PEAK_Device_Found": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "poster": "Flow bot",
+                    "location": "Channel",
+                    "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                    "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                    "body/messageBody": "<p class=\"editor-paragraph\"><u><b><strong class=\"editor-text-bold editor-text-underline\">PEAK Device Relocation</strong></b></u></p><br><br><p class=\"editor-paragraph\"><span style=\"background-color: rgb(248, 231, 28);\">No devices were found in the Staging folder, which has the DOBI number in X012, requiring relocation today.</span></p><br><br>"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                    "operationId": "PostMessageToConversation",
+                    "connectionName": "shared_teams"
+                  }
+                }
+              },
+              "Terminate": {
+                "runAfter": {
+                  "No_PEAK_Device_Found": [
+                    "Succeeded"
+                  ]
+                },
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Succeeded"
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(outputs('Run_a_query_against_a_dataset')?['body/firstTableRows'])",
+                  0
+                ]
+              }
+            ]
+          },
+          "type": "If"
+        },
+        "Get_secret_APIKEY": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-api-key-movedevice-42g"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          }
+        },
+        "Get_secret_UID": {
+          "runAfter": {
+            "Get_secret_APIKEY": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secret_PSWD": {
+          "runAfter": {
+            "Get_secret_UID": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "varSuccessLog": {
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varSuccessLog",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "varFailureLog": {
+          "runAfter": {
+            "varSuccessLog": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varFailureLog",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

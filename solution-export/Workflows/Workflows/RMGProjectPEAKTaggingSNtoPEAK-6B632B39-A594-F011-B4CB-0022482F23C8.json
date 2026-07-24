@@ -1,0 +1,490 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365-1": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedsharepointonline_cc95c"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Hour",
+            "timeZone": "UTC"
+          }
+        }
+      },
+      "actions": {
+        "Run_a_query_against_a_dataset_PEAK_All_Devices": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "b6a56604-7b3d-487e-9038-96e00e480413",
+              "specification/query": "// DAX Query\nDEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('PEAK Project Table'[Device Name])),\n\t\t\tNOT(SEARCH(\"PEAK\", 'PEAK Project Table'[Device Name], 1, 0) >= 1)\n\t\t)\n\n\tVAR __DS0FilterTable2 = \n\t\tTREATAS({\"Seasonal\"}, 'PEAK Project Table'[Deployment Mode])\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'PEAK Project Table',\n\t\t\t\t'PEAK Project Table'[Device Name],\n\t\t\t\t'PEAK Project Table'[Serial],\n\t\t\t\t'PEAK Project Table'[IMEI],\n\t\t\t\t'PEAK Project Table'[SW-Build],\n\t\t\t\t'PEAK Project Table'[OS Build Number],\n\t\t\t\t'PEAK Project Table'[Contract ID],\n\t\t\t\t'PEAK Project Table'[Deployment Mode],\n\t\t\t\t'PEAK Project Table'[MSPI],\n\t\t\t\t'PEAK Project Table'[Enrollment],\n\t\t\t\t'PEAK Project Table'[Operational Status],\n\t\t\t\t'PEAK Project Table'[Device ID],\n\t\t\t\t'PEAK Project Table'[Status],\n\t\t\t\t'PEAK Project Table'[Group Path],\n\t\t\t\t'PEAK Project Table'[Asset No.]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable),\n\t\t\tKEEPFILTERS(__DS0FilterTable2)\n\t\t)\n\nEVALUATE\n\t__DS0Core \n\nORDER BY\n\t'PEAK Project Table'[Status] DESC,\n\t'PEAK Project Table'[Device Name],\n\t'PEAK Project Table'[Serial],\n\t'PEAK Project Table'[IMEI],\n\t'PEAK Project Table'[SW-Build],\n\t'PEAK Project Table'[OS Build Number],\n\t'PEAK Project Table'[Contract ID],\n\t'PEAK Project Table'[Deployment Mode],\n\t'PEAK Project Table'[MSPI],\n\t'PEAK Project Table'[Enrollment],\n\t'PEAK Project Table'[Operational Status],\n\t'PEAK Project Table'[Device ID],\n 'PEAK Project Table'[Group Path],\n\t'PEAK Project Table'[Asset No.]\n",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {
+            "Password": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "aa4fcb43-90b7-444e-82ee-6b0209c240c7"
+          }
+        },
+        "Select_PEAK_Devices": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset_PEAK_All_Devices')?['body/firstTableRows']",
+            "select": {
+              "Asset No.": "@item()?['PEAK Project Table[Asset No.]']",
+              "Device Name": "@item()?['PEAK Project Table[Device Name]']",
+              "Serial Number": "@item()?['PEAK Project Table[Serial]']",
+              "IMEI": "@item()?['PEAK Project Table[IMEI]']",
+              "SW-Build": "@item()?['PEAK Project Table[SW-Build]']",
+              "Build Number": "@item()?['PEAK Project Table[OS Build Number]']",
+              "Deployment Mode": "@item()?['PEAK Project Table[Deployment Mode]']",
+              "MSPI": "@item()?['PEAK Project Table[MSPI]']",
+              "Enrollment": "@item()?['PEAK Project Table[Enrollment]']",
+              "Operational Status": "@item()?['PEAK Project Table[Operational Status]']",
+              "Status": "@item()?['PEAK Project Table[Status]']",
+              "Group Path": "@item()?['PEAK Project Table[Group Path]']",
+              "Device ID": "@item()?['PEAK Project Table[Device ID]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset_PEAK_All_Devices": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "61201853-f96c-44e5-8fed-b994a420280f"
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨FAILED FLOW ALERT: RMG Project PEAK Tagging SN to PEAK🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><br>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "be091e0b-e4fd-4bf5-95e7-313230625c3f"
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨FAILED FLOW ALERT: RMG Project PEAK Tagging SN to PEAK🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨FAILED FLOW ALERT: RMG Project PEAK Tagging SN to PEAK🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365-1"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b04d30a3-f983-4788-8503-66bb7ab9f42b"
+              }
+            }
+          },
+          "runAfter": {
+            "Condition": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "69e0e51e-d87a-4235-8f0d-38001a12b00f"
+          }
+        },
+        "Get_secret": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-api-key-movedevice-42g"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {}
+        },
+        "UID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Password": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "UID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Success_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\"><span style=\"background-color: rgb(65, 117, 5); color: rgb(255, 255, 255);\">PASSED: RMG Project PEAK Tagging SN to PEAK</span><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><br>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "be091e0b-e4fd-4bf5-95e7-313230625c3f"
+              }
+            },
+            "FAILED_Send_an_email_(V2)_1": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "PASSED: RMG Project PEAK Tagging SN to PEAK",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(65, 117, 5); color: rgb(255, 255, 255);\">PASSED: RMG Project PEAK Tagging SN to PEAK</strong></b><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365-1"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel_1": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b04d30a3-f983-4788-8503-66bb7ab9f42b"
+              }
+            }
+          },
+          "runAfter": {
+            "Condition": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Condition": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(outputs('Run_a_query_against_a_dataset_PEAK_ALL_Devices')?['body']?['firstTableRows'])",
+                  0
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Create_CSV_table": {
+              "type": "Table",
+              "inputs": {
+                "from": "@body('Select_PEAK_Devices')",
+                "format": "CSV"
+              },
+              "metadata": {
+                "operationMetadataId": "95da2fd7-8af6-4768-8afe-147eda557427"
+              }
+            },
+            "Create_file": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "folderPath": "/Shared Documents/DOCUMENTS/1. ACCOUNTS/ROYAL MAIL GROUP/3. PROJECT/PEAK PROJECT/PEAK 2025",
+                  "name": "PEAK_2025_@{utcNow()}.csv",
+                  "body": "@body('Create_CSV_table')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "CreateFile",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Create_CSV_table": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "6d6d942b-d46f-418c-8caa-67df4f8125b7"
+              }
+            },
+            "Delay": {
+              "type": "Wait",
+              "inputs": {
+                "interval": {
+                  "count": 10,
+                  "unit": "Second"
+                }
+              },
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4bef0500-128e-4056-9c3f-cffff01bc5ab"
+              }
+            },
+            "Scope": {
+              "type": "Scope",
+              "actions": {
+                "Apply_to_each": {
+                  "type": "Foreach",
+                  "foreach": "@body('Select_PEAK_Devices')",
+                  "actions": {
+                    "DeviceID": {
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Device ID']",
+                      "metadata": {
+                        "operationMetadataId": "fac5819c-969d-4a67-8ff4-d58d225ec2f5"
+                      }
+                    },
+                    "HTTP": {
+                      "type": "Http",
+                      "inputs": {
+                        "uri": "https://zebrams001.eu.suremdm.io/api/dynamicjob",
+                        "method": "POST",
+                        "headers": {
+                          "ApiKey": "@{outputs('Get_secret')?['body/value']}",
+                          "Content-Type": "application/json"
+                        },
+                        "body": {
+                          "DeviceID": "@{outputs('DeviceID')}",
+                          "JobType": "Set_Devicename",
+                          "PayLoad": "@{outputs('SerialNumber')}-PEAK26"
+                        },
+                        "authentication": {
+                          "type": "Basic",
+                          "username": "@{outputs('UID')?['body/value']}",
+                          "password": "@{outputs('Password')?['body/value']}"
+                        }
+                      },
+                      "runAfter": {
+                        "SerialNumber": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "c4a0f7d2-3c92-431c-b147-7397b27532f7"
+                      }
+                    },
+                    "DeviceName": {
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Device Name']",
+                      "runAfter": {
+                        "DeviceID": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "5609e7b9-295f-4d2c-a9da-b09ddd9624c2"
+                      }
+                    },
+                    "SerialNumber": {
+                      "type": "Compose",
+                      "inputs": "@items('Apply_to_each')?['Serial Number']",
+                      "runAfter": {
+                        "DeviceName": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "17a0bd52-fcd5-49ec-9a89-845a6b87ffe8"
+                      }
+                    }
+                  },
+                  "metadata": {
+                    "operationMetadataId": "250cb36d-b255-42ce-8ad4-02dbe8b94e69"
+                  }
+                }
+              },
+              "runAfter": {
+                "Delay": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "petra.mochnacka1@zebra.com",
+                  "emailMessage/Subject": "RMG: PEAK Tagging",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">Greetings!</p><br><p class=\"editor-paragraph\">Please find the attached PEAK devices, which were tagged today.</p><br><p class=\"editor-paragraph\">Regards</p><br><p class=\"editor-paragraph\">Strategic Innovation and Automation</p><br>",
+                  "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Bcc": "StrategicInnovationandAutomation@Zebra.com",
+                  "emailMessage/Attachments": [
+                    {
+                      "Name": "rmg_peak_tagged_@{utcNow()}.csv",
+                      "ContentBytes": "@body('Create_CSV_table')"
+                    }
+                  ],
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365-1"
+                }
+              },
+              "runAfter": {
+                "Scope": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Terminate": {
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Succeeded"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Select_PEAK_Devices": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

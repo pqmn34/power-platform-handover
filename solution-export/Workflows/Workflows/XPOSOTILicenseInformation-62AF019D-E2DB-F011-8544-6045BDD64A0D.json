@@ -1,0 +1,548 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_sharepointonline": {
+        "api": {
+          "name": "shared_sharepointonline"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "cr4bb_b6599cff35a24544bcf663b98e2da320"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Day",
+            "interval": 1,
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "1",
+                "6",
+                "10",
+                "17",
+                "20",
+                "23",
+                "4",
+                "8",
+                "12",
+                "14"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "1908fb05-d50f-460e-9975-a135280d7aa9"
+          }
+        }
+      },
+      "actions": {
+        "Get_secret_ClientIDSecret": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-xpo-sti-cidcs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "EmailCC": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "e1d307a5-27e5-4a4e-999a-788c3ca588a6"
+          }
+        },
+        "Get_secretPSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-xpo-sti-cs"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "bd32d846-055f-440a-9326-b08b868d8413"
+          }
+        },
+        "EmailTO": {
+          "type": "Compose",
+          "inputs": "emea.mlm.support@zebra.com,GlobalPremierSupport@zebra.com",
+          "runAfter": {}
+        },
+        "EmailCC": {
+          "type": "Compose",
+          "inputs": "GMSSBA@zebra.com,Jakub.Polak@zebra.com,GLOBALDMSLEVEL2@zebra.com,DMSDeliveryLeads@zebra.com",
+          "runAfter": {
+            "EmailTO": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "HTTP_License": {
+              "type": "Http",
+              "inputs": {
+                "uri": "https://mlmsti45a.zebra.com:443/MobiControl/api/license",
+                "method": "GET",
+                "headers": {
+                  "Authorization": "Bearer @{variables('AccessToken')}",
+                  "Content-Type": "application/json",
+                  "Accept": "application/json"
+                }
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "04ddfa4b-55c4-488a-8e77-bbc15b685bf6"
+              }
+            },
+            "Parse_JSON": {
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@body('HTTP_License')",
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "RegistrationCode": {
+                      "type": "string"
+                    },
+                    "ExpiryDate": {
+                      "type": "string"
+                    },
+                    "PurchasedLicenses": {
+                      "type": "integer"
+                    },
+                    "UsedLicenses": {
+                      "type": "object",
+                      "properties": {
+                        "Android": {
+                          "type": "integer"
+                        },
+                        "Apple": {
+                          "type": "integer"
+                        },
+                        "WindowsCE": {
+                          "type": "integer"
+                        },
+                        "WindowsDesktop": {
+                          "type": "integer"
+                        },
+                        "WindowsModern": {
+                          "type": "integer"
+                        },
+                        "Linux": {
+                          "type": "integer"
+                        },
+                        "ZebraPrinter": {
+                          "type": "integer"
+                        },
+                        "Chrome": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "UsedDeploymentServers": {
+                      "type": "integer"
+                    },
+                    "PurchasedServers": {
+                      "type": "integer"
+                    },
+                    "LastActivationDate": {
+                      "type": "string"
+                    },
+                    "ProductVersion": {
+                      "type": "string"
+                    },
+                    "LicenseType": {
+                      "type": "string"
+                    },
+                    "LicenseState": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "HTTP_License": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose": {
+              "type": "Compose",
+              "inputs": "@body('Parse_JSON')",
+              "runAfter": {
+                "Parse_JSON": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Get_items": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                  "table": "ed5342b3-0631-445d-91e7-bb56986edbde"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_sharepointonline"
+                }
+              },
+              "runAfter": {
+                "Compose": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "For_each": {
+              "type": "Foreach",
+              "foreach": "@outputs('Get_items')?['body/value']",
+              "actions": {
+                "Update_item": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "ed5342b3-0631-445d-91e7-bb56986edbde",
+                      "id": "@items('For_each')?['ID']",
+                      "item/Title": "@body('Parse_JSON')?['RegistrationCode']",
+                      "item/ExpiryDate": "@body('Parse_JSON')?['ExpiryDate']",
+                      "item/PurchasedLicenses": "@body('Parse_JSON')?['PurchasedLicenses']",
+                      "item/Used_Android": "@body('Parse_JSON')?['UsedLicenses']?['Android']",
+                      "item/Used_Windows": "@body('Parse_JSON')?['UsedLicenses']?['WindowsCE']",
+                      "item/Used_Apple": "@body('Parse_JSON')?['UsedLicenses']?['Apple']",
+                      "item/LicenseType": "@body('Parse_JSON')?['LicenseType']",
+                      "item/ProductVersion": "@body('Parse_JSON')?['ProductVersion']",
+                      "item/LogDate": "@formatDateTime(utcNow(),'yyyy-MM-dd HH:mm:ss')",
+                      "item/{ContentType}/Id": "0x01005FF4F24B929DEF4CA9CA02A2FBE5AA8A00C5358CCEF4A6624D997E760AC65A362A"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "operationId": "PatchItem",
+                      "connectionName": "shared_sharepointonline"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Get_items": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "AccessToken": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ClientIDSecret": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ClientIDSecret",
+                "type": "string",
+                "value": "@outputs('Get_secret_ClientIDSecret')?['body/value']"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_secretPSWD": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e787621f-edd0-432a-b05e-592f985be9f9"
+          }
+        },
+        "UID": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "UID",
+                "type": "string",
+                "value": "prabhat.kumar@zebra.com"
+              }
+            ]
+          },
+          "runAfter": {
+            "ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0e81c84f-b4fc-4e9b-b89f-c3fd2b0de3e8"
+          }
+        },
+        "Password": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Password",
+                "type": "string",
+                "value": "PKumar)010880"
+              }
+            ]
+          },
+          "runAfter": {
+            "UID": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9a7c50a6-1992-455a-b509-eada497906df"
+          }
+        },
+        "EncodeSecret": {
+          "type": "Compose",
+          "inputs": "@base64(variables('ClientIDSecret'))",
+          "runAfter": {
+            "Password": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1cdac49a-2b2e-43ee-a1e3-d32e254ad595"
+          }
+        },
+        "HTTP": {
+          "type": "Http",
+          "inputs": {
+            "uri": "https://mlmsti45a.zebra.com:443/MobiControl/api/token",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Basic @{outputs('EncodeSecret')}",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "body": "grant_type=password&username=@{variables('UID')}&password=@{variables('Password')}"
+          },
+          "runAfter": {
+            "EncodeSecret": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            },
+            "secureData": {
+              "properties": [
+                "inputs"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "f2f80696-269a-4c5b-b307-fb545d2409fa"
+          }
+        },
+        "TokenParse_JSON": {
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "token_type": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "expires_in": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6fea45a2-f4c0-4c52-a80e-6b982d89b85a"
+          }
+        },
+        "AccessToken": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AccessToken",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "TokenParse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5efc3169-4b11-4d88-beb7-8daa016b9e08"
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "Post_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\">🚨<b><strong class=\"editor-text-bold\" style=\"color: rgb(208, 2, 27);\"> FLOW FAILED ALERT</strong></b>: XPO SOTI License Information 🚨<br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            },
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "🚨 FLOW FAILED ALERT: XPO SOTI License Information 🚨",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\">🚨 FLOW FAILED ALERT: XPO SOTI License Information 🚨<br><br><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p>",
+                  "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,615 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedpowerbi_50189"
+        },
+        "api": {
+          "name": "shared_powerbi"
+        }
+      },
+      "shared_keyvault": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "api": {
+          "name": "shared_keyvault"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_77429"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "frequency": "Month",
+            "interval": 1,
+            "timeZone": "Central Europe Standard Time",
+            "startTime": "2024-12-15T08:00:00Z"
+          },
+          "metadata": {
+            "operationMetadataId": "1908fb05-d50f-460e-9975-a135280d7aa9"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "HTTP": {
+          "runAfter": {
+            "EncodeSecret": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f2f80696-269a-4c5b-b307-fb545d2409fa"
+          },
+          "type": "Http",
+          "inputs": {
+            "uri": "https://mlmsti19web01.zebra.com/MobiControl/api/token",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Basic @{outputs('EncodeSecret')}",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            "body": "grant_type=password&username=@{variables('UID')}&password=@{variables('Password')}"
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            },
+            "secureData": {
+              "properties": [
+                "inputs"
+              ]
+            }
+          }
+        },
+        "ClientIDSecret": {
+          "runAfter": {
+            "Get_secretPSWD": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e787621f-edd0-432a-b05e-592f985be9f9"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "ClientIDSecret",
+                "type": "string",
+                "value": "@outputs('Get_secret_ClientIDSecret')?['body/value']"
+              }
+            ]
+          }
+        },
+        "EncodeSecret": {
+          "runAfter": {
+            "Password": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1cdac49a-2b2e-43ee-a1e3-d32e254ad595"
+          },
+          "type": "Compose",
+          "inputs": "@base64(variables('ClientIDSecret'))"
+        },
+        "UID": {
+          "runAfter": {
+            "ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "0e81c84f-b4fc-4e9b-b89f-c3fd2b0de3e8"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "UID",
+                "type": "string",
+                "value": "prabhat.kumar@zebra.com"
+              }
+            ]
+          }
+        },
+        "Password": {
+          "runAfter": {
+            "UID": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9a7c50a6-1992-455a-b509-eada497906df"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Password",
+                "type": "string",
+                "value": "Passwordpka!1"
+              }
+            ]
+          }
+        },
+        "TokenParse_JSON": {
+          "runAfter": {
+            "HTTP": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6fea45a2-f4c0-4c52-a80e-6b982d89b85a"
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('HTTP')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "properties": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "token_type": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "expires_in": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "AccessToken": {
+          "runAfter": {
+            "TokenParse_JSON": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5efc3169-4b11-4d88-beb7-8daa016b9e08"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "AccessToken",
+                "type": "string",
+                "value": "@body('TokenParse_JSON')?['access_token']"
+              }
+            ]
+          }
+        },
+        "Create_CSV_table": {
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5aa50498-ae57-4002-b86c-afc4485cf2d4"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select_EVRI_Offline_More_Than_30_Days')",
+            "format": "CSV"
+          }
+        },
+        "Compose": {
+          "runAfter": {
+            "Create_HTML_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e6de21c2-2407-4e47-a528-c80fecd0ee85"
+          },
+          "type": "Compose",
+          "inputs": "<style>\n    table {\n        width:100%;\n        height:100%;\n        border:1px solid #b3adad;\n        border-collapse:collapse;\n    }\n    table th {\n        border:1px solid #b3adad;\n        background: #0000FF; /* Blue background color */\n        color: #FFFFFF; /* White font color */\n    }\n    table td {\n        border:1px solid #b3adad;\n        text-align:center;\n        background: #ffffff;\n        color: #313030;\n    }\n</style>\n@{body('Create_HTML_table')}"
+        },
+        "Create_HTML_table": {
+          "runAfter": {
+            "Select_EVRI_Offline_More_Than_30_Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8eda08a8-3d37-4ec3-b5a7-164e7b69c72c"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select_EVRI_Offline_More_Than_30_Days')",
+            "format": "HTML"
+          }
+        },
+        "Select_EVRI_Offline_More_Than_30_Days": {
+          "runAfter": {
+            "EVRi_Offline_More_Than_30_Days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6ce05d4f-206b-4f20-895c-59a9fb123009"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('EVRi_Offline_More_Than_30_Days')?['body/firstTableRows']",
+            "select": {
+              "Device Name": "@item()?['Zebra DB[Device Name]']",
+              "Serial Number": "@item()?['Zebra DB[SerialNo]']",
+              "Model": "@item()?['Zebra DB[Model]']",
+              "Business Division": "@item()?['Zebra DB[Business Division]']",
+              "Business Site": "@item()?['Zebra DB[Business Site]']",
+              "Business Unit": "@item()?['Zebra DB[Business Unit]']",
+              "Offline Days": "@item()?['Zebra DB[Offline Days]']",
+              "Offline > 30 Days": "@item()?['Zebra DB[Offline > 30 Days]']",
+              "Last Seen": "@if(equals(item()?['Zebra DB[LastDisConnTime]'], null), '', formatDateTime(item()?['Zebra DB[LastDisConnTime]'],'dd/MM/yyyy', 'en-GB'))",
+              "Enrollment Time": "@if(equals(item()?['Zebra DB[EnrollmentTime]'], null), '', formatDateTime(item()?['Zebra DB[EnrollmentTime]'],'dd/MM/yyyy HH:mm', 'en-GB'))",
+              "Star ID": "@item()?['Zebra DB[Star ID]']",
+              "Device Group Path": "@item()?['Zebra DB[DeviceGroupPath]']",
+              "ICCID": "@concat('`', item()?['Zebra DB[ICCID]'], '`')",
+              "Device ID": "@item()?['Zebra DB[DevID]']"
+            }
+          }
+        },
+        "EVRi_Offline_More_Than_30_Days": {
+          "runAfter": {
+            "Offlinemorethan30days": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "ccaa465d-4163-4488-8927-3bf69158edde"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "DEFINE\n    VAR __DS0FilterTable =\n        TREATAS({\"EMEA\"}, 'Zebra DB'[Region Path])\n \n    VAR __DS0FilterTable2 =\n        TREATAS({\"Offline\"}, 'Zebra DB'[Offline > 30 Days])\n \n    VAR __DS0FilterTable3 =\n        FILTER(\n            KEEPFILTERS(VALUES('Zebra DB'[Business Division])),\n            NOT('Zebra DB'[Business Division] IN {\"LOST & STOLEN\",\n                \"x TBW\"})\n        )\n \n    VAR __DS0FilterTable4 =\n        FILTER(\n            KEEPFILTERS(VALUES('Zebra DB'[DeviceGroupPath])),\n            NOT('Zebra DB'[DeviceGroupPath] IN {\"\\\\Evri\\EMEA\\TC75\\x TBW\\RMA\"})\n        )\n \n    VAR __DS0Core =\n        CALCULATETABLE(\n            SUMMARIZE(\n                'Zebra DB',\n                'Zebra DB'[EnrollmentTime],\n                'Zebra DB'[Offline Days],\n                'Zebra DB'[Device Name],\n                'Zebra DB'[DeviceGroupPath],\n                'Zebra DB'[Model],\n                'Zebra DB'[SerialNo],\n                'Zebra DB'[Business Division],\n                'Zebra DB'[Business Site],\n                'Zebra DB'[Business Unit],\n                'Zebra DB'[Offline > 30 Days],\n                'Zebra DB'[Star ID],\n                'Zebra DB'[LastDisConnTime],\n                'Zebra DB'[ICCID],\n                'Zebra DB'[DevID]\n            ),\n            KEEPFILTERS(__DS0FilterTable),\n            KEEPFILTERS(__DS0FilterTable2),\n            KEEPFILTERS(__DS0FilterTable3),\n            KEEPFILTERS(__DS0FilterTable4)\n        )\n \nEVALUATE\n    __DS0Core\n \nORDER BY\n    'Zebra DB'[ICCID] DESC,\n    'Zebra DB'[EnrollmentTime],\n    'Zebra DB'[Offline Days],\n    'Zebra DB'[Device Name],\n    'Zebra DB'[DeviceGroupPath],\n    'Zebra DB'[Model],\n    'Zebra DB'[SerialNo],\n    'Zebra DB'[Business Division],\n    'Zebra DB'[Business Site],\n    'Zebra DB'[Business Unit],\n    'Zebra DB'[Offline > 30 Days],\n    'Zebra DB'[Star ID],\n    'Zebra DB'[LastDisConnTime],\n    'Zebra DB'[DevID]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Offlinemorethan30days": {
+          "runAfter": {
+            "EVRiCountMoreThan30DaysOffline": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "cfca84de-4817-4258-b8da-2062c8ecdd46"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Offline30days",
+                "type": "float",
+                "value": "@outputs('EVRiCountMoreThan30DaysOffline')?['body/firstTableRows'][0]?['[M_Zebra_Offline___30_Days]']"
+              }
+            ]
+          }
+        },
+        "EVRiCountMoreThan30DaysOffline": {
+          "runAfter": {
+            "AccessToken": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e63f4494-7a15-459c-833d-c198f3dd0ef8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f",
+              "specification/query": "EVALUATE\n\tROW(\n\t\"M_Zebra_Offline___30_Days\", 'Zebra DB'[M Zebra Offline > 30 Days]\n)",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "connectionName": "shared_powerbi",
+              "operationId": "ExecuteDatasetQuery"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Get_secret_ClientIDSecret": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "e1d307a5-27e5-4a4e-999a-788c3ca588a6"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-sti19"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "connectionName": "shared_keyvault",
+              "operationId": "GetSecret"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secretPSWD": {
+          "runAfter": {
+            "Get_secret_ClientIDSecret": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bd32d846-055f-440a-9326-b08b868d8413"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "sia-sti19-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "connectionName": "shared_keyvault",
+              "operationId": "GetSecret"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_items": {
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "4061c848-038f-4883-a47e-00f54653533a"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "eb13e449-9cbf-4f7d-b8c8-2d087aa075e0",
+              "$filter": "Path eq '\\\\Evri\\Lost_Stolen\\Lost'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Compose_LostId": {
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "575c0c4f-a826-458e-b180-26e0f656ead9"
+          },
+          "type": "Compose",
+          "inputs": "@body('Get_Items')?['value'][0]?['ReferenceId']"
+        },
+        "Initialize_variable": {
+          "runAfter": {
+            "Compose_LostId": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "44b57254-c1f6-48ad-9101-e2733a60ba00"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "LostFolderReferenceId",
+                "type": "string",
+                "value": "@outputs('Compose_LostId')"
+              }
+            ]
+          }
+        },
+        "Condition": {
+          "actions": {
+            "Condition_PreDeletionList": {
+              "actions": {},
+              "else": {
+                "actions": {
+                  "Send_an_email_(V2)": {
+                    "metadata": {
+                      "operationMetadataId": "e6f6822a-6a99-4569-8c54-fce4ceabd249"
+                    },
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "emailMessage/To": "HUKITProc@hermes-europe.co.uk;Paul.Tate@Evri.com;debbie.bakes@evri.com",
+                        "emailMessage/Subject": "EVRi: Zebra Offline > 30 Days Devices Moving to Lost Folder",
+                        "emailMessage/Body": "<p class=\"editor-paragraph\">Hello,<br><br>Please find the attached report of Offline &gt; 30 Days devices that are moving to the Lost folder.<br><br><b><strong class=\"editor-text-bold\">ZEBRA DEVICES</strong></b></p><p class=\"editor-paragraph\">@{outputs('Compose')}</p><br><p class=\"editor-paragraph\">If there are any issues with this report, please get in touch with your Zebra Service Manager (elena.brusentsova@zebra.com).</p><br><p class=\"editor-paragraph\">Warm regards</p><br><p class=\"editor-paragraph\">Zebra DMS Support</p>",
+                        "emailMessage/From": "dms.support@zebra.com",
+                        "emailMessage/Cc": "elena.brusentsova@zebra.com;michaela.pastourmatzi@zebra.com;darshindran.jeyakumar@zebra.com;Iva.Musialkova@zebra.com;gmssba@zebra.com;jocasta.malinova@zebra.com;matthew.mcdonnell@zebra.com",
+                        "emailMessage/Bcc": "PQMN34@zebra.com",
+                        "emailMessage/Attachments": [
+                          {
+                            "Name": "ZebraOfflineMoreThan30Days.csv",
+                            "ContentBytes": "@body('Create_CSV_table')"
+                          }
+                        ],
+                        "emailMessage/Sensitivity": "9ca67e64-6921-4a30-921f-923231455f5f",
+                        "emailMessage/Importance": "High"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                        "connectionName": "shared_office365",
+                        "operationId": "SendEmailV2"
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    }
+                  },
+                  "Apply_to_each": {
+                    "foreach": "@body('Select_EVRI_Offline_More_Than_30_Days')",
+                    "actions": {
+                      "HTTP_MoveDevice": {
+                        "metadata": {
+                          "operationMetadataId": "04ddfa4b-55c4-488a-8e77-bbc15b685bf6"
+                        },
+                        "type": "Http",
+                        "inputs": {
+                          "uri": "https://mlmsti19web01.zebra.com:443/MobiControl/api/devicegroups/referenceId:@{variables('LostFolderReferenceId')}/members",
+                          "method": "POST",
+                          "headers": {
+                            "Authorization": "Bearer @{variables('AccessToken')}",
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                          },
+                          "body": [
+                            "@{items('Apply_to_each')?['Device ID']}"
+                          ]
+                        },
+                        "runtimeConfiguration": {
+                          "contentTransfer": {
+                            "transferMode": "Chunked"
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Send_an_email_(V2)": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "a6dfecde-54e5-4e5e-a21f-4ecc04b759f7"
+                    },
+                    "type": "Foreach"
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@outputs('EVRiCountMoreThan30DaysOffline')?['body/firstTableRows'][0]?['[M_Zebra_Offline___30_Days]']",
+                      ""
+                    ]
+                  }
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "17ba7cd5-11ce-4546-8f6a-14785cedaad7"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@dayOfMonth(utcNow())",
+                  15
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "379f5002-e3ce-4a39-a16b-23439d641c38"
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

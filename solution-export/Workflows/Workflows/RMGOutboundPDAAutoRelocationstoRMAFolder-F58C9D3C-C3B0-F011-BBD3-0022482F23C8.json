@@ -1,0 +1,599 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_keyvault": {
+        "api": {
+          "name": "shared_keyvault"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedkeyvault_f3ab0"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_powerbi-1": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_office365": {
+        "api": {
+          "name": "shared_office365"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_teams": {
+        "api": {
+          "name": "shared_teams"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_ade65"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Day",
+            "timeZone": "UTC",
+            "schedule": {
+              "hours": [
+                "18"
+              ],
+              "minutes": [
+                30
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Create_CSV_table": {
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select_RMADevices')",
+            "format": "CSV"
+          },
+          "runAfter": {
+            "Select_RMADevices": [
+              "Succeeded"
+            ]
+          }
+        },
+        "arrSuccessLog": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "arrSuccessLog",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "Get_secret_PSWD": [
+              "Succeeded"
+            ]
+          }
+        },
+        "arrFailureLog": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "arrFailureLog",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {
+            "arrSuccessLog": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_secret_APIKEY": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-api-key-movedevice-42g"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {}
+        },
+        "Get_secret_UID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-uid"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_APIKEY": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Get_secret_PSWD": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "secretName": "rmg-LnS-42g-pswd"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_keyvault",
+              "operationId": "GetSecret",
+              "connectionName": "shared_keyvault"
+            }
+          },
+          "runAfter": {
+            "Get_secret_UID": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs",
+                "outputs"
+              ]
+            }
+          }
+        },
+        "Run_a_query_against_a_dataset_RMAGroupID": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "DEFINE\n\tVAR __DS0FilterTable = \n\t\tFILTER(\n\t\t\tKEEPFILTERS(VALUES('royal_mail_groups'[group_path])),\n\t\t\tSEARCH(\"/RMA\", 'royal_mail_groups'[group_path], 1, 0) >= 1\n\t\t)\n\n\tVAR __DS0Core = \n\t\tCALCULATETABLE(\n\t\t\tSUMMARIZE(\n\t\t\t\t'royal_mail_groups',\n\t\t\t\t'royal_mail_groups'[group_path],\n\t\t\t\t'royal_mail_groups'[group_name],\n\t\t\t\t'royal_mail_groups'[group_id]\n\t\t\t),\n\t\t\tKEEPFILTERS(__DS0FilterTable)\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'royal_mail_groups'[group_path],\n\t'royal_mail_groups'[group_name],\n\t'royal_mail_groups'[group_id]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "varFailureLog": [
+              "Succeeded"
+            ]
+          }
+        },
+        "ComposeGroupID": {
+          "type": "Compose",
+          "inputs": "@first(body('Run_a_query_against_a_dataset_RMAGroupID')?['firstTableRows'])?['royal_mail_groups[group_id]']",
+          "runAfter": {
+            "Run_a_query_against_a_dataset_RMAGroupID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Run_a_query_against_a_dataset_RMADevices": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "01eb5fcd-97e7-443a-aa11-6be57bed6ae7",
+              "specification/query": "DEFINE\n\tVAR __DS0Core = \n\t\tSUMMARIZE(\n\t\t\t'OutboundToRMA',\n\t\t\t'OutboundToRMA'[Asset],\n\t\t\t'OutboundToRMA'[Company],\n\t\t\t'OutboundToRMA'[Customer Location Identifier],\n\t\t\t'OutboundToRMA'[Device ID],\n\t\t\t'OutboundToRMA'[Display name],\n\t\t\t'OutboundToRMA'[Group Path],\n\t\t\t'OutboundToRMA'[Name],\n\t\t\t'OutboundToRMA'[Number],\n\t\t\t'OutboundToRMA'[Outgoing asset],\n\t\t\t'OutboundToRMA'[Serial number],\n\t\t\t'OutboundToRMA'[SIM number]\n\t\t)\n\nEVALUATE\n\t__DS0Core\n\nORDER BY\n\t'OutboundToRMA'[Asset],\n\t'OutboundToRMA'[Company],\n\t'OutboundToRMA'[Customer Location Identifier],\n\t'OutboundToRMA'[Device ID],\n\t'OutboundToRMA'[Display name],\n\t'OutboundToRMA'[Group Path],\n\t'OutboundToRMA'[Name],\n\t'OutboundToRMA'[Number],\n\t'OutboundToRMA'[Outgoing asset],\n\t'OutboundToRMA'[Serial number],\n\t'OutboundToRMA'[SIM number]",
+              "specification/serializerSettings/includeNulls": false
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "ExecuteDatasetQuery",
+              "connectionName": "shared_powerbi-1"
+            }
+          },
+          "runAfter": {
+            "ComposeGroupID": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Select_RMADevices": {
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Run_a_query_against_a_dataset_RMADevices')?['body/firstTableRows']",
+            "select": {
+              "Asset": "@item()?['OutboundToRMA[Asset]']",
+              "Serial Number": "@item()?['OutboundToRMA[Serial number]']",
+              "Company": "@item()?['OutboundToRMA[Company]']",
+              "Customer Location Identifier": "@item()?['OutboundToRMA[Customer Location Identifier]']",
+              "Display Name": "@item()?['OutboundToRMA[Display name]']",
+              "Group Path": "@item()?['OutboundToRMA[Group Path]']",
+              "Name": "@item()?['OutboundToRMA[Name]']",
+              "Number": "@item()?['OutboundToRMA[Number]']",
+              "Outgoing Asset": "@item()?['OutboundToRMA[Outgoing asset]']",
+              "ICCID": "@item()?['OutboundToRMA[SIM number]']",
+              "DeviceID": "@item()?['OutboundToRMA[Device ID]']"
+            }
+          },
+          "runAfter": {
+            "Run_a_query_against_a_dataset_RMADevices": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varSuccessLog": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varSuccessLog",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "arrFailureLog": [
+              "Succeeded"
+            ]
+          }
+        },
+        "varFailureLog": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varFailureLog",
+                "type": "string"
+              }
+            ]
+          },
+          "runAfter": {
+            "varSuccessLog": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Error_Handling": {
+          "type": "Scope",
+          "actions": {
+            "FAILED_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "RMG: FAILED - RMG PEAK Device Auto Relocations as per X012",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\"><span style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">FAILED:  RMG Outbound PDA Auto Relocations to RMA Folder</span></p><p class=\"editor-paragraph\"><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br>FAILED MOVES:<br>@{if(empty(variables('arrFailureLog')), 'None', outputs('Compose_FAILED_HTML_Table'))}</p>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_FAILED_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Post_FAILED_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">FAILED: </strong></b><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(208, 2, 27); color: rgb(255, 255, 255);\">RMG Outbound PDA Auto Relocations to RMA Folder</strong></b><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><br>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "TimedOut",
+              "Skipped",
+              "Failed"
+            ]
+          }
+        },
+        "SUCCESS_Handling": {
+          "type": "Scope",
+          "actions": {
+            "SUCCESS_Send_an_email_(V2)": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "emailMessage/To": "PQMN34@zebra.com",
+                  "emailMessage/Subject": "RMG: SUCCESSFULLY COMPLETED-RMG PEAK Device Auto Relocations as per X012",
+                  "emailMessage/Body": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\">SUCCESSFULLY COMPLETED</strong></b><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\"> </strong></b><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\">: </strong></b><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(126, 211, 33); color: rgb(255, 255, 255);\">RMG Outbound PDA Auto Relocations to RMA Folder</strong></b><br>Flow Name: @{workflow()?['tags']['flowDisplayName']}<br>Run ID: @{workflow()?['run']['name']}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}<br>Link to Run: @{concat('https://make.powerautomate.com/environments/', workflow()?['name'], '/flows/', workflow()?['tags']['logicAppName'], '/runs/', workflow()?['run']['name'])}</p><p class=\"editor-paragraph\">SUCCESSFUL MOVES:@{if(empty(variables('arrSuccessLog')), 'None', outputs('Compose_PASSED_HTML_Table'))}<br>FAILED MOVES:<br>@{if(empty(variables('arrFailureLog')), 'None', outputs('Compose_FAILED_HTML_Table'))}</p><br>",
+                  "emailMessage/Importance": "High"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "SendEmailV2",
+                  "connectionName": "shared_office365"
+                }
+              },
+              "runAfter": {
+                "Post_PASSED_message_in_a_chat_or_channel": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Post_PASSED_message_in_a_chat_or_channel": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient/groupId": "02deece1-19d7-41b6-b50c-75e3cd5178ea",
+                  "body/recipient/channelId": "19:b32c3b1c47a04ebf909717aa6eb147bc@thread.tacv2",
+                  "body/messageBody": "<p class=\"editor-paragraph\"><b><strong class=\"editor-text-bold\" style=\"background-color: rgb(65, 117, 5); color: rgb(255, 255, 255);\">SUCCESSFULLY COMPLETED: </strong></b><span style=\"background-color: rgb(65, 117, 5); color: rgb(255, 255, 255);\">RMG Outbound PDA Auto Relocations to RMA Folder</span><br><u><b><strong class=\"editor-text-bold editor-text-underline\">SUCCESSFUL MOVES:</strong></b></u>@{if(empty(variables('arrSuccessLog')), 'None', outputs('Compose_PASSED_HTML_Table'))}</p><p class=\"editor-paragraph\"><u><b><strong class=\"editor-text-bold editor-text-underline\">FAILED MOVES:</strong></b></u><br>@{if(empty(variables('arrFailureLog')), 'None', outputs('Compose_FAILED_HTML_Table'))}</p>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostMessageToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Scope": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Scope": {
+          "type": "Scope",
+          "actions": {
+            "Apply_to_each": {
+              "type": "Foreach",
+              "foreach": "@body('Select_RMADevices')",
+              "actions": {
+                "Condition": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('Compose')",
+                          200
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Append_to_string_variable_PASSED": {
+                      "type": "AppendToStringVariable",
+                      "inputs": {
+                        "name": "varSuccessLog",
+                        "value": "SUCCESS: Moved SN  to group "
+                      },
+                      "runAfter": {
+                        "Append_to_array_variable_PASSED": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Append_to_array_variable_PASSED": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "arrSuccessLog",
+                        "value": {
+                          "Asset": "@{item()?['Asset']}",
+                          "Serial Number": "@{item()?['Serial Number']}",
+                          "Group Path": "@{item()?['Group Path']}"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {
+                      "Append_to_string_variable_FAILED": {
+                        "type": "AppendToStringVariable",
+                        "inputs": {
+                          "name": "varFailureLog",
+                          "value": "FAILED: SN . Status: @{outputs('HTTP')?['statusCode']}. Error: @{outputs('HTTP')?['body']}"
+                        },
+                        "runAfter": {
+                          "Append_to_array_variable_FAILED": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Append_to_array_variable_FAILED": {
+                        "type": "AppendToArrayVariable",
+                        "inputs": {
+                          "name": "arrFailureLog",
+                          "value": {
+                            "Asset": "@{item()?['Asset']}",
+                            "Serial Number": "@{item()?['Serial Number']}",
+                            "Group Path": "@{item()?['Group Path']}"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Compose": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "HTTP": {
+                  "type": "Http",
+                  "inputs": {
+                    "uri": "https://zebrams001.eu.suremdm.io/api/deviceassignment",
+                    "method": "PUT",
+                    "headers": {
+                      "ApiKey": "@{outputs('Get_secret_APIKEY')?['body/value']}",
+                      "Content-TypeContent-Type": "application/json"
+                    },
+                    "body": [
+                      {
+                        "DeviceID": "@{item()?['DeviceID']}",
+                        "GroupID": "@{outputs('ComposeGroupID')}"
+                      }
+                    ],
+                    "authentication": {
+                      "type": "Basic",
+                      "username": "@{outputs('Get_secret_UID')?['body/value']}",
+                      "password": "@{outputs('Get_secret_PSWD')?['body/value']}"
+                    }
+                  },
+                  "runAfter": {
+                    "Compose_1": [
+                      "Succeeded"
+                    ]
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                },
+                "Compose": {
+                  "type": "Compose",
+                  "inputs": "@int(outputs('HTTP')['statusCode'])",
+                  "runAfter": {
+                    "HTTP": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Compose_1": {
+                  "type": "Compose",
+                  "inputs": "@item()?['DeviceID']"
+                }
+              },
+              "runtimeConfiguration": {
+                "concurrency": {
+                  "repetitions": 30
+                }
+              }
+            },
+            "Create_HTML_table_PASSED": {
+              "type": "Table",
+              "inputs": {
+                "from": "@variables('arrSuccessLog')",
+                "format": "HTML",
+                "columns": [
+                  {
+                    "header": "Asset",
+                    "value": "@item()?['Asset']"
+                  },
+                  {
+                    "header": "Serial Number",
+                    "value": "@item()?['Serial Number']"
+                  },
+                  {
+                    "header": "Group Path",
+                    "value": "@item()?['Group Path']"
+                  }
+                ]
+              },
+              "runAfter": {
+                "Apply_to_each": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_PASSED_HTML_Table": {
+              "type": "Compose",
+              "inputs": "@replace(outputs('Create_HTML_table_PASSED')?['body'], '<table>', '<style>table {border: 1px solid #ddd; border-collapse: collapse; font-family: sans-serif; width: 100%;} th, td {border: 1px solid #ddd; padding: 8px; text-align: left;} th {background-color: #C00000; color: white; font-weight: bold; text-align: center;}</style><table>')",
+              "runAfter": {
+                "Create_HTML_table_FAILED": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Create_HTML_table_FAILED": {
+              "type": "Table",
+              "inputs": {
+                "from": "@variables('arrFailureLog')",
+                "format": "HTML",
+                "columns": [
+                  {
+                    "header": "Asset",
+                    "value": "@item()?['Asset']"
+                  },
+                  {
+                    "header": "Serial Number",
+                    "value": "@item()?['Serial Number']"
+                  },
+                  {
+                    "header": "Group Path",
+                    "value": "@item()?['Group Path']"
+                  }
+                ]
+              },
+              "runAfter": {
+                "Create_HTML_table_PASSED": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_FAILED_HTML_Table": {
+              "type": "Compose",
+              "inputs": "@replace(outputs('Create_HTML_table_FAILED')?['body'], '<table>', '<style>table {border: 1px solid #ddd; border-collapse: collapse; font-family: sans-serif; width: 100%;} th, td {border: 1px solid #ddd; padding: 8px; text-align: left;} th {background-color: #C00000; color: white; font-weight: bold; text-align: center;}</style><table>')",
+              "runAfter": {
+                "Compose_PASSED_HTML_Table": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

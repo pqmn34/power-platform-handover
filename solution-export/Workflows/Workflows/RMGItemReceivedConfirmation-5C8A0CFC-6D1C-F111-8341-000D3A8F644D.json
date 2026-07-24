@@ -1,0 +1,251 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_microsoftforms": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedmicrosoftforms_06bec"
+        },
+        "api": {
+          "name": "shared_microsoftforms"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedsharepointonline_4deeb"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedoffice365_bd676"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_new_response_is_submitted": {
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "form_id": "CiY9TUCcBkONrA1kcXA57JtRft8wGGRDkSUQWF_I7nhUMVBNTEZEN0JQQ0Q1VFZEWTc5Tlg3NEs2UC4u"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+              "connectionName": "shared_microsoftforms",
+              "operationId": "CreateFormWebhook"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Get_response_details": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "form_id": "CiY9TUCcBkONrA1kcXA57JtRft8wGGRDkSUQWF_I7nhUMVBNTEZEN0JQQ0Q1VFZEWTc5Tlg3NEs2UC4u",
+              "response_id": "@triggerOutputs()?['body/resourceData/responseId']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_microsoftforms",
+              "connectionName": "shared_microsoftforms",
+              "operationId": "GetFormResponseById"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Get_items": {
+          "runAfter": {
+            "Get_response_details": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "81e52923-78db-4171-bf7c-5ca6f678a22b",
+              "$filter": "Title eq '@{outputs('Get_response_details')?['body/rf9e138132ab6416b82e1b14f7b5f5511']}'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetItems"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runtimeConfiguration": {
+            "paginationPolicy": {
+              "minimumItemCount": 2000
+            }
+          }
+        },
+        "Filter_array": {
+          "runAfter": {
+            "Create_item": [
+              "Succeeded"
+            ]
+          },
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('Get_items')?['body/value']",
+            "where": "@equals(item()?['Title'],outputs('Get_response_details')?['body/rf9e138132ab6416b82e1b14f7b5f5511'])"
+          }
+        },
+        "Condition": {
+          "actions": {
+            "For_each": {
+              "foreach": "@outputs('Get_items')?['body/value']",
+              "actions": {
+                "Create_items": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+                      "table": "b021549a-e3b2-4bae-92e7-4f4ae74c272f",
+                      "item/Title": "@items('For_each')?['field_1']",
+                      "item/DOBI": "@items('For_each')?['Title']",
+                      "item/SubmitterName": "@outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']",
+                      "item/SitePostCode": "@outputs('Get_response_details')?['body/r72c60f7ca9064c6a8f2d8393974c9562']",
+                      "item/DateofFitting": "@outputs('Get_response_details')?['body/r3e33ea8b9e6b4bda8e03e58ff6f4df33']",
+                      "item/AdditionalComment": "@outputs('Get_response_details')?['body/rad07eeadf18b47259984571e70b695e5']",
+                      "item/ContactPerson": "@outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']",
+                      "item/SubmitterEmail": "@outputs('Get_response_details')?['body/r6db815d0450d454ea487717f1d64c3a6']",
+                      "item/{ContentType}/Id": "0x0100E92AEBC6880C8F4785130A5C384B314700D096F7A990395F4694CBF09850D35189"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "PostItem"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "type": "Foreach"
+            },
+            "For_each_1": {
+              "foreach": "@outputs('Get_items')?['body/value']",
+              "actions": {
+                "Send_an_email_(V2)_1": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "emailMessage/To": "PQMN34@zebra.com;@{outputs('ComposeEmail')}",
+                      "emailMessage/Subject": "New EXO Confirmation: @{items('For_each_1')?['field_1']}-@{items('For_each_1')?['Title']}",
+                      "emailMessage/Body": "<div style=\"font-family: Arial, sans-serif; color: #333333; line-height: 1.6;\">\n    <p>Hello,</p>\n    <p>A new EXO installation has been confirmed. Please see the details below:</p>\n\n    <table style=\"width: 100%; max-width: 650px; border-collapse: collapse; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);\">\n        <tbody>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold; width: 30%;\">Site Name</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{items('For_each_1')?['field_1']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">DOBI Code</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{items('For_each_1')?['Title']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Postcode</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/r72c60f7ca9064c6a8f2d8393974c9562']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Date of Fitting</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/r3e33ea8b9e6b4bda8e03e58ff6f4df33']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Contact Person</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']}\n                </td>\n            </tr>\n            <tr>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; background-color: #f8f9fa; font-weight: bold;\">Comments</td>\n                <td style=\"padding: 12px; border: 1px solid #dddddd; color: #000000;\">\n                    @{outputs('Get_response_details')?['body/rad07eeadf18b47259984571e70b695e5']}\n                </td>\n            </tr>\n        </tbody>\n    </table>\n\n    <p style=\"margin-top: 20px;\">\n        Regards,<br>\n        <strong>@{outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']}</strong>\n    </p>\n</div>\n",
+                      "emailMessage/From": "strategicinnovationandautomation@zebra.com",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "connectionName": "shared_office365",
+                      "operationId": "SendEmailV2"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {
+                "For_each": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Foreach"
+            }
+          },
+          "runAfter": {
+            "ComposeEmail": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "and": [
+              {
+                "greaterOrEquals": [
+                  "@length(outputs('Get_items')?['body/value'])",
+                  0
+                ]
+              }
+            ]
+          },
+          "type": "If"
+        },
+        "ComposeEmail": {
+          "runAfter": {
+            "Filter_array": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@trim(outputs('Get_response_details')?['body/r6db815d0450d454ea487717f1d64c3a6'])"
+        },
+        "Combined_Site": {
+          "runAfter": {
+            "Get_items": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@{outputs('Get_response_details')?['body/r37fcd4ec6791491fb69ca85a5fa05f24']}@{outputs('Get_response_details')?['body/r77d1588e5a674e51818bac9852c74b11']}@{outputs('Get_response_details')?['body/rac681adee6824e5cbc5284864372bc96']}@{outputs('Get_response_details')?['body/r904dd7b026844d3c9ec886ec5e8c0eb0']}@{outputs('Get_response_details')?['body/r83377c393876447ab32e8ecd4db40f14']}@{outputs('Get_response_details')?['body/r91cadc8ca5e74eca8a14acf3d6577568']}@{outputs('Get_response_details')?['body/r01c5ebc3d560491186ed6d1f2236ac3e']}@{outputs('Get_response_details')?['body/rad6a254b424a45a385d316663e3d2276']}"
+        },
+        "Create_item": {
+          "runAfter": {
+            "Combined_Site": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "dataset": "https://zebra.sharepoint.com/sites/StrategicInnovationandAutomation",
+              "table": "8f709111-c83b-473c-9aa9-d534c4dfbc13",
+              "item/Title": "@trim(split(outputs('Combined_Site'), ' - ')[0])",
+              "item/DOBI": "@trim(split(outputs('Combined_Site'), ' - ')[1])",
+              "item/SitePostcode": "@outputs('Get_response_details')?['body/r72c60f7ca9064c6a8f2d8393974c9562']",
+              "item/DateofFitting": "@outputs('Get_response_details')?['body/r3e33ea8b9e6b4bda8e03e58ff6f4df33']",
+              "item/ContactPerson": "@outputs('Get_response_details')?['body/r42afc3f2b1e645ecadef0d74a0439ef6']",
+              "item/AdditionalComment": "@outputs('Get_response_details')?['body/rad07eeadf18b47259984571e70b695e5']",
+              "item/Confirmation": "@outputs('Get_response_details')?['body/rf0adc018b0a44ecb896cd3dc2db8e108']",
+              "item/{ContentType}/Id": "0x01005B0D2A05C3778F488040A92B7595DEB900DC16C3394EAD274A9194A5D7F983887B"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "PostItem"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

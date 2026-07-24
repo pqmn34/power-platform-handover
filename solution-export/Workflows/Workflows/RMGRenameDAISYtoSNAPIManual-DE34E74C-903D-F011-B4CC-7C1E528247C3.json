@@ -1,0 +1,204 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "dms_sharedoffice365_f3d13"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_excelonlinebusiness": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedexcelonlinebusiness_d7bcb"
+        },
+        "api": {
+          "name": "shared_excelonlinebusiness"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "42038540-b89f-45d5-90a6-693a5ab16f88"
+          },
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Send_an_email_(V2)": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7c3fe2b6-6299-4743-9de4-4346bd52418b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "FAILED : PEAK RENAMING FAILED",
+              "emailMessage/Body": "<p>FAILED : PEAK RENAMING FAILED</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SendEmailV2"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('List_rows_present_in_a_table')?['body/value']",
+          "actions": {
+            "SN": {
+              "metadata": {
+                "operationMetadataId": "0cea0c6f-b1a9-4bab-961b-fc78618373e9"
+              },
+              "type": "Compose",
+              "inputs": "@items('Apply_to_each')?['Serial Number']"
+            },
+            "DevID": {
+              "runAfter": {
+                "SN": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "7376a69f-6823-4c82-a08a-7ab825302acd"
+              },
+              "type": "Compose",
+              "inputs": "@items('Apply_to_each')?['Device ID']"
+            },
+            "HTTP": {
+              "runAfter": {
+                "DevID": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c4a0f7d2-3c92-431c-b147-7397b27532f7"
+              },
+              "type": "Http",
+              "inputs": {
+                "uri": "https://zebrams001.eu.suremdm.io/api/dynamicjob",
+                "method": "POST",
+                "headers": {
+                  "ApiKey": "13967834-72B0-42F0-8F8C-66A69BE028D8",
+                  "Content-Type": "application/json"
+                },
+                "body": {
+                  "DeviceID": "@{outputs('DevID')}",
+                  "JobType": "Set_Devicename",
+                  "PayLoad": "@{outputs('SN')}-D"
+                },
+                "authentication": {
+                  "type": "Basic",
+                  "username": "L2_RM_API_21070007",
+                  "password": "Zebr@DMSL@60200@"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "List_rows_present_in_a_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "05fc734a-a9b4-4ac4-b49a-eeb097414102"
+          },
+          "type": "Foreach"
+        },
+        "List_rows_present_in_a_table": {
+          "runAfter": {},
+          "metadata": {
+            "01T4LJCQ3KPJ2R5IJMWVCYOTXKXP4NRQHG": "/5. PROJECT/From SN to PEAK.xlsx",
+            "operationMetadataId": "c6faae93-f520-4352-a42a-1c01c29e3803",
+            "tableId": "{00000000-000C-0000-FFFF-FFFF00000000}",
+            "01T4LJCQ76IUNIZWLV6NCIXIFW6UUQL2B5": "/5. PROJECT/From PEAK to SN.xlsx",
+            "01U33U3YGEZME62SNXUVHYFA5KYLRLCRFV": "/DOCUMENTS/1. ACCOUNTS/ROYAL MAIL GROUP/3. PROJECT/PEAK PROJECT/From PEAK to SN.xlsx",
+            "01U33U3YBINFFASB5AFVGZXJWKUTJHH5IZ": "/DOCUMENTS/1. ACCOUNTS/ROYAL MAIL GROUP/3. PROJECT/DAISY PROJECT/From SN to DAISY.xlsx"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "source": "groups/02deece1-19d7-41b6-b50c-75e3cd5178ea",
+              "drive": "b!ZmxYxfZ-Gk2s4Xolw1AuW8XRAawiUotPr-BQvg1pkgqszY_Om9rdQrXmzFK3xiR4",
+              "file": "01U33U3YBINFFASB5AFVGZXJWKUTJHH5IZ",
+              "table": "{00000000-000C-0000-FFFF-FFFF00000000}"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+              "connectionName": "shared_excelonlinebusiness",
+              "operationId": "GetItems"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          },
+          "runtimeConfiguration": {
+            "paginationPolicy": {
+              "minimumItemCount": 5000
+            }
+          }
+        },
+        "Send_an_email_(V2)_2": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7c3fe2b6-6299-4743-9de4-4346bd52418b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "emailMessage/To": "PQMN34@zebra.com",
+              "emailMessage/Subject": "PASSED : PEAK RENAMING PASSED",
+              "emailMessage/Body": "<p>PASSED: PEAK RENAMING PASSED<br>\n<br>\nKindly clear the table in the <a href=\"https://zebra.sharepoint.com/:x:/r/sites/MS&amp;SS/_layouts/15/Doc.aspx?sourcedoc=%7B1E757A6A-2CA1-45B5-874E-EABBF8D8C0E6%7D&amp;file=From%20SN%20to%20PEAK.xlsx&amp;action=default&amp;mobileredirect=true\">file</a> .<br>\n<br>\nRegards<br>\n<br>\nPK</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "SendEmailV2"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,96 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_powerbi": {
+        "api": {
+          "name": "shared_powerbi"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedpowerbi_e7cf2"
+        },
+        "runtimeSource": "embedded"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Day",
+            "interval": 1,
+            "timeZone": "Central Europe Standard Time",
+            "startTime": "2025-05-05T15:00:00Z",
+            "schedule": {
+              "hours": [
+                "8",
+                "10",
+                "12",
+                "15",
+                "9",
+                "11",
+                "13",
+                "14",
+                "16",
+                "17",
+                "18",
+                "5",
+                "6",
+                "7",
+                "1",
+                "2",
+                "3",
+                "4",
+                "19",
+                "20",
+                "21",
+                "22",
+                "23"
+              ],
+              "minutes": [
+                45
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "0437e682-4fe0-4ffe-9336-4d3f474eea60"
+          }
+        }
+      },
+      "actions": {
+        "Refresh_a_dataset": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "groupid": "ed7233e2-1daf-4288-a3fd-d4943f0b8f89",
+              "datasetid": "197b214a-ad12-4a8d-bb1f-ec6f7a6e218f"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerbi",
+              "operationId": "RefreshDataset",
+              "connectionName": "shared_powerbi"
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "7cf0484d-c94e-43d7-b0a1-39d2356fd780"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
